@@ -23,7 +23,7 @@ measured: #6 confirms them in game. File IDs can be passed straight to `SetTextu
 
 | Icon | File ID | Use |
 |---|---|---|
-| `inv_misc_bomb_04` | 133712 | **Smiley bomb**: the AddOns-list icon (`## IconTexture`). A nod to Minesweeper's smiley. |
+| `inv_misc_bomb_04` | 133712 | **Smiley bomb**: the AddOns-list icon (`## IconTexture`). A nod to Minesweeper's smiley. **Measured: renders in the AddOns list** (owner, 2026-10-02). |
 | `inv_misc_bomb_01` … `_09` | 133709 … 133717 | Mine candidates (round engineering bombs). Pick the one that reads best at tile size. |
 | `inv_misc_blackironbomb` | 463515 | Mine candidate |
 | `creatureportrait_g_bomb_02` | 512904 | Mine candidate (a goblin bomb portrait) |

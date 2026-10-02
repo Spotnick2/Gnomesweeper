@@ -31,7 +31,8 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
-`Skin.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → [`Scores.lua`] → `Gnomesweeper.lua`.
+`Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → [`Scores.lua`] →
+`Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -64,10 +65,22 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   UIParent's size, so a UI-scale or resolution change moves it), `Layout.FormatTime`,
   `Layout.ValidPos` / `Layout.ClampPos` (a saved position is the window's top-left corner in
   **UIParent units**).
-- **`Skin.lua`** (#3): every texture and colour in one table (`Skin.TEXTURES`, `Skin.COLORS`), so art
-  swaps never touch logic. The textures are **placeholders**, unverified until #6 (`docs/ASSETS.md`).
-  `Skin.FACES` holds the HUD face for each game state (`ready|playing|won|lost`), `Skin.NUMBER_COLORS`
-  the 1-8 colours.
+- **`Skin.lua`**: every texture and colour in one table (`Skin.TEXTURES`, `Skin.COLORS`), so art
+  swaps never touch logic. Most of the art is **ours, in `Media/`** (`Tools/make_tiles.py`,
+  `Tools/make_ui.py`, and the mascot's face cut from the logo with `Tools/png_to_tga.py`); the bomb
+  and the settings gear are still the client's own (`docs/ASSETS.md`). `Skin.RARITY` has WoW's
+  item-quality colours and `Skin.DIFFICULTY_QUALITY` maps Beginner/Intermediate/Expert to
+  uncommon/rare/epic (`Skin.DifficultyColor(key)`); **legendary is held back** for a much harder
+  level some day (#18). `Skin.FACE_RING` and `Skin.FACE_OVERLAY` say how the mascot shows the game
+  state: one face, a ring coloured by state, sparkles over her after a win and soot after a wipe,
+  until the real expressions exist (#12). `Skin.NUMBER_COLORS` has the 1-8 colours.
+- **`Widgets.lua`**: the Liquid Glass controls: `GlassButton` (a dark glass body, a rim that takes an
+  accent colour, a hover glow, a pressed state), `IconButton`, `FaceButton` (the mascot in her ring),
+  `GlassPanel`, `Tip`. Baked textures, 9-sliced for the wide buttons; **a small square is never
+  sliced** (its corners would meet). Methods we add are lower-case (`b:setAccent`), so none can
+  collide with the client's. A `GlassPanel` has a near-opaque, masked backing under its glass body (a list over the
+  HUD must not show it through), the difficulty list sits at window level +30 (above the result
+  overlay's rim at +25), and a glass button clears its pressed look if it hides before the release.
 - **`Input.lua`** (#4): mouse gestures to actions, **pure** (every global forbidden in its test).
   `Input.New({reveal, mark, chord})` then `g:Down(tile, button)`, `g:Up(tile, button, inside)`,
   `g:Cancel()`. Every action fires from a **release**, once. Left, right or middle pressed and
@@ -90,10 +103,14 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (logo, name, tagline, an inert settings gear until #8, close), a difficulty button
-    with a small **hand-rolled** list (not Blizzard's dropdown API, which no sibling has measured on
-    Forever; the list closes on an outside click by polling `IsMouseButtonDown` in an OnUpdate that
-    exists only while it's open), the HUD strip (mines left, the face = new game, the clock).
+  - Title bar (the mascot, name, tagline, an inert settings gear until #8, close), a difficulty
+    button in the difficulty's **rarity colour** with a small **hand-rolled** list (not Blizzard's
+    dropdown API, which no sibling has measured on Forever; each row gives the name and
+    `9x9 · 10 mines`, built from `Board.PRESETS`, and the current row has a bar down its edge; the list
+    closes on an outside click by polling `IsMouseButtonDown` in an OnUpdate that exists only while it's
+    open), the HUD strip (mines left, the mascot = a new game, the clock). The strip's width is capped
+    (`Layout.HudWidth`) so the three stay together on Expert. A dark backing under the glass keeps the
+    scenery from competing with the board.
   - **`Window.Dispatch(kind, i)` is the controller**, the one place the game is acted on: it asks
     the board (`Reveal`/`Chord`/`ToggleMark` at `game:XY(i)`, with `chordOnLeft` turning a left click
     on a revealed number into a chord), has `Grid.Refresh` repaint the changed cells, refreshes the
@@ -105,15 +122,23 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   - **Fit:** `Window.Layout()` runs on a new game, on every show, and on `DISPLAY_SIZE_CHANGED` /
     `UI_SCALE_CHANGED`. The window is moved by dragging, saved as `GnomesweeperDB.pos`, and clamped
     back on screen when restored. `/gsweep reset` forgets it.
-  - **The end of a game (#5):** the HUD face follows `game:State()` (`Skin.FACES`, set in
+  - **The end of a game (#5):** the mascot follows `game:State()` (`ui.face:setState`, set in
     `Window.Refresh`). The action that ENDS a game (a state change in `Dispatch`, not just a finished
     state) calls `Window.ShowEnd()`: one overlay frame, built on first use and re-dressed each time,
     centred on the board, above the tiles (so the board under it takes no clicks; the Board no-ops
     after the end anyway) and under the difficulty list. Cleared: gold title and rim, "Time mm:ss",
     "Play again". Wipe: red title and rim, "Try again". **"New personal best!" stays hidden**
-    (`isPersonalBest()` is false) until #7 can say it's true. A click on the overlay puts it away to
-    look at the board; it does not come back on later clicks, and a new game (the button, the face, the
-    difficulty list) clears it. The golden burst and the loss smoke are #10's.
+    (`isPersonalBest()` is false) until #7 can say it's true. **"View board"** (and a click on the
+    panel) puts the overlay away, `Window.DismissEnd()`, and the result stays in the footer as a
+    **result bar** with its Play again / Try again button, in place of the controls; the finished
+    board is untouched. It does not come back on later clicks, and a new game (the button, the face,
+    the difficulty list) clears both. The golden burst and the loss smoke are #10's.
+  - **The footer:** "Choose a tile to begin." (ready only), `Left-click: Reveal     Right-click: Flag`,
+    `Middle-click: Clear around number`, and a **?** whose tooltip explains chording (only when the
+    flags around a number equal it; a wrong flag reveals a mine; left+right does it too).
+  - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`
+    still keeps the window inside 95% of the screen, so the scale wanted and the scale shown can
+    differ, and the command says so.
   - **Measuring commands:** `/gsweep perf` times an Expert build, a first reveal, a loss and ten
     difficulty switches on a scratch board (then puts your game back); `/gsweep input` logs every
     tile press and release with `upInside` and `IsMouseOver`, for the live input matrix. The lines
@@ -245,8 +270,12 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
-- **`test_overlay.lua`** plays games to their end through the stub: the faces, both overlays, what
-  they say and show, the button, putting the overlay away, a click not bringing it back.
+- **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
+  what they say and show, the button, putting the overlay away, a click not bringing it back.
+- **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,
+  the glass controls (sliced or not), the flag, the detonated tile's burst, the footer and its help, looking
+  at a finished board and the result bar, the capped HUD, and the scale across every difficulty on four
+  screens. **`test_media.lua`** checks every texture in `Media/` is a valid power-of-two 32-bit TGA.
 - **`test_grid.lua`** clicks tiles through the stub on hand-built boards (`Window._test.SetGame`):
   the pool, painting, flood, flags, chords, wrong gestures, the end of a game, `/gsweep perf|input`.
 - **`test_window.lua`** drives the window through the stub: slash commands, clicks, drags, ticks,

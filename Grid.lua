@@ -40,19 +40,44 @@ local paints = 0              -- tiles actually repainted (tests count this)
 -- Painting
 ------------------------------------------------------------
 
-local function setIcon(t, texture, desaturate)
+-- opts.size (default the tile icon), opts.crop (WoW's own icons carry a border to
+-- cut off; ours are drawn without one), opts.desaturate (a wrong flag).
+local function setIcon(t, texture, opts)
+    opts = opts or {}
     if texture then
         if not t.icon then
             t.icon = t:CreateTexture(nil, "ARTWORK")
-            t.icon:SetSize(Skin.TILE_ICON, Skin.TILE_ICON)
             t.icon:SetPoint("CENTER", t, "CENTER", 0, 0)
-            t.icon:SetTexCoord(unpack(Skin.ICON_CROP))
         end
+        local size = opts.size or Skin.TILE_ICON
+        t.icon:SetSize(size, size)
         t.icon:SetTexture(texture)
-        t.icon:SetDesaturated(desaturate and true or false)
+        if opts.crop then
+            t.icon:SetTexCoord(unpack(Skin.ICON_CROP))
+        else
+            t.icon:SetTexCoord(0, 1, 0, 1)
+        end
+        t.icon:SetDesaturated(opts.desaturate and true or false)
         t.icon:Show()
     elseif t.icon then
         t.icon:Hide()
+    end
+end
+
+-- The starburst behind the bomb on the tile that ended the game: a SHAPE as well as
+-- a colour, so the detonated tile isn't told apart by red alone.
+local function setBurst(t, on)
+    if on then
+        if not t.burst then
+            t.burst = t:CreateTexture(nil, "ARTWORK", nil, -1)
+            t.burst:SetSize(Skin.BURST, Skin.BURST)
+            t.burst:SetPoint("CENTER", t, "CENTER", 0, 0)
+            t.burst:SetTexture(Skin.TEXTURES.burst)
+            t.burst:SetBlendMode("ADD")
+        end
+        t.burst:Show()
+    elseif t.burst then
+        t.burst:Hide()
     end
 end
 
@@ -86,16 +111,19 @@ local function paint(i)
     if c.state == "revealed" then
         t.covered = false
         t.bg:SetTexture(c.exploded and T.tileExploded or T.tileRevealed)
-        setIcon(t, c.mine and T.mine or nil)
+        setBurst(t, c.exploded)
+        -- The bomb that ended it is drawn smaller, so the red tile and the burst show round it.
+        setIcon(t, c.mine and T.mine or nil, { crop = true, size = c.exploded and 14 or nil })
         local n = c.count
         if n and n > 0 then setText(t, tostring(n), Skin.NUMBER_COLORS[n]) else setText(t, nil) end
     else
         t.covered = true
         t.bg:SetTexture(T.tileCovered)
+        setBurst(t, false)
         if c.state == "flag" then
             -- A wrong flag: the banner greyed and a red X over it. (A red X on the
             -- red banner was invisible: seen in game.)
-            setIcon(t, T.flag, c.wrongFlag)
+            setIcon(t, T.flag, { size = Skin.FLAG_ICON, desaturate = c.wrongFlag })
             if c.wrongFlag then setText(t, "X", Skin.COLORS.wrongFlag) else setText(t, nil) end
         elseif c.state == "question" then
             setIcon(t, nil)

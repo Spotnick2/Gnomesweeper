@@ -40,24 +40,43 @@ do
     WoW.slash("/gsweep")
     Skin = Gnomesweeper.Skin
     local ui = W._test.ui
-    eq(ui.faceTex._texture, Skin.FACES.ready, "a new game: the ready face")
+    eq(ui.face.state, "ready", "a new game: the mascot is ready")
+    eq(ui.face.face._texture, Skin.TEXTURES.face, "...and her face is the logo's gnome")
+    eq(ui.logo._texture, Skin.TEXTURES.face, "...the same one in the title bar (one mascot, not three characters)")
+    eq(ui.face.ring._vertex[1], Skin.FACE_RING.ready[1], "...in the ready ring")
+    check(not ui.face.overlay:IsShown(), "...with nothing over her")
     eq(ui.overlay, nil, "...and no overlay has even been built")
 
     click(41, L)
     eq(W.game:State(), "playing", "(the first click started the game)")
-    eq(ui.faceTex._texture, Skin.FACES.playing, "playing: the serious face")
+    eq(ui.face.state, "playing", "playing: the mascot follows the game")
+    eq(ui.face.face._texture, Skin.TEXTURES.face, "...still the same gnome")
 
     for i = 1, W.game.total do                          -- end it on a mine
         if W.game._mine[i] then click(i, L); break end
     end
     eq(W.game:State(), "lost", "(a mine was revealed)")
-    eq(ui.faceTex._texture, Skin.FACES.lost, "lost: the bomb face")
+    eq(ui.face.state, "lost", "lost: the mascot follows the game")
+    eq(ui.face.face._texture, Skin.TEXTURES.face, "...still the same gnome, not a bomb")
+    eq(ui.face.ring._vertex[1], Skin.FACE_RING.lost[1], "...in a red ring")
+    check(ui.face.overlay:IsShown() and ui.face.overlay._texture == Skin.TEXTURES.faceSoot, "...with soot over her")
 
     ui.face._scripts.OnClick(ui.face)
-    eq(ui.faceTex._texture, Skin.FACES.ready, "the face starts a new game, and goes back to ready")
+    eq(ui.face.state, "ready", "the face starts a new game, and goes back to ready")
+    check(not ui.face.overlay:IsShown(), "...and the soot is gone")
 
-    check(Skin.FACES.ready ~= Skin.FACES.playing and Skin.FACES.playing ~= Skin.FACES.won
-        and Skin.FACES.won ~= Skin.FACES.lost and Skin.FACES.ready ~= Skin.FACES.lost, "the four faces are four different pictures")
+    -- She is one character; the state shows in her ring and what is over her, and the ready,
+    -- cleared and wiped looks are three different ones.
+    local function look(state)
+        return table.concat(Skin.FACE_RING[state], ",") .. "/" .. tostring(Skin.FACE_OVERLAY[state])
+    end
+    check(look("ready") ~= look("won") and look("won") ~= look("lost") and look("ready") ~= look("lost"),
+        "ready, cleared and wiped look different from one another (by ring and overlay, not by colour alone)")
+    -- ...and the colours mean what they say (not compared with themselves).
+    local ready, won, lost = Skin.FACE_RING.ready, Skin.FACE_RING.won, Skin.FACE_RING.lost
+    check(won[1] > 0.9 and won[2] > 0.7 and won[3] < 0.5, "the cleared ring is gold")
+    check(lost[1] > 0.9 and lost[2] < 0.5 and lost[3] < 0.5, "the wiped ring is red")
+    check(ready[3] > 0.9 and ready[1] < 0.3, "the ready ring is cyan-blue")
 end
 
 ----------------------------------------------------------------------------
@@ -84,7 +103,9 @@ do
     eq(o.button.label:GetText(), "Play again", "the button says Play again")
     eq(o.glass.rim._vertex[1], Skin.COLORS.winRim[1], "the rim is gold")
     eq(o.glass.rim._vertex[3], Skin.COLORS.winRim[3], "(its blue is low)")
-    eq(ui.faceTex._texture, Skin.FACES.won, "the face is the beaming one")
+    eq(ui.face.state, "won", "the mascot is in her cleared state")
+    eq(ui.face.ring._vertex[1], Skin.FACE_RING.won[1], "...in a gold ring")
+    check(ui.face.overlay:IsShown() and ui.face.overlay._texture == Skin.TEXTURES.faceSparkle, "...with sparkles over her")
     eq(ui.counter:GetText(), "0", "every mine is flagged, so the counter reads 0")
 
     check(o._mouse, "the overlay takes the mouse, so the board under it gets no clicks")
@@ -93,7 +114,7 @@ do
     check(o._width <= ui.grid._width, "it fits the board (" .. o._width .. " of " .. ui.grid._width .. ")")
     local p = lastPoint(o)
     check(p[1] == "CENTER" and p[2] == ui.grid and p[3] == "CENTER", "...centred on it")
-    eq(o._height, 108, "without the personal-best line it is shorter")
+    eq(o._height, 134, "without the personal-best line it is shorter")
 end
 
 ----------------------------------------------------------------------------
@@ -113,8 +134,8 @@ do
     check(not o.best:IsShown(), "...and no personal best")
     eq(o.button.label:GetText(), "Try again", "the button says Try again")
     eq(o.glass.rim._vertex[1], Skin.COLORS.lossRim[1], "the rim is red")
-    eq(o._height, 92, "the wipe overlay is the short one")
-    eq(ui.faceTex._texture, Skin.FACES.lost, "the face is the bomb")
+    eq(o._height, 114, "the wipe overlay is the short one")
+    eq(ui.face.state, "lost", "the mascot is in her wiped state")
 
     -- Both overlays are one frame, re-dressed: no second one is built.
     local frames = #WoW.frames

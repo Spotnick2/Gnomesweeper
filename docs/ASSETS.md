@@ -56,20 +56,23 @@ as file IDs. #6 does the rest.
   were compared at 18 px and it is the one that stays legible. (The spiked `_02`, the smiley `_04`,
   the dynamite and the red crab bomb were set aside; `inv_eng_bombfire`, 2115301, is a bomb in
   flames for a later "boom".) **Measured to render** (owner's screenshots of games and losses).
-- **Flag:** the red Horde banner `inv_bannerpvp_01` (132485), **measured** to render.
+- **Flag:** our own red pennant on a dark post (`Media/icon_flag.tga`, `Tools/make_ui.py`), the same on the
+  tiles and beside the counter. (The Horde banner `inv_bannerpvp_01` stood in until the UI review
+  said a faction crest doesn't say "flagged mine".)
 - **Wrong flag:** the flag with a red text "X" over it; **question mark:** a gold text "?". No
   textures, so nothing can come out as a green square.
 - **Tiles:** baked textures, `Media/tile_*.tga` (`Media/README.md`), not WoW art.
 
-## The faces (#5)
+## The mascot (#5, #30)
 
-One gnome-head icon per game state, chosen from a contact sheet (placeholders until the generated
-set, #12). **All four measured to render** (owner's screenshots of a win and a loss): ready
-`achievement_character_gnome_male` (236446), playing `inv_misc_head_gnome_01` (134164), won
-`achievement_character_gnome_female` (236445, a pink-haired gnome), lost `inv_misc_bomb_01` (133709,
-the bomb: the state reads at a glance at 40 px). Alternatives
-looked at: `inv_gnometoy` (4226119), a pink-haired gnome with a big grin; `inv_misc_head_gnome_02`
-(134165); `inv_misc_head_clockworkgnome_01` (134152); `inv_eng_bombfire` (2115301), a bomb in flames.
+The HUD picture and the title-bar logo are **the logo's gnome**, cut from `docs/logo.png` as
+`Media/face_mascot.tga` (see `Media/README.md`). One expression; the game state shows in her
+ring (cyan, gold, red) and what is drawn over her (gold sparkles after a win, soot after a
+wipe). The real expressions are #12; the requests are in `docs/ART.md`.
+
+Retired: the stock gnome-head icons that stood in first (236446, 134164, 236445, and the bomb
+133709 as the loss face). All four were measured to render, but together they were three different
+characters and then a bomb, which the UI review rightly called out.
 
 ## Element by element
 

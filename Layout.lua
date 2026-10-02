@@ -14,8 +14,11 @@ Gnomesweeper.Layout = Layout
 Layout.TILE = 24              -- one tile, in window units (the user scale comes with #8)
 Layout.PAD = 14               -- side padding
 Layout.MIN_WIDTH = 300        -- Beginner's 9 tiles are narrower than the title bar
-Layout.CHROME_TOP = 150       -- title block 12..56, difficulty 66..90, HUD 98..142, a gap
-Layout.CHROME_BOTTOM = 56     -- a gap, two hint lines, the bottom pad
+Layout.CHROME_TOP = 138       -- title block 10..50, difficulty 58..82, HUD 90..130, a gap
+Layout.CHROME_BOTTOM = 68     -- a gap, three hint lines, the bottom pad
+Layout.HUD_MAX = 340          -- the counter, face and clock stay this close on a wide window
+Layout.USER_SCALE_MIN = 0.5   -- the player's scale setting: /gsweep scale
+Layout.USER_SCALE_MAX = 1.5
 Layout.SCREEN_FRACTION = 0.95 -- the window never takes more than this of the screen
 Layout.MIN_SCALE = 0.3
 
@@ -38,6 +41,19 @@ function Layout.Size(cols, rows, tile)
         gridY = Layout.CHROME_TOP,
         tile = tile,
     }
+end
+
+-- The HUD strip's width: the window's, less its padding, but never wider than
+-- HUD_MAX, so the counter, the face and the clock stay together and balanced on
+-- Expert instead of being stretched across 700 units.
+function Layout.HudWidth(windowWidth)
+    return math.min(windowWidth - 2 * Layout.PAD, Layout.HUD_MAX)
+end
+
+-- A scale the player typed: a number in range, or nil.
+function Layout.ValidUserScale(n)
+    if finite(n) and n >= Layout.USER_SCALE_MIN and n <= Layout.USER_SCALE_MAX then return n end
+    return nil
 end
 
 -- The scale to put the window at: the wanted one (default 1), but never so big

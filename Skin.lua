@@ -1,7 +1,11 @@
 -- Skin.lua: every texture and colour the window uses, in one place, so an art
--- swap never touches logic. These are PLACEHOLDERS from the client's own art
--- (docs/ASSETS.md); none is verified on Forever yet (#6 checks them all), and
--- the generated gnome art replaces them in M3.
+-- swap never touches logic.
+--
+-- Most of the art is ours and lives in Media/: baked tiles (Tools/make_tiles.py),
+-- the UI (Tools/make_ui.py: flag, clock, close, arrow, glass buttons, the face's
+-- ring, sparkles and soot) and the mascot's face, cut from the logo
+-- (Tools/png_to_tga.py, docs/ART.md). What is still the client's own art is
+-- listed in docs/ASSETS.md: the bomb and the settings gear.
 --
 -- A number is a file ID, a string is a texture path.
 
@@ -12,33 +16,61 @@ Gnomesweeper.Skin = Skin
 
 Skin.TITLE = "|cff7fd4ffGnome|rsweeper"
 
-Skin.TEXTURES = {
-    logo  = 236446,                                     -- achievement_character_gnome_male
-    flag  = 132485,                                     -- inv_bannerpvp_01: red (_02 is the blue Alliance banner, seen in game)
-    clock = "Interface\\Icons\\INV_Misc_PocketWatch_01",
-    gear  = "Interface\\WorldMap\\GEAR_64GREY",
-    arrow = "Interface\\Buttons\\Arrow-Down-Up",
-}
-
--- The face in the HUD, one per game state. Placeholders from gnome heads until
--- the generated set (#12); chosen by looking at them (docs/ASSETS.md).
-Skin.FACES = {
-    ready   = 236446,       -- achievement_character_gnome_male: goggles, a smile (the logo too)
-    playing = 134164,       -- inv_misc_head_gnome_01: serious
-    won     = 236445,       -- achievement_character_gnome_female: beaming
-    lost    = 133709,       -- inv_misc_bomb_01: the bomb; the state reads at a glance at 40 px
-}
-
--- The board's own art: baked textures from Tools/make_tiles.py, shared by
--- every tile (never a glass frame per tile), and the icons a tile can show.
 local MEDIA = Gnomesweeper.Glass.MEDIA
-Skin.TEXTURES.tileCovered  = MEDIA .. "tile_covered"
-Skin.TEXTURES.tileRevealed = MEDIA .. "tile_revealed"
-Skin.TEXTURES.tileExploded = MEDIA .. "tile_exploded"
-Skin.TEXTURES.tileHover    = MEDIA .. "tile_hover"
-Skin.TEXTURES.mine = 133709           -- inv_misc_bomb_01: the classic black bomb, legible at 18 px
 
-Skin.TILE_ICON = 18                   -- the flag and the bomb on a 24-unit tile
+Skin.TEXTURES = {
+    -- the mascot: the green-haired gnome from the logo (one face; the state shows in
+    -- the ring and the overlays until the real expressions exist, #12)
+    logo = MEDIA .. "face_mascot",
+    face = MEDIA .. "face_mascot",
+    faceRing = MEDIA .. "face_ring",
+    faceSparkle = MEDIA .. "face_sparkle",
+    faceSoot = MEDIA .. "face_soot",
+    -- icons
+    flag = MEDIA .. "icon_flag",
+    clock = MEDIA .. "icon_clock",
+    close = MEDIA .. "icon_close",
+    arrow = MEDIA .. "icon_arrow",
+    burst = MEDIA .. "icon_burst",
+    gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
+    mine = 133709,                                      -- inv_misc_bomb_01: the classic black bomb (art needed, #13)
+    -- the glass controls (9-sliced, margin 8)
+    uiFill = MEDIA .. "ui_fill",
+    uiBorder = MEDIA .. "ui_border",
+    uiGlow = MEDIA .. "ui_glow",
+    -- the board's tiles
+    tileCovered = MEDIA .. "tile_covered",
+    tileRevealed = MEDIA .. "tile_revealed",
+    tileExploded = MEDIA .. "tile_exploded",
+    tileHover = MEDIA .. "tile_hover",
+}
+
+-- What shows over the mascot's face, and the colour of its ring, per game state.
+Skin.FACE_OVERLAY = { won = "faceSparkle", lost = "faceSoot" }
+Skin.FACE_RING = {
+    ready   = { 0.15, 0.70, 0.99 },
+    playing = { 0.15, 0.70, 0.99 },
+    won     = { 1.00, 0.77, 0.38 },
+    lost    = { 1.00, 0.35, 0.30 },
+}
+
+-- The difficulties take WoW's item-quality colours. Legendary is held back for a
+-- much harder level some day (#18).
+Skin.RARITY = {
+    uncommon  = { 0.12, 1.00, 0.00 },     -- #1eff00
+    rare      = { 0.00, 0.44, 0.87 },     -- #0070dd
+    epic      = { 0.64, 0.21, 0.93 },     -- #a335ee
+    legendary = { 1.00, 0.50, 0.00 },     -- #ff8000
+}
+Skin.DIFFICULTY_QUALITY = { beginner = "uncommon", intermediate = "rare", expert = "epic" }
+
+function Skin.DifficultyColor(key)
+    return Skin.RARITY[Skin.DIFFICULTY_QUALITY[key]] or Skin.COLORS.accent
+end
+
+Skin.TILE_ICON = 18                   -- the bomb on a 24-unit tile
+Skin.FLAG_ICON = 20                   -- the flag, a little taller: it has a pole
+Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
 Skin.TILE_FONT = 15                   -- the numbers
 
 -- 1-8 on a dark tile: the classic colours, lightened to read on glass.
@@ -53,22 +85,25 @@ Skin.NUMBER_COLORS = {
     { 0.65, 0.65, 0.70 },   -- 8 grey
 }
 
--- Icon textures carry a border: crop it off.
+-- WoW's own icons carry a border: crop it off. (Ours are drawn without one.)
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 
 Skin.COLORS = {
-    gold        = { 1, 0.82, 0 },
-    hint        = { 0.72, 0.76, 0.85 },
-    tagline     = { 0.78, 0.87, 1 },
-    hudBg       = { 0, 0, 0, 0.35 },
-    gridBg      = { 0.03, 0.06, 0.12, 0.6 },
-    button      = { 0.16, 0.28, 0.5, 0.75 },
-    buttonHover = { 0.25, 0.4, 0.7, 0.35 },
-    menuBg      = { 0.04, 0.07, 0.15, 0.97 },
-    wrongFlag   = { 1, 0.15, 0.15 },           -- the X over a (greyed) flag that wasn't on a mine
-    question    = { 1, 0.82, 0 },
-    overlayBg   = { 0.03, 0.06, 0.13, 0.94 },
-    winRim      = { 1, 0.82, 0.30 },           -- the cleared overlay's gold rim
-    lossRim     = { 1, 0.35, 0.30 },
-    boom        = { 1, 0.42, 0.36 },           -- "Boom. Full wipe."
+    gold         = { 0.98, 0.77, 0.38 },       -- the logo's lettering, #fbc560
+    hint         = { 0.72, 0.76, 0.85 },
+    tagline      = { 0.78, 0.87, 1 },
+    accent       = { 0.45, 0.80, 1.00 },       -- a glass control's rim unless it says otherwise
+    closeAccent  = { 0.95, 0.42, 0.38 },
+    glassHover   = { 0.45, 0.85, 1.00, 0.30 },
+    panelBacking = { 0.02, 0.04, 0.09, 0.42 }, -- darkens the window so the scenery doesn't compete
+    menuBacking  = { 0.02, 0.04, 0.09, 0.97 }, -- the HUD must not show through the difficulty list
+    hudBg        = { 0, 0, 0, 0.35 },
+    gridBg       = { 0.03, 0.06, 0.12, 0.72 },
+    menuText     = { 0.62, 0.68, 0.80 },
+    wrongFlag    = { 1, 0.15, 0.15 },          -- the X over a (greyed) flag that wasn't on a mine
+    question     = { 0.98, 0.77, 0.38 },
+    overlayBg    = { 0.03, 0.06, 0.13, 0.94 },
+    winRim       = { 1, 0.82, 0.30 },          -- the cleared overlay's gold rim
+    lossRim      = { 1, 0.35, 0.30 },
+    boom         = { 1, 0.42, 0.36 },          -- "Boom. Full wipe."
 }

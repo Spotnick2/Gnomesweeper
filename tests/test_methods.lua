@@ -90,6 +90,29 @@ do
     W.NewGame("beginner")
 end
 
+-- The glass controls and the polish: hover, press, tooltips, the help, the result bar, scale.
+do
+    local ui = W._test.ui
+    local function press(i, button)
+        local t = Gnomesweeper.Grid._test.tiles[i]
+        t._scripts.OnMouseDown(t, button)
+        t._scripts.OnMouseUp(t, button, true)
+    end
+    for _, b in ipairs({ ui.diff, ui.close, ui.gear, ui.help }) do
+        b._scripts.OnMouseDown(b, "LeftButton"); b._scripts.OnMouseUp(b, "LeftButton", true)
+    end
+    for _, b in ipairs({ ui.diff, ui.help, ui.close, ui.gear, ui.face }) do
+        if b._scripts.OnEnter then b._scripts.OnEnter(b); b._scripts.OnLeave(b) end
+    end
+    W.NewGame("expert")                                 -- the list's Expert row, the rarity colours
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "..*..", "..*..", "..*..", "..*.." }))
+    press(3, "LeftButton")                              -- a loss: the burst, the soot, the overlay
+    ui.overlay.view._scripts.OnClick(ui.overlay.view)   -- View board: the result bar
+    ui.result.button._scripts.OnClick(ui.result.button)
+    WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
+    W.NewGame("beginner")
+end
+
 win._scripts.OnDragStart(win)
 win._left, win._top = 100, 500
 win._scripts.OnDragStop(win)

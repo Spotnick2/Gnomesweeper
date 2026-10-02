@@ -1,14 +1,14 @@
 -- Window.lua: the glass window. Title bar, difficulty, the HUD (mines left,
--- the face, the clock), the board area, the hint lines. It owns the current
--- game (Window.game, a Board) and is the only thing that creates or replaces
--- one. Grid.lua draws the tiles INTO Window.grid; every click comes back here
--- through Window.Dispatch, the one place an action is carried out. The
--- overlays (#5) hang off Window.win.
+-- the mascot, the clock), the board area, the footer. It owns the current game
+-- (Window.game, a Board) and is the only thing that creates or replaces one.
+-- Grid.lua draws the tiles INTO Window.grid; every click comes back here through
+-- Window.Dispatch, the one place an action is carried out.
 --
 -- Nothing here is secure and nothing is parented to a protected frame, so the
 -- window works in combat.
 --
--- Geometry is Layout.lua's (pure, tested); this file only applies it.
+-- Geometry is Layout.lua's (pure, tested); the glass controls are Widgets.lua's;
+-- this file puts them together and wires them to the game.
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -16,20 +16,28 @@ local GS = Gnomesweeper
 local Window = {}
 GS.Window = Window
 
-local Board, Layout, Glass, Skin, Grid = GS.Board, GS.Layout, GS.Glass, GS.Skin, GS.Grid
+local Board, Layout, Glass, Skin, Grid, Widgets = GS.Board, GS.Layout, GS.Glass, GS.Skin, GS.Grid, GS.Widgets
 local PAD = Layout.PAD
+local T, C = Skin.TEXTURES, Skin.COLORS
 
 local LABELS = { beginner = "Beginner", intermediate = "Intermediate", expert = "Expert" }
 local WIN_NAME = "GnomesweeperWindow"
+local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 
 local win, game
-local ui = {}       -- the widgets Refresh and the layout touch
+local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
 local function db() return GnomesweeperDB end
 
 local function difficultyKey()
     local d = db().difficulty
     return Board.PRESETS[d] and d or "beginner"
+end
+
+-- "9x9 . 10 mines", from the board's own presets, never typed in twice.
+local function details(key)
+    local p = Board.PRESETS[key]
+    return string.format("%d%s%d %s %d mines", p.w, MULT, p.h, DOT, p.mines)
 end
 
 ------------------------------------------------------------
@@ -45,43 +53,9 @@ local function newBoard()
     Window.game = game
 end
 
-------------------------------------------------------------
--- Small widgets
-------------------------------------------------------------
-
-local function tip(widget, title, line)
-    widget:SetScript("OnEnter", function(self)
-        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
-        GameTooltip:SetText(title)
-        if line then GameTooltip:AddLine(line, 0.7, 0.7, 0.7, true) end
-        GameTooltip:Show()
-    end)
-    widget:SetScript("OnLeave", function() GameTooltip:Hide() end)
-end
-
--- A flat translucent blue button with a hover glow and a centred label: the
--- storyboard's buttons, without a template's red and gold.
-local function flatButton(parent, width, height)
-    local b = CreateFrame("Button", nil, parent)
-    b:SetSize(width, height)
-    b.bg = b:CreateTexture(nil, "BACKGROUND")
-    b.bg:SetAllPoints(b)
-    b.bg:SetColorTexture(unpack(Skin.COLORS.button))
-    b.hover = b:CreateTexture(nil, "HIGHLIGHT")
-    b.hover:SetAllPoints(b)
-    b.hover:SetColorTexture(unpack(Skin.COLORS.buttonHover))
-    b.hover:SetBlendMode("ADD")
-    b.label = Glass.Font(b, 12, "CENTER")
-    b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
-    return b
-end
-
-local function icon(parent, texture, size)
-    local t = parent:CreateTexture(nil, "ARTWORK")
-    t:SetSize(size, size)
-    t:SetTexture(texture)
-    t:SetTexCoord(unpack(Skin.ICON_CROP))
-    return t
+local function over()
+    local s = game:State()
+    return s == "won" or s == "lost"
 end
 
 ------------------------------------------------------------
@@ -110,11 +84,17 @@ end
 
 function Window.Refresh()
     if not (win and game) then return end
+    local key = difficultyKey()
+    local col = Skin.DifficultyColor(key)
     ui.counter:SetText(tostring(game:FlagsLeft()))
     ui.timer:SetText(timerText())
     ui.hintStart:SetShown(game:State() == "ready")
-    ui.diff.label:SetText(LABELS[difficultyKey()])
-    ui.faceTex:SetTexture(Skin.FACES[game:State()])
+    ui.diff.label:SetText(LABELS[key])
+    ui.diff.label:SetTextColor(col[1], col[2], col[3])
+    ui.diff:setAccent(col[1], col[2], col[3])
+    ui.diffArrow:SetVertexColor(col[1], col[2], col[3])
+    for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
+    ui.face:setState(game:State())
     setTicking(game:State() == "playing")
 end
 
@@ -146,9 +126,11 @@ function Window.Layout()
     Window.size, Window.scale = size, scale
     win:SetScale(scale)
     win:SetSize(size.width, size.height)
+    ui.hud:SetWidth(Layout.HudWidth(size.width))
     ui.grid:SetSize(size.gridW, size.gridH)
     ui.grid:ClearAllPoints()
     ui.grid:SetPoint("TOPLEFT", win, "TOPLEFT", size.gridX, -size.gridY)
+    ui.result:SetWidth(size.gridW)
     applyPosition()
 end
 
@@ -167,8 +149,10 @@ function Window.ResetPosition()
 end
 
 ------------------------------------------------------------
--- Building it
+-- The difficulty list
 ------------------------------------------------------------
+
+local MENU_W, ROW_H = 214, 24
 
 local function pickDifficulty(key)
     ui.menu:Hide()
@@ -176,19 +160,40 @@ local function pickDifficulty(key)
 end
 
 local function buildMenu()
-    local menu = CreateFrame("Frame", nil, win)
-    menu:SetFrameLevel(win:GetFrameLevel() + 20)      -- above the glass rim (+10)
-    menu:SetSize(ui.diff:GetWidth(), #Board.PRESET_ORDER * 22 + 4)
-    menu:SetPoint("TOPLEFT", ui.diff, "BOTTOMLEFT", 0, -2)
+    local menu = Widgets.GlassPanel(win)
+    -- Above everything else in the window, including the result overlay (+15) and the glass rim that
+    -- overlay draws at its own +10, i.e. +25: a list opened while an overlay is up must not slide under it.
+    menu:SetFrameLevel(win:GetFrameLevel() + 30)
+    menu:SetSize(MENU_W, #Board.PRESET_ORDER * ROW_H + 8)
+    menu:SetPoint("TOP", ui.diff, "BOTTOM", 0, -3)
     menu:EnableMouse(true)
-    menu.bg = menu:CreateTexture(nil, "BACKGROUND")
-    menu.bg:SetAllPoints(menu)
-    menu.bg:SetColorTexture(unpack(Skin.COLORS.menuBg))
     for i, key in ipairs(Board.PRESET_ORDER) do
-        local entry = flatButton(menu, ui.diff:GetWidth() - 4, 22)
-        entry:SetPoint("TOPLEFT", menu, "TOPLEFT", 2, -2 - (i - 1) * 22)
-        entry.label:SetText(LABELS[key])
-        entry:SetScript("OnClick", function() pickDifficulty(key) end)
+        local col = Skin.DifficultyColor(key)
+        local row = CreateFrame("Button", nil, menu)
+        row:SetSize(MENU_W - 8, ROW_H)
+        row:SetPoint("TOPLEFT", menu, "TOPLEFT", 4, -4 - (i - 1) * ROW_H)
+        row.hover = row:CreateTexture(nil, "HIGHLIGHT")
+        row.hover:SetAllPoints(row)
+        row.hover:SetColorTexture(unpack(C.glassHover))
+        row.hover:SetBlendMode("ADD")
+        -- The row you're on: a tinted body and a bar down its edge (a shape, not only a colour).
+        row.selected = row:CreateTexture(nil, "BACKGROUND")
+        row.selected:SetAllPoints(row)
+        row.selected:SetColorTexture(col[1], col[2], col[3], 0.20)
+        row.bar = row:CreateTexture(nil, "ARTWORK")
+        row.bar:SetSize(3, ROW_H - 8)
+        row.bar:SetPoint("LEFT", row, "LEFT", 2, 0)
+        row.bar:SetColorTexture(col[1], col[2], col[3], 1)
+        row.label = Glass.Font(row, 13, "LEFT")
+        row.label:SetPoint("LEFT", row, "LEFT", 11, 0)
+        row.label:SetTextColor(col[1], col[2], col[3])
+        row.label:SetText(LABELS[key])
+        row.details = Glass.Font(row, 11, "RIGHT")
+        row.details:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+        row.details:SetTextColor(unpack(C.menuText))
+        row.details:SetText(details(key))
+        row:SetScript("OnClick", function() pickDifficulty(key) end)
+        ui.rows[key] = row
     end
     -- Closes on a click anywhere else. Polled while it is open (an OnUpdate
     -- that exists only then) rather than relying on a global mouse event.
@@ -205,14 +210,78 @@ local function buildMenu()
 end
 
 ------------------------------------------------------------
+-- The footer: the controls, or (once a finished board has been put on show) its result
+------------------------------------------------------------
+
+-- Show the result bar in place of the controls, or the other way round.
+local function showResultBar(on)
+    ui.hintKeys:SetShown(not on)
+    ui.hintMid:SetShown(not on)
+    ui.help:SetShown(not on)
+    ui.result:SetShown(on)
+end
+
+local function buildFooter()
+    ui.hintStart = Glass.Font(win, 12, "CENTER")
+    ui.hintStart:SetPoint("TOP", ui.grid, "BOTTOM", 0, -8)
+    ui.hintStart:SetTextColor(unpack(C.gold))
+    ui.hintStart:SetText("Choose a tile to begin.")
+
+    ui.hintKeys = Glass.Font(win, 11, "CENTER")
+    ui.hintKeys:SetPoint("TOP", ui.grid, "BOTTOM", 0, -25)
+    ui.hintKeys:SetTextColor(unpack(C.hint))
+    ui.hintKeys:SetText("Left-click: Reveal     Right-click: Flag")
+
+    ui.hintMid = Glass.Font(win, 11, "CENTER")
+    ui.hintMid:SetPoint("TOP", ui.grid, "BOTTOM", 0, -41)
+    ui.hintMid:SetTextColor(unpack(C.hint))
+    ui.hintMid:SetText("Middle-click: Clear around number")
+
+    -- A small ? beside it explains what that does.
+    local help = Widgets.GlassButton(win, 16, 16, { square = true, fontSize = 11 })
+    help:SetFrameLevel(Glass.ContentLevel(win))
+    help:SetPoint("LEFT", ui.hintMid, "RIGHT", 6, 0)
+    help.label:SetText("?")
+    Widgets.Tip(help, "Clearing around a number", {
+        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
+        "It only works when the number of flags around it equals the number.",
+        "A wrong flag makes it reveal a mine, so check your flags first.",
+    })
+    ui.help = help
+
+    -- The result bar: what the overlay said, and the button to play again.
+    local r = CreateFrame("Frame", nil, win)
+    r:SetFrameLevel(Glass.ContentLevel(win))
+    r:SetPoint("TOP", ui.grid, "BOTTOM", 0, -6)
+    r:SetHeight(44)
+    r.title = Glass.Font(r, 14, "LEFT")
+    r.title:SetPoint("TOPLEFT", r, "TOPLEFT", 4, -6)
+    r.sub = Glass.Font(r, 11, "LEFT")
+    r.sub:SetPoint("TOPLEFT", r.title, "BOTTOMLEFT", 0, -3)
+    r.sub:SetTextColor(unpack(C.hint))
+    r.button = Widgets.GlassButton(r, 104, 26)
+    r.button:SetPoint("RIGHT", r, "RIGHT", -4, 0)
+    r.button:SetScript("OnClick", function() Window.NewGame() end)
+    r:Hide()
+    ui.result = r
+end
+
+------------------------------------------------------------
 -- The end of a game: the overlay over the board
 ------------------------------------------------------------
 
-local OVERLAY_W, WIN_H, LOSS_H = 200, 126, 92
+local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
 
 -- #7 (personal bests) will say whether this win beat the player's best. Until it
 -- exists nothing is true, and the line stays hidden.
 local function isPersonalBest() return false end
+
+local function endTexts()
+    if game:State() == "won" then
+        return "Field cleared!", C.gold, "Time " .. timerText(), "Play again", C.winRim
+    end
+    return "Boom. Full wipe.", C.boom, "Wrong flags are crossed out.", "Try again", C.lossRim
+end
 
 local function buildOverlay()
     local o = CreateFrame("Frame", nil, win)
@@ -222,7 +291,7 @@ local function buildOverlay()
     o.glass = Glass.Apply(o, "small")
     o.backing = o:CreateTexture(nil, "BACKGROUND", nil, -7)
     o.backing:SetAllPoints(o)
-    o.backing:SetColorTexture(unpack(Skin.COLORS.overlayBg))
+    o.backing:SetColorTexture(unpack(C.overlayBg))
     o.backing:AddMaskTexture(o.glass.mask)
 
     o.title = Glass.Font(o, 20, "CENTER")
@@ -231,48 +300,68 @@ local function buildOverlay()
     o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
     o.best = Glass.Font(o, 12, "CENTER")
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
-    o.best:SetTextColor(unpack(Skin.COLORS.gold))
+    o.best:SetTextColor(unpack(C.gold))
     o.best:SetText("New personal best!")
-    o.button = flatButton(o, 130, 26)
-    o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
-    o.button:SetScript("OnClick", function() Window.NewGame() end)
 
-    -- A click on the overlay itself puts it away, to look at the board: after a
-    -- loss that is how you see what you did.
-    o:SetScript("OnMouseUp", function(self) self:Hide() end)
-    tip(o, "Click to see the board", "The face starts a new game.")
+    o.button = Widgets.GlassButton(o, 136, 26)
+    o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
+    o.button:SetScript("OnClick", function() Window.NewGame() end)
+    -- The way to look at the finished board: a visible control, not only a click on the panel.
+    o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
+    o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
+    o.view.label:SetText("View board")
+    o.view:SetScript("OnClick", function() Window.DismissEnd() end)
+
+    -- And a click on the panel itself does the same.
+    o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
+    Widgets.Tip(o, "Click to see the board", "Play again or Try again stays at the bottom, and the face starts a new game.")
     o:Hide()
     ui.overlay = o
 end
 
 -- Shown once, when an action ends the game (Dispatch): cleared, or the wipe.
 function Window.ShowEnd()
-    local state = game:State()
-    if state ~= "won" and state ~= "lost" then return end
+    if not over() then return end
     if not ui.overlay then buildOverlay() end
     local o = ui.overlay
+    local title, color, sub, button, rim = endTexts()
     o:SetWidth(math.min(OVERLAY_W, Window.size.gridW - 12))
-    if state == "won" then
+    o.title:SetTextColor(color[1], color[2], color[3])
+    o.title:SetText(title)
+    o.button.label:SetText(button)
+    o.button:setAccent(rim[1], rim[2], rim[3])
+    o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
+    if game:State() == "won" then
         local best = isPersonalBest()
         o:SetHeight(best and WIN_H or WIN_H - 18)
-        o.title:SetTextColor(unpack(Skin.COLORS.gold))
-        o.title:SetText("Field cleared!")
-        o.time:SetText("Time " .. timerText())
+        o.time:SetText(sub)
         o.time:Show()
         o.best:SetShown(best)
-        o.button.label:SetText("Play again")
-        o.glass.rim:SetVertexColor(unpack(Skin.COLORS.winRim))
     else
         o:SetHeight(LOSS_H)
-        o.title:SetTextColor(unpack(Skin.COLORS.boom))
-        o.title:SetText("Boom. Full wipe.")
         o.time:Hide()
         o.best:Hide()
-        o.button.label:SetText("Try again")
-        o.glass.rim:SetVertexColor(unpack(Skin.COLORS.lossRim))
     end
     o:Show()
 end
+
+-- Put the overlay away to look at the finished board. The board is exactly as it
+-- was, and the result stays in the footer with the button to play again.
+function Window.DismissEnd()
+    if not (ui.overlay and ui.overlay:IsShown() and over()) then return end
+    ui.overlay:Hide()
+    local title, color, sub, button, rim = endTexts()
+    ui.result.title:SetTextColor(color[1], color[2], color[3])
+    ui.result.title:SetText(title)
+    ui.result.sub:SetText(sub)
+    ui.result.button.label:SetText(button)
+    ui.result.button:setAccent(rim[1], rim[2], rim[3])
+    showResultBar(true)
+end
+
+------------------------------------------------------------
+-- Building it
+------------------------------------------------------------
 
 local function build()
     win = CreateFrame("Frame", WIN_NAME, UIParent)
@@ -287,103 +376,96 @@ local function build()
     for _, name in ipairs(UISpecialFrames) do if name == WIN_NAME then escapable = true end end
     if not escapable then table.insert(UISpecialFrames, WIN_NAME) end
     win.glass = Glass.Apply(win, "large")
+    -- A darker body under the glass, so the scenery doesn't compete with the board. It sits
+    -- above the shadow and under the tint (GlassPanel's window does the same), inside the mask.
+    win.backing = win:CreateTexture(nil, "BACKGROUND", nil, -7)
+    win.backing:SetAllPoints(win)
+    win.backing:SetColorTexture(unpack(C.panelBacking))
+    win.backing:AddMaskTexture(win.glass.mask)
     local content = Glass.ContentLevel(win)
 
-    -- Title bar: the logo, the name, the tagline, the settings gear, close.
-    local logo = icon(win, Skin.TEXTURES.logo, 44)
-    logo:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
-    local title = Glass.Font(win, 20, "LEFT")
-    title:SetPoint("TOPLEFT", logo, "TOPRIGHT", 10, -3)
+    -- Title bar: the mascot, the name, the tagline, the settings gear, close.
+    ui.logo = win:CreateTexture(nil, "ARTWORK")
+    ui.logo:SetSize(40, 40)
+    ui.logo:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -10)
+    ui.logo:SetTexture(T.logo)
+    local title = Glass.Font(win, 19, "LEFT")
+    title:SetPoint("TOPLEFT", ui.logo, "TOPRIGHT", 9, -2)
     title:SetText(Skin.TITLE)
     local tagline = Glass.Font(win, 11, "LEFT")
-    tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -3)
-    tagline:SetTextColor(unpack(Skin.COLORS.tagline))
+    tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
+    tagline:SetTextColor(unpack(C.tagline))
     tagline:SetText(GS.TAGLINE)
 
-    local close = CreateFrame("Button", nil, win, "UIPanelCloseButton")
-    close:SetFrameLevel(content)
-    close:SetPoint("TOPRIGHT", win, "TOPRIGHT", -4, -4)
-    close:SetScript("OnClick", function() win:Hide() end)
+    ui.close = Widgets.IconButton(win, 22, T.close, { 1, 0.9, 0.9 })
+    ui.close:SetFrameLevel(content)
+    ui.close:SetPoint("TOPRIGHT", win, "TOPRIGHT", -10, -10)
+    ui.close:setAccent(unpack(C.closeAccent))
+    ui.close:SetScript("OnClick", function() win:Hide() end)
+    Widgets.Tip(ui.close, "Close", "Escape closes it too.")
 
-    local gear = CreateFrame("Button", nil, win)
-    gear:SetFrameLevel(content)
-    gear:SetSize(22, 22)
-    gear:SetPoint("RIGHT", close, "LEFT", -2, 0)
-    local gearTex = gear:CreateTexture(nil, "ARTWORK")
-    gearTex:SetAllPoints(gear)
-    gearTex:SetTexture(Skin.TEXTURES.gear)
-    gear.hover = gear:CreateTexture(nil, "HIGHLIGHT")
-    gear.hover:SetAllPoints(gear)
-    gear.hover:SetColorTexture(unpack(Skin.COLORS.buttonHover))
-    gear.hover:SetBlendMode("ADD")
-    tip(gear, "Settings", "Coming soon.")           -- inert until #8
-    ui.gear = gear
+    ui.gear = Widgets.IconButton(win, 22, T.gear, { 0.82, 0.92, 1 })
+    ui.gear:SetFrameLevel(content)
+    ui.gear:SetPoint("RIGHT", ui.close, "LEFT", -5, 0)
+    Widgets.Tip(ui.gear, "Settings", {            -- inert until #8
+        "A settings panel is coming.",
+        "For now: /gsweep scale 0.5 to 1.5 resizes the window.",
+    })
 
-    -- Difficulty: a button and the small list it opens.
-    local diff = flatButton(win, 130, 24)
-    diff:SetFrameLevel(content)
-    diff:SetPoint("TOP", win, "TOP", 0, -66)
-    local arrow = diff:CreateTexture(nil, "ARTWORK")
-    arrow:SetSize(14, 14)
-    arrow:SetTexture(Skin.TEXTURES.arrow)
-    arrow:SetPoint("RIGHT", diff, "RIGHT", -6, 0)
-    diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
-    ui.diff = diff
+    -- Difficulty: a glass button in the difficulty's rarity colour, and the list it opens.
+    ui.diff = Widgets.GlassButton(win, 150, 24, { fontSize = 13 })
+    ui.diff:SetFrameLevel(content)
+    ui.diff:SetPoint("TOP", win, "TOP", 0, -58)
+    ui.diffArrow = ui.diff:CreateTexture(nil, "OVERLAY")
+    ui.diffArrow:SetSize(14, 14)
+    ui.diffArrow:SetTexture(T.arrow)
+    ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
+    ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
+    Widgets.Tip(ui.diff, "Difficulty", "Starts a new game.")
     buildMenu()
 
-    -- The HUD strip: mines left, the face (a new game), the clock.
+    -- The HUD strip: mines left, the mascot (a new game), the clock. Its width is capped
+    -- (Layout.HudWidth), so on Expert the three stay together instead of spreading out.
     local hud = CreateFrame("Frame", nil, win)
     hud:SetFrameLevel(content)
-    hud:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -98)
-    hud:SetPoint("TOPRIGHT", win, "TOPRIGHT", -PAD, -98)
-    hud:SetHeight(44)
+    hud:SetPoint("TOP", win, "TOP", 0, -90)
+    hud:SetHeight(40)
     hud.bg = hud:CreateTexture(nil, "BACKGROUND")
     hud.bg:SetAllPoints(hud)
-    hud.bg:SetColorTexture(unpack(Skin.COLORS.hudBg))
+    hud.bg:SetColorTexture(unpack(C.hudBg))
+    ui.hud = hud
 
-    local flag = icon(hud, Skin.TEXTURES.flag, 22)
-    flag:SetPoint("LEFT", hud, "LEFT", 12, 0)
+    local flag = hud:CreateTexture(nil, "ARTWORK")
+    flag:SetSize(24, 24)
+    flag:SetPoint("LEFT", hud, "LEFT", 10, 0)
+    flag:SetTexture(T.flag)
     ui.counter = Glass.Font(hud, 22, "LEFT")
-    ui.counter:SetPoint("LEFT", flag, "RIGHT", 6, 0)
+    ui.counter:SetPoint("LEFT", flag, "RIGHT", 5, 0)
 
-    local face = CreateFrame("Button", nil, hud)
-    face:SetSize(40, 40)
-    face:SetPoint("CENTER", hud, "CENTER", 0, 0)
-    local faceTex = icon(face, Skin.FACES.ready, 40)
-    faceTex:SetAllPoints(face)
-    ui.faceTex = faceTex
-    face.hover = face:CreateTexture(nil, "HIGHLIGHT")
-    face.hover:SetAllPoints(face)
-    face.hover:SetColorTexture(unpack(Skin.COLORS.buttonHover))
-    face.hover:SetBlendMode("ADD")
-    face:SetScript("OnClick", function() Window.NewGame() end)
-    tip(face, "New game", "Same difficulty.")
-    ui.face = face
+    ui.face = Widgets.FaceButton(hud, 44)
+    ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
+    ui.face:SetScript("OnClick", function() Window.NewGame() end)
+    Widgets.Tip(ui.face, "New game", "Same difficulty.")
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
-    ui.timer:SetWidth(54)             -- "00:00" is about 47 wide; any more leaves a gap before the clock icon
-    ui.timer:SetPoint("RIGHT", hud, "RIGHT", -12, 0)
-    local clock = icon(hud, Skin.TEXTURES.clock, 22)
-    clock:SetPoint("RIGHT", ui.timer, "LEFT", -6, 0)
+    ui.timer:SetWidth(54)             -- "00:00" is about 47 wide; any more leaves a gap before the clock
+    ui.timer:SetPoint("RIGHT", hud, "RIGHT", -10, 0)
+    local clock = hud:CreateTexture(nil, "ARTWORK")
+    clock:SetSize(22, 22)
+    clock:SetPoint("RIGHT", ui.timer, "LEFT", -5, 0)
+    clock:SetTexture(T.clock)
 
     -- The board area: a dark panel the tiles sit on (Grid.lua fills it).
     local grid = CreateFrame("Frame", nil, win)
     grid:SetFrameLevel(content)
     grid.bg = grid:CreateTexture(nil, "BACKGROUND")
     grid.bg:SetAllPoints(grid)
-    grid.bg:SetColorTexture(unpack(Skin.COLORS.gridBg))
+    grid.bg:SetColorTexture(unpack(C.gridBg))
     ui.grid = grid
     Window.grid = grid
     Grid.Attach(grid, function(kind, i) Window.Dispatch(kind, i) end)
 
-    ui.hintStart = Glass.Font(win, 12, "CENTER")
-    ui.hintStart:SetPoint("TOP", grid, "BOTTOM", 0, -8)
-    ui.hintStart:SetTextColor(unpack(Skin.COLORS.gold))
-    ui.hintStart:SetText("Choose a tile to begin.")
-    local hintKeys = Glass.Font(win, 11, "CENTER")
-    hintKeys:SetPoint("TOP", grid, "BOTTOM", 0, -26)
-    hintKeys:SetTextColor(unpack(Skin.COLORS.hint))
-    hintKeys:SetText("Left-click: Reveal     Right-click: Flag")
+    buildFooter()
 
     -- Moving it.
     win:SetScript("OnDragStart", function(self) self:StartMoving() end)
@@ -469,8 +551,7 @@ end
 local function syncGame()
     Window.Layout()
     Grid.Rebuild(game)
-    local state = game:State()
-    if state == "won" or state == "lost" then Grid.SetInteractive(false) end
+    if over() then Grid.SetInteractive(false) end
     Window.Refresh()
 end
 
@@ -487,6 +568,7 @@ function Window.NewGame(preset)
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
     if ui.overlay then ui.overlay:Hide() end
+    if ui.result then showResultBar(false) end
     if win then syncGame() end
     return game
 end
@@ -504,6 +586,20 @@ end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end
 
+-- The player's own scale (/gsweep scale), nil to go back to 1. The window still
+-- never exceeds the screen: the number wanted and the number shown can differ.
+function Window.SetScale(n)
+    ensure()
+    db().scale = n
+    Window.Layout()
+end
+
+-- The scale wanted, and the one actually in use.
+function Window.ScaleInfo()
+    ensure()
+    return db().scale or 1, Window.scale
+end
+
 -- /gsweep perf: times the heavy operations on a scratch Expert board, then puts
 -- the real game back.
 function Window.Benchmark()
@@ -516,10 +612,13 @@ end
 Window._test = {
     ui = ui,
     menu = function() return ui.menu end,
+    details = details,
     -- Swap in a hand-built board (Board._test.FromLayout), to test exact shapes.
     SetGame = function(b)
         game = b
         Window.game = b
+        if ui.overlay then ui.overlay:Hide() end
+        if ui.result then showResultBar(false) end
         if win then syncGame() end
     end,
 }

@@ -9,4 +9,7 @@
 Compat.lua
 Glass.lua
 Board.lua
+Layout.lua
+Skin.lua
+Window.lua
 Gnomesweeper.lua

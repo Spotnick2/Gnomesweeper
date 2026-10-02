@@ -3,23 +3,8 @@
 -- forbidden, which is what "pure" means here.
 dofile("tests/harness.lua")
 
-local ALLOWED = { "math", "type", "setmetatable", "error", "tostring", "ipairs", "pairs", "assert", "select" }
-local env = {}
-for _, k in ipairs(ALLOWED) do env[k] = _G[k] end
-setmetatable(env, {
-    __index = function(_, k)
-        if k == "Gnomesweeper" then return nil end   -- the file's own `X = X or {}`
-        error("Board.lua read the global '" .. tostring(k) .. "'", 2)
-    end,
-    __newindex = function(t, k, v)
-        if k ~= "Gnomesweeper" then error("Board.lua wrote the global '" .. tostring(k) .. "'", 2) end
-        rawset(t, k, v)
-    end,
-})
-local chunk = assert(loadfile("Board.lua"))
-setfenv(chunk, env)
-chunk("Gnomesweeper", {})
-local Board = env.Gnomesweeper.Board
+local env = newPureEnv()
+local Board = loadPure(env, "Board.lua").Board
 check(Board ~= nil, "Board.lua defines Gnomesweeper.Board without touching any other global")
 
 local function toc()

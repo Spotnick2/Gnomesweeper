@@ -18,9 +18,9 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: M1 in progress.** Done: the scaffold (#1) and the game model, `Board.lua` (#2). Next:
-the glass window (#3) and the tile grid (#4) on top of it. Nothing is drawn yet; `/gsweep` still
-says "not playable".
+**Status: M1 in progress.** Done: the scaffold (#1), the game model `Board.lua` (#2) and the glass
+window (#3: title bar, difficulty, HUD, an empty board area). Next: the tile grid (#4) that fills the
+board area. `/gsweep` opens the window; nothing can be played until #4.
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -30,8 +30,8 @@ holds the decided design, so update it when the design changes.
 
 ## Layout
 
-TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` →
-[`Skin.lua`] → [`Models.lua`] → [`Window.lua`] → [`Scores.lua`] → `Gnomesweeper.lua`.
+TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
+`Skin.lua` → [`Models.lua`] → `Window.lua` → [`Scores.lua`] → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -58,20 +58,37 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     error without it.
   - `Board._test.FromLayout(rows)` builds a board from text rows (`*` = mine) already past its first
     reveal; tests only.
-- **`Skin.lua`** (milestone 1): tile, number, face and icon art in one table (`Skin.TEXTURES`,
-  `Skin.NUMBER_COLORS`), so art swaps never touch logic. See `docs/ASSETS.md`.
+- **`Layout.lua`** (#3): the window's geometry as **pure functions**, loaded in tests with every
+  global forbidden like `Board.lua`: `Layout.Size(cols, rows)` (a minimum chrome width, the board
+  centred, 24-unit tiles), `Layout.FitScale` (never more than 95% of the screen; the screen is
+  UIParent's size, so a UI-scale or resolution change moves it), `Layout.FormatTime`,
+  `Layout.ValidPos` / `Layout.ClampPos` (a saved position is the window's top-left corner in
+  **UIParent units**).
+- **`Skin.lua`** (#3): every texture and colour in one table (`Skin.TEXTURES`, `Skin.COLORS`), so art
+  swaps never touch logic. The textures are **placeholders**, unverified until #6 (`docs/ASSETS.md`).
+  `Skin.NUMBER_COLORS` arrives with the tiles (#4).
 - **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
   `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never
   `SetCreature`**; never a model per tile; everything degrades to the 2D art.
-- **`Window.lua`** (milestone 1): the glass window: title bar (gnome logo, title, tagline, settings,
-  close), difficulty dropdown, the HUD (flag counter, gnome face, timer), the grid, the hint line,
-  the win/loss overlays. Tiles are **pooled** `Button`s reused across difficulty changes (Expert is
-  480 tiles: never create per game), drawn with **simple shared textures** (a baked covered tile,
-  a flat revealed fill, a hover glow; `Tools/make_tiles.py`), **never `Glass.Apply` per tile**:
-  it makes 6 textures, a mask and a frame per host, and its sliced mask is measured to fail on
-  small squares. Glass is for the window and the overlays. The window has a minimum chrome width,
-  centres the board, and fits its scale to the screen (Expert at 24 px tiles is 720×384 before
-  chrome). It refits after difficulty, resolution and UI-scale changes.
+- **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
+  `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
+  one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
+  - Title bar (logo, name, tagline, an inert settings gear until #8, close), a difficulty button
+    with a small **hand-rolled** list (not Blizzard's dropdown API, which no sibling has measured on
+    Forever; the list closes on an outside click by polling `IsMouseButtonDown` in an OnUpdate that
+    exists only while it's open), the HUD strip (mines left, the face = new game, the clock).
+  - **#4 draws into `Window.grid` and calls `Window.Refresh()` after every action**; #5's overlays
+    hang off `Window.win`. `Window._test.ui` exposes the widgets to tests.
+  - **The clock is active time:** hiding the window calls `game:Pause`, showing it `game:Resume`.
+    An `OnUpdate` redraws the clock only while a game is in progress.
+  - **Fit:** `Window.Layout()` runs on a new game, on every show, and on `DISPLAY_SIZE_CHANGED` /
+    `UI_SCALE_CHANGED`. The window is moved by dragging, saved as `GnomesweeperDB.pos`, and clamped
+    back on screen when restored. `/gsweep reset` forgets it.
+  - Tiles (#4) are **pooled** `Button`s reused across difficulty changes (Expert is 480 tiles: never
+    create per game), drawn with **simple shared textures** (a baked covered tile, a flat revealed
+    fill, a hover glow; `Tools/make_tiles.py`), **never `Glass.Apply` per tile**: it makes 6
+    textures, a mask and a frame per host, and its sliced mask is measured to fail on small
+    squares. Glass is for the window and the overlays.
 - **`Scores.lua`** (milestone 2): personal bests per difficulty in `GnomesweeperDB`. Social
   leaderboards (guild/friends/Battle.net) are milestone 4 — not day 1.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash
@@ -176,12 +193,21 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 `WoW` table), `tests\harness.lua` (`check` / `eq` / `done` / `tocFiles` / `loadAddon`),
 `tests\run.ps1`.
 
-- **`Board.lua` is where the tests go.** It's pure, so test it directly: first-click safety,
-  flood fill shape, chord with right and wrong flags, win/loss, counter, timer cap. Seed the RNG.
-- **The stub is an allowlist.** Before stubbing a global, confirm it's in the dump and copy its
-  signature; defining something Forever lacks lets a broken call pass. When the UI lands, grow the
-  stub toward `..\GlassRaidFrames\tests\wow_stubs.lua` (dump-validated events and widget methods)
-  rather than inventing a new one.
+- **Pure files are tested directly**, loaded with `newPureEnv()` / `loadPure()` (the harness): every
+  global but a few Lua builtins is forbidden, reads and writes. `test_board.lua`, `test_layout.lua`.
+- **The stub is an allowlist**, modelled on `..\GlassRaidFrames\tests\wow_stubs.lua`:
+  - globals are **strict** (reading one the stub doesn't define is an error), so before stubbing one,
+    confirm it's in the dump and copy its signature;
+  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70170.txt`, made from
+    the dump by `Tools/make_events_fixture.py`; `test_toc` checks it against the dump);
+  - widgets answer **any** method as a recorded no-op, so **`test_methods.lua`** checks every
+    `Type:Method` the addon called against the dump's widget methods (skipped, loudly, without the
+    dump: set `GNOMESWEEPER_API_DUMP` to another path);
+  - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
+    space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_window.lua`** drives the window through the stub: slash commands, clicks, drags, ticks,
+  screen changes. Set `frame._left` / `_top` / `_mouseOver` and `WoW.now` / `WoW.screen` /
+  `WoW.mouseDown` to stage the client.
 - **Mutation-test a new test**: break the behaviour, confirm it goes red.
 - Offline tests can't cover rendering or click feel. Those need the game.
 

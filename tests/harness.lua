@@ -41,3 +41,31 @@ function loadAddon(opts)
     end
     WoW.fire("ADDON_LOADED", "Gnomesweeper")
 end
+
+-- Pure modules (Board.lua, Layout.lua) are loaded with every global but a few
+-- Lua builtins forbidden, reads AND writes (except the addon's own table):
+-- "pure" is then enforced, not claimed. A stray client call, or a missing
+-- `local`, fails the suite.
+local PURE_ALLOWED = { "math", "string", "table", "type", "setmetatable", "error", "tostring",
+                       "ipairs", "pairs", "assert", "select" }
+function newPureEnv()
+    local env = {}
+    for _, k in ipairs(PURE_ALLOWED) do env[k] = _G[k] end
+    return setmetatable(env, {
+        __index = function(_, k)
+            if k == "Gnomesweeper" then return nil end   -- the file's own `X = X or {}`
+            error("a pure file read the global '" .. tostring(k) .. "'", 2)
+        end,
+        __newindex = function(t, k, v)
+            if k ~= "Gnomesweeper" then error("a pure file wrote the global '" .. tostring(k) .. "'", 2) end
+            rawset(t, k, v)
+        end,
+    })
+end
+
+function loadPure(env, file)
+    local chunk = assert(loadfile(file))
+    setfenv(chunk, env)
+    chunk("Gnomesweeper", {})
+    return env.Gnomesweeper
+end

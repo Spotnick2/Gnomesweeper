@@ -8,9 +8,12 @@ local GS = Gnomesweeper
 GS.TAGLINE = "One wrong click. Full wipe."
 
 -- Missing keys are filled in; existing ones are never overwritten, so the
--- shape on disk only ever grows.
+-- shape on disk only ever grows. (Also kept in GnomesweeperDB, but not here:
+-- `pos`, the window's saved corner, which is nil until it has been moved.)
 local DEFAULTS = {
     difficulty = "beginner",
+    safeZone = "area",         -- "area": the first click opens an area; "cell": XP's single safe cell
+    questionMarks = false,
 }
 
 local function EnsureDefaults()
@@ -24,12 +27,24 @@ local function Print(msg)
     print("|cff7fd4ffGnome|rsweeper: " .. msg)
 end
 
+local HELP = {
+    "/gsweep - open or close the board (also /gnomesweeper, /minewipe)",
+    "/gsweep beginner | intermediate | expert - start a game at that difficulty",
+    "/gsweep reset - put the window back in the middle of the screen",
+}
+
 local function Slash(msg)
     msg = (msg or ""):lower():match("^%s*(.-)%s*$")
-    if msg == "help" then
-        Print("/gsweep - open the board (also /gnomesweeper, /minewipe)")
+    if msg == "" then
+        GS.Window.Toggle()
+    elseif GS.Board.PRESETS[msg] then
+        GS.Window.Open(msg)
+    elseif msg == "reset" then
+        GS.Window.ResetPosition()
+        Print("window position reset.")
     else
-        Print("not playable yet. " .. GS.TAGLINE)
+        if msg ~= "help" then Print("unknown option '" .. msg .. "'.") end
+        for _, line in ipairs(HELP) do Print(line) end
     end
 end
 

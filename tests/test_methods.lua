@@ -1,0 +1,81 @@
+-- Every widget method the addon calls must exist on this client.
+--
+-- The stub answers ANY method call as a recorded no-op, so a call to a method
+-- Forever lacks would otherwise pass silently. This exercises the addon, then
+-- checks each recorded "Type:Method" against the API dump's widget-method
+-- walk. Skipped (loudly) when the dump isn't on this machine.
+dofile("tests/wow_stubs.lua")
+dofile("tests/harness.lua")
+
+local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/References/forever-api-1.60.1.70170.md"
+local f = io.open(DUMP, "r")
+if not f then
+    io.write("test_methods: SKIPPED (no API dump at " .. DUMP .. ")\n")
+    os.exit(0)
+end
+local widget, globals = {}, {}
+local inWidgets, inGlobals = false, false
+for line in f:lines() do
+    if line:match("^## ") then
+        inWidgets = line:match("^## Widget methods") ~= nil
+        inGlobals = line:match("^## Documented functions") ~= nil or line:match("^## Global functions") ~= nil
+    elseif inWidgets then
+        local m = line:match("^(%a+:[%w_]+)%s*$")
+        if m then widget[m] = true end
+    elseif inGlobals then
+        -- Documented functions carry a signature; the walk of _G is bare names.
+        local g = line:match("^([%a_][%w_]*)%(") or line:match("^([%a_][%w_]*)%s*$")
+        if g then globals[g] = true end
+    end
+end
+f:close()
+check(next(widget) ~= nil, "parsed the dump's widget methods")
+
+-- Exercise everything, so every method is recorded.
+loadAddon()
+local W = Gnomesweeper.Window
+WoW.slash("/gsweep")
+local win, ui = W.win, W._test.ui
+for _, key in ipairs({ "expert", "intermediate", "beginner" }) do
+    ui.diff._scripts.OnClick(ui.diff)
+    local menu = W._test.menu()
+    WoW.mouseDown = true
+    WoW.tick()
+    WoW.mouseDown = false
+    ui.diff._scripts.OnClick(ui.diff)
+    for _, c in ipairs(menu._children) do
+        if c._type == "Button" and c.label:GetText():lower() == key then c._scripts.OnClick(c) end
+    end
+end
+for _, b in ipairs({ ui.gear, ui.face }) do
+    b._scripts.OnEnter(b)
+    b._scripts.OnLeave(b)
+end
+ui.face._scripts.OnClick(ui.face)
+W.game:Reveal(5, 5, 1)
+W.Refresh()
+WoW.tick(0.2)
+win._scripts.OnDragStart(win)
+win._left, win._top = 100, 500
+win._scripts.OnDragStop(win)
+WoW.fire("DISPLAY_SIZE_CHANGED")
+WoW.fire("UI_SCALE_CHANGED")
+win:Hide()
+win:Show()
+WoW.slash("/gsweep reset")
+WoW.slash("/gsweep help")
+WoW.slash("/gsweep")
+
+-- Global functions the addon calls through the strict _G are, by construction,
+-- defined in the stub; confirm each is a real one.
+for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor" }) do
+    check(globals[name], "global function exists on Forever: " .. name)
+end
+
+local n = 0
+for name in pairs(WoW.methodsCalled) do
+    n = n + 1
+    check(widget[name], "method exists on Forever: " .. name)
+end
+check(n >= 25, "recorded the addon's method calls (" .. n .. ")")
+done("test_methods")

@@ -93,7 +93,7 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\GlassUnitFrames\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
 - `docs/MODELS.md` — rendering creature models, from AltStable's measured pet work
-  (`..\AltStable\docsorever-api-notes.md` "Pets", `Plugins\Roster\AltStableRoster.lua`).
+  (`..\AltStable\docs\forever-api-notes.md` "Pets", `..\AltStable\Plugins\Roster\AltStableRoster.lua`).
 - `docs/REFERENCES.md` — game-logic references and their licences. `docs/ASSETS.md` — the art plan.
 - In game: `/api search <name>`.
 

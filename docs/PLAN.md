@@ -36,6 +36,10 @@ Number colours (storyboard): 1 blue, 2 green, 3 red; take 4–8 from classic Min
 
 Mines are **gnomish bombs** (round, riveted, red eye) — not skulls.
 
+**Theme: Gnomeregan.** The cast comes from Gnomeregan: Thermaplugg's **Walking Bombs** are the
+mines, **Alarm-a-bomb 2600** is the alarm, a Gnomeregan gnome is the face. They're live models where
+possible, and generated art (M3) draws on the same look. Display IDs and roles: `docs/MODELS.md`.
+
 ## Milestones
 
 The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`), one milestone each; this section is the overview.

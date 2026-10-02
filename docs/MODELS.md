@@ -46,6 +46,31 @@ auto-frames") and the porting guide's "Rendering a character who is not logged i
 | Gnome (loss?) | Leprous Defender / Machinesmith (6223 / 6224) | 6982 / 6936 | Vanilla, Gnomeregan | Leper gnomes: a darkly funny "full wipe" face. |
 | Gnome | the player | `SetUnit("player")` | — | Perfect when the player is a gnome; fall back to an NPC otherwise. |
 
+## Theme: Gnomeregan (owner, 2026-10-02)
+
+The models come from **Gnomeregan**: a city overrun by its own machines and radiation, and a
+final boss (Mekgineer Thermaplugg) who sends **Walking Bombs** at you. That's the "one wrong click"
+story, told in vanilla content. The window keeps the storyboard's blue glass look; Gnomeregan
+supplies the cast. All of these are vanilla, Wowhead Forever pages, 2026-10-02, not probed:
+
+| Role | NPC | Display | Why |
+|---|---|---|---|
+| **The wipe** (detonates on the clicked mine) | Walking Bomb (7915) | **6977** | Thermaplugg's bombs; the owner's first pick |
+| **The alarm** (loss: red glow, sirens; or a "danger" pulse) | Alarm-a-bomb 2600 (7897) | **6888** | Owner's pick. Shares its model with the Mobile Alert System (7849). |
+| **The face** | Blastmaster Emi Shortfuse (7998) | **7138** | Gnomeregan's demolitions gnome (the bomb escort) |
+| Face, alternatives | Kernobee (7850) / Holdout Technician (6407) / Leprous Assistant (7603) | 7132 / 6628 / 6967 | Escort gnome, survivor, leper gnome (for the wipe face?) |
+| **The villain** (loss screen: "Thermaplugg wins") | Mekgineer Thermaplugg (7800) | **6980** | The boss behind the bombs |
+| Bots (difficulty mascots? win parade?) | Mechanized Sentry / Guardian (6233 / 6234) | 6978 / 6979 | |
+| | Arcane Nullifier X-21 (6232) | 6889 | |
+| | Mechano-Flamewalker (6226) | 6890 | |
+| | Electrocutioner 6000 (6235) | 6915 | |
+| | Crowd Pummeler 9-60 (6229) | 6774 | |
+| Radiation (loss smoke, "fallout")? | Viscous Fallout (7079) / Irradiated Horror (6220) | 5497 / 4907 | |
+
+Possible mapping, once the probe shows what animates well: Beginner → Mechanized Sentry,
+Intermediate → Electrocutioner 6000, Expert → Crowd Pummeler 9-60 (or Thermaplugg) as the
+dropdown's mascot. That's an idea, not a decision.
+
 ## Where models go, and where they don't
 
 - **Yes:** the reset face (1 scene), the loss explosion over the clicked tile (1 scene, a one-shot),

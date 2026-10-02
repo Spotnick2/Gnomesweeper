@@ -19,8 +19,8 @@ doesn't cover something, check how those handle it before you invent a new idiom
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
 **Status: M1 in progress.** Done: the scaffold (#1), the game model `Board.lua` (#2), the glass
-window (#3) and the tile grid (#4): **the game is playable**. Left in M1: the win and loss overlays
-(#5) and the asset probe (#6). A won or lost game just stops (the tiles show it) until #5.
+window (#3), the tile grid (#4) and the game states (#5): **the game is playable** and ends with
+the storyboard's overlays. Left in M1: the asset probe (#6).
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -66,7 +66,8 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   **UIParent units**).
 - **`Skin.lua`** (#3): every texture and colour in one table (`Skin.TEXTURES`, `Skin.COLORS`), so art
   swaps never touch logic. The textures are **placeholders**, unverified until #6 (`docs/ASSETS.md`).
-  `Skin.NUMBER_COLORS` arrives with the tiles (#4).
+  `Skin.FACES` holds the HUD face for each game state (`ready|playing|won|lost`), `Skin.NUMBER_COLORS`
+  the 1-8 colours.
 - **`Input.lua`** (#4): mouse gestures to actions, **pure** (every global forbidden in its test).
   `Input.New({reveal, mark, chord})` then `g:Down(tile, button)`, `g:Up(tile, button, inside)`,
   `g:Cancel()`. Every action fires from a **release**, once. Left, right or middle pressed and
@@ -104,6 +105,15 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   - **Fit:** `Window.Layout()` runs on a new game, on every show, and on `DISPLAY_SIZE_CHANGED` /
     `UI_SCALE_CHANGED`. The window is moved by dragging, saved as `GnomesweeperDB.pos`, and clamped
     back on screen when restored. `/gsweep reset` forgets it.
+  - **The end of a game (#5):** the HUD face follows `game:State()` (`Skin.FACES`, set in
+    `Window.Refresh`). The action that ENDS a game (a state change in `Dispatch`, not just a finished
+    state) calls `Window.ShowEnd()`: one overlay frame, built on first use and re-dressed each time,
+    centred on the board, above the tiles (so the board under it takes no clicks; the Board no-ops
+    after the end anyway) and under the difficulty list. Cleared: gold title and rim, "Time mm:ss",
+    "Play again". Wipe: red title and rim, "Try again". **"New personal best!" stays hidden**
+    (`isPersonalBest()` is false) until #7 can say it's true. A click on the overlay puts it away to
+    look at the board; it does not come back on later clicks, and a new game (the button, the face, the
+    difficulty list) clears it. The golden burst and the loss smoke are #10's.
   - **Measuring commands:** `/gsweep perf` times an Expert build, a first reveal, a loss and ten
     difficulty switches on a scratch board (then puts your game back); `/gsweep input` logs every
     tile press and release with `upInside` and `IsMouseOver`, for the live input matrix. The lines
@@ -232,6 +242,8 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_overlay.lua`** plays games to their end through the stub: the faces, both overlays, what
+  they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_grid.lua`** clicks tiles through the stub on hand-built boards (`Window._test.SetGame`):
   the pool, painting, flood, flags, chords, wrong gestures, the end of a game, `/gsweep perf|input`.
 - **`test_window.lua`** drives the window through the stub: slash commands, clicks, drags, ticks,

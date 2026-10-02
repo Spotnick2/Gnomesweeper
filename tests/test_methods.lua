@@ -74,9 +74,18 @@ do
     WoW.slash("/gsweep input")
     press(2, "LeftButton")
     WoW.slash("/gsweep input")
-    for i = 1, W.game.total do                            -- end the game on a mine
-        if W.game._mine[i] then press(i, "LeftButton"); break end
-    end
+    -- End a game on a mine, on a hand-built board (a random one might put the mine under a flag).
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "..*..", "..*..", "..*..", "..*.." }))
+    press(3, "LeftButton")
+    -- The overlay: the loss above built it; use it, then a win.
+    local o = W._test.ui.overlay
+    o._scripts.OnEnter(o); o._scripts.OnLeave(o)
+    o._scripts.OnMouseUp(o)
+    o:Show()
+    o.button._scripts.OnClick(o.button)
+    W._test.SetGame(Gnomesweeper.Board.New(30, 16, 0))
+    press(1, "LeftButton")                                -- no mines: one click wins
+    o.button._scripts.OnClick(o.button)
     W.NewGame("expert")
     W.NewGame("beginner")
 end

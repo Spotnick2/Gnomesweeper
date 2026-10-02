@@ -114,6 +114,7 @@ function Window.Refresh()
     ui.timer:SetText(timerText())
     ui.hintStart:SetShown(game:State() == "ready")
     ui.diff.label:SetText(LABELS[difficultyKey()])
+    ui.faceTex:SetTexture(Skin.FACES[game:State()])
     setTicking(game:State() == "playing")
 end
 
@@ -203,6 +204,76 @@ local function buildMenu()
     ui.menu = menu
 end
 
+------------------------------------------------------------
+-- The end of a game: the overlay over the board
+------------------------------------------------------------
+
+local OVERLAY_W, WIN_H, LOSS_H = 200, 126, 92
+
+-- #7 (personal bests) will say whether this win beat the player's best. Until it
+-- exists nothing is true, and the line stays hidden.
+local function isPersonalBest() return false end
+
+local function buildOverlay()
+    local o = CreateFrame("Frame", nil, win)
+    o:SetFrameLevel(win:GetFrameLevel() + 15)       -- over the tiles and the rim, under the difficulty list (+20)
+    o:SetPoint("CENTER", ui.grid, "CENTER", 0, 0)
+    o:EnableMouse(true)                              -- the board under it takes no clicks
+    o.glass = Glass.Apply(o, "small")
+    o.backing = o:CreateTexture(nil, "BACKGROUND", nil, -7)
+    o.backing:SetAllPoints(o)
+    o.backing:SetColorTexture(unpack(Skin.COLORS.overlayBg))
+    o.backing:AddMaskTexture(o.glass.mask)
+
+    o.title = Glass.Font(o, 20, "CENTER")
+    o.title:SetPoint("TOP", o, "TOP", 0, -14)
+    o.time = Glass.Font(o, 14, "CENTER")
+    o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
+    o.best = Glass.Font(o, 12, "CENTER")
+    o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
+    o.best:SetTextColor(unpack(Skin.COLORS.gold))
+    o.best:SetText("New personal best!")
+    o.button = flatButton(o, 130, 26)
+    o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
+    o.button:SetScript("OnClick", function() Window.NewGame() end)
+
+    -- A click on the overlay itself puts it away, to look at the board: after a
+    -- loss that is how you see what you did.
+    o:SetScript("OnMouseUp", function(self) self:Hide() end)
+    tip(o, "Click to see the board", "The face starts a new game.")
+    o:Hide()
+    ui.overlay = o
+end
+
+-- Shown once, when an action ends the game (Dispatch): cleared, or the wipe.
+function Window.ShowEnd()
+    local state = game:State()
+    if state ~= "won" and state ~= "lost" then return end
+    if not ui.overlay then buildOverlay() end
+    local o = ui.overlay
+    o:SetWidth(math.min(OVERLAY_W, Window.size.gridW - 12))
+    if state == "won" then
+        local best = isPersonalBest()
+        o:SetHeight(best and WIN_H or WIN_H - 18)
+        o.title:SetTextColor(unpack(Skin.COLORS.gold))
+        o.title:SetText("Field cleared!")
+        o.time:SetText("Time " .. timerText())
+        o.time:Show()
+        o.best:SetShown(best)
+        o.button.label:SetText("Play again")
+        o.glass.rim:SetVertexColor(unpack(Skin.COLORS.winRim))
+    else
+        o:SetHeight(LOSS_H)
+        o.title:SetTextColor(unpack(Skin.COLORS.boom))
+        o.title:SetText("Boom. Full wipe.")
+        o.time:Hide()
+        o.best:Hide()
+        o.button.label:SetText("Try again")
+        o.glass.rim:SetVertexColor(unpack(Skin.COLORS.lossRim))
+    end
+    o:Show()
+end
+
 local function build()
     win = CreateFrame("Frame", WIN_NAME, UIParent)
     Window.win = win
@@ -278,8 +349,9 @@ local function build()
     local face = CreateFrame("Button", nil, hud)
     face:SetSize(40, 40)
     face:SetPoint("CENTER", hud, "CENTER", 0, 0)
-    local faceTex = icon(face, Skin.TEXTURES.face, 40)
+    local faceTex = icon(face, Skin.FACES.ready, 40)
     faceTex:SetAllPoints(face)
+    ui.faceTex = faceTex
     face.hover = face:CreateTexture(nil, "HIGHLIGHT")
     face.hover:SetAllPoints(face)
     face.hover:SetColorTexture(unpack(Skin.COLORS.buttonHover))
@@ -367,6 +439,7 @@ function Window.Dispatch(kind, i)
         end
         before = string.format("(%d,%d) %s%s, %d flags around", x, y, c.state, c.count and (" " .. c.count) or "", flags)
     end
+    local was = game:State()
     local list
     if kind == "reveal" then
         list = game:Reveal(x, y, GetTime())
@@ -379,7 +452,12 @@ function Window.Dispatch(kind, i)
     Grid.Refresh(list)
     Window.Refresh()
     local state = game:State()
-    if state == "won" or state == "lost" then Grid.SetInteractive(false) end
+    -- Only the action that ENDS the game brings the overlay up: a click on a
+    -- finished board does nothing, and must not bring back one put away.
+    if (state == "won" or state == "lost") and state ~= was then
+        Grid.SetInteractive(false)
+        Window.ShowEnd()
+    end
     return list
 end
 
@@ -408,6 +486,7 @@ end
 function Window.NewGame(preset)
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
+    if ui.overlay then ui.overlay:Hide() end
     if win then syncGame() end
     return game
 end

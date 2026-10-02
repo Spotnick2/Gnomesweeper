@@ -44,21 +44,28 @@ possible, and generated art (M3) draws on the same look. Display IDs and roles: 
 
 The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`), one milestone each; this section is the overview.
 
-### M1 — Playable (day 1): #2 #3 #4 #5 #6 #20
+### M1 — Playable (day 1): #2 #3 #4 #5 #6
 - `Board.lua`: pure game model + full unit tests (rules in `CLAUDE.md`).
 - `Window.lua` + `Skin.lua`: the glass window, HUD, pooled tile grid, all three presets via the
   dropdown, states 01–04 with the overlays, Escape to close, draggable, position saved.
+- Simple baked tile textures (never glass per tile); a window that fits the screen at every
+  difficulty; the timer pauses while the window is hidden.
 - Slash commands open/toggle; `/gsweep beginner|intermediate|expert` starts that preset.
 - Art: WoW-internal placeholders for every element (`docs/ASSETS.md`), generated art only where
   nothing in the client fits.
 - In-game measure: click registration (left/right/middle, chord), tile render cost at Expert size.
+- **Done when:** complete games at all three presets, reset and difficulty changes mid-game,
+  close and reopen, and input and performance measured in game.
 
-### M2 — Polish: #7 #8 #9 #10 #11 #21 #22
-- Personal bests per difficulty (time, date), shown in the win overlay ("New personal best!").
+### M2 — Polish: #7 #8 #9 #10 #11 #20 #21 #22 #23
+- Personal bests per difficulty **and ruleset** (precise time, date, name), shown in the win
+  overlay ("New personal best!"). The record is defined in #7 before anything is saved.
 - Settings (gear button): question marks, safe-zone size, chord on left-click, sounds, scale.
 - Sounds: SoundKit IDs for reveal / flag / boom / win (measure each plays).
 - Face animations (pressed-tile "o" face, win burst, loss smoke).
-- Pause when the window is hidden (timer doesn't run while closed).
+- The model probe (#20), then live models (#21): the wipe bomb first; a live face only if it
+  reads at HUD size.
+- Gnomeregan music with a mute button (#22); a keybinding and a launcher (#23).
 
 ### M3 — Art pass: #12 #13 #14
 - Replace placeholders with generated gnomish art (gnome face set, bomb, exploded tile, logo),

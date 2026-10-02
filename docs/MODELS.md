@@ -12,7 +12,9 @@ auto-frames") and the porting guide's "Rendering a character who is not logged i
   (1.60.1.70124). This covers bombs, bots and NPC gnomes.
 - **A player-race display does not**: `SetDisplayInfo(id)` on a player race gives correct geometry
   and a **white, untextured body**. The one exception is the live character:
-  `DressUpModel:SetUnit("player")`, perfect, so a gnome player can be their own face.
+  `DressUpModel:SetUnit("player")`, perfect, so a gnome player can be their own face. That's a
+  **`DressUpModel`** method; in a `ModelScene`, `actor:SetModelByUnit("player")` is declared in
+  the 70170 dump but **unmeasured**.
 - `SetCreature(npcID)` picks a **random skin** of the creature. Use display IDs, not NPC IDs.
 - `SetModelByCreatureDisplayID(id, true)` composites the **active player**: never pass `true`.
 - **The framing recipe that works** (`..\AltStable\Plugins\Roster\AltStableRoster.lua`,
@@ -44,7 +46,7 @@ auto-frames") and the porting guide's "Rendering a character who is not logged i
 | Gnome | Namdo Bizzfizzle (2683) | 4953 | Vanilla engineering trainer | |
 | Gnome | Holdout Technician (6407) | 6628 | Vanilla, Gnomeregan | |
 | Gnome (loss?) | Leprous Defender / Machinesmith (6223 / 6224) | 6982 / 6936 | Vanilla, Gnomeregan | Leper gnomes: a darkly funny "full wipe" face. |
-| Gnome | the player | `SetUnit("player")` | — | Perfect when the player is a gnome; fall back to an NPC otherwise. |
+| Gnome | the player | `DressUpModel:SetUnit("player")` (measured) or `actor:SetModelByUnit("player")` (unmeasured) | — | Perfect when the player is a gnome; fall back to an NPC otherwise. |
 
 ## Theme: Gnomeregan (owner, 2026-10-02)
 
@@ -73,8 +75,14 @@ dropdown's mascot. That's an idea, not a decision.
 
 ## Where models go, and where they don't
 
-- **Yes:** the reset face (1 scene), the loss explosion over the clicked tile (1 scene, a one-shot),
-  maybe the win celebration (1 scene).
+- **Yes, in this order:** the loss explosion over the clicked tile (1 scene, a one-shot), then the
+  reset face **only if** the probe shows a readable head crop and distinguishable expressions at
+  HUD size (~40 px; AltStable only fitted whole bodies), and maybe a win celebration. The face
+  stays 2D until then.
+- **Layering:** scenes are mouse-disabled with explicit frame levels against the board and the
+  glass rim. Glass masks **don't clip 3D models**, and particles can escape the frame, so test the
+  bomb with particles over neighbouring tiles. Cancel pending box polls and animation callbacks on
+  reset and hide.
 - **No:** a model per tile. Expert has 480 tiles and 99 mines; tiles keep 2D icons
   (`docs/ASSETS.md`). On a loss, the *clicked* mine gets the model, the rest stay icons.
 - Animations are unmeasured: which `SetAnimation` IDs each model has (stand, cheer, death,

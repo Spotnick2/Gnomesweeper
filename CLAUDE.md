@@ -55,7 +55,12 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`B
 - **`Window.lua`** (milestone 1): the glass window: title bar (gnome logo, title, tagline, settings,
   close), difficulty dropdown, the HUD (flag counter, gnome face, timer), the grid, the hint line,
   the win/loss overlays. Tiles are **pooled** `Button`s reused across difficulty changes (Expert is
-  480 tiles: never create per game).
+  480 tiles: never create per game), drawn with **simple shared textures** (a baked covered tile,
+  a flat revealed fill, a hover glow; `Tools/make_tiles.py`), **never `Glass.Apply` per tile**:
+  it makes 6 textures, a mask and a frame per host, and its sliced mask is measured to fail on
+  small squares. Glass is for the window and the overlays. The window has a minimum chrome width,
+  centres the board, and fits its scale to the screen (Expert at 24 px tiles is 720×384 before
+  chrome). It refits after difficulty, resolution and UI-scale changes.
 - **`Scores.lua`** (milestone 2): personal bests per difficulty in `GnomesweeperDB`. Social
   leaderboards (guild/friends/Battle.net) are milestone 4 — not day 1.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash
@@ -66,18 +71,29 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`B
 Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 
 - Presets: **Beginner 9×9 / 10**, **Intermediate 16×16 / 40**, **Expert 30×16 / 99**; Custom later.
-- **Mines are placed on the first reveal**, never on the clicked cell. Default safe zone: the
-  clicked cell **and its neighbours** (the first click always opens an area — friendlier than XP);
-  an option can narrow it to XP's single cell.
-- Flood fill is an **iterative queue**, never recursion (Expert's 381 safe cells must not
-  approach the C stack).
-- **Chord**: clicking a revealed number whose adjacent flag count equals it reveals the other
-  neighbours; a wrong flag loses. Triggered by middle-click, or left+right, or left-click on a
-  satisfied number (one option).
+- A board is `w, h ≥ 1` integers with `0 ≤ mines < w·h`; anything else is rejected.
+- **Mines are placed on the first successful reveal**, never on the clicked cell. Default safe
+  zone: the clicked cell **and its in-bounds neighbours** (5 at an edge, 4 in a corner), so the
+  first click opens an area. When the mines don't fit outside that zone, it falls back to the
+  single cell. An option narrows it to XP's single cell. Flags placed before the first reveal don't
+  influence placement. Placement samples **without replacement** from the eligible cells (no retry
+  loop) through the injected `opts.rng(n) → 1..n`. A board is reproducible from the same rng,
+  options and first-reveal cell.
+- Flood fill is an **iterative queue**, never recursion.
+- Flags block reveal, flood fill and chord; question marks behave like covered cells for all three.
+  Marking a revealed cell, and every action after a win or loss, does nothing.
+- **Chord** on a revealed number whose adjacent flags equal it reveals the other neighbours; a
+  wrong flag loses. A chord anywhere else (covered, marked, zero, unsatisfied) does nothing.
+  Triggered by middle-click, by left+right, or by left-click on a satisfied number (an option).
 - Right-click cycles covered → flag → (question mark, if enabled) → covered.
-- Mine counter = mines − flags, may go negative. Timer starts at the first reveal, caps at 999.
+- Mine counter = mines − flags, may go negative.
+- **Timer:** starts on the first *successful* reveal (not marks, not a no-op chord) and freezes on
+  win or loss. It counts **active time**: the model has `Pause(now)` / `Resume(now)`, and the window
+  pauses while it's hidden. Scores keep the precise, uncapped time; only the display caps at 999 s.
 - Win when `revealed == cells − mines`; remaining mines get auto-flagged.
 - Loss: the clicked mine shows exploded, other mines revealed, wrong flags crossed.
+- Every action returns the changed cells as **one table of unique row-major indices** (`{}` for a
+  no-op), including auto-flags and everything a loss reveals. The view repaints exactly those.
 
 ## References: read these before touching an unfamiliar API
 

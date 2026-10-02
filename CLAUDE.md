@@ -92,6 +92,8 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 - `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\GlassUnitFrames\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
+- `docs/SOUNDS.md` — Gnomeregan sound kits and music (`PlaySound(kit)`, `PlayMusic(fileID)`;
+  never `PlaySoundFile` with a game path).
 - `docs/MODELS.md` — rendering creature models, from AltStable's measured pet work
   (`..\AltStable\docs\forever-api-notes.md` "Pets", `..\AltStable\Plugins\Roster\AltStableRoster.lua`).
 - `docs/REFERENCES.md` — game-logic references and their licences. `docs/ASSETS.md` — the art plan.

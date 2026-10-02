@@ -63,8 +63,6 @@ Other bomb families listed there, if the misc bombs read poorly: `inv_crabbomb_*
 | Loss smoke | `Interface\Cooldown\star4` / spell particle textures, animated alpha | — | no |
 | Tavern background (storyboard) | **out of scope** — the window floats over the game world | — | no |
 
-## Sounds (M2)
+## Sounds
 
-`PlaySoundFile` refuses built-in game-file **paths**; SoundKit IDs (`PlaySound(SOUNDKIT.X)`) and
-FileDataIDs play (porting guide, Stakeout probe). Candidates to measure: a click/reveal tick, a flag
-plant, an explosion (engineering bomb), a win fanfare (achievement / level-up).
+See [`SOUNDS.md`](SOUNDS.md): Gnomeregan sound kits for every moment, and the zone music.

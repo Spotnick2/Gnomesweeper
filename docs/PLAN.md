@@ -53,7 +53,7 @@ The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`)
   nothing in the client fits.
 - In-game measure: click registration (left/right/middle, chord), tile render cost at Expert size.
 
-### M2 — Polish: #7 #8 #9 #10 #11 #21
+### M2 — Polish: #7 #8 #9 #10 #11 #21 #22
 - Personal bests per difficulty (time, date), shown in the win overlay ("New personal best!").
 - Settings (gear button): question marks, safe-zone size, chord on left-click, sounds, scale.
 - Sounds: SoundKit IDs for reveal / flag / boom / win (measure each plays).

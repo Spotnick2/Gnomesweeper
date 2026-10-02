@@ -356,4 +356,45 @@ do   -- every difficulty at every scale, on a few screens: the window always fit
     end
 end
 
+----------------------------------------------------------------------------
+-- Codex's review of PR #31: three bugs
+----------------------------------------------------------------------------
+do   -- a control that hides mid-press must not come back looking pressed
+    local W = fresh()
+    WoW.slash("/gsweep")
+    local ui = W._test.ui
+    ui.diff._scripts.OnMouseDown(ui.diff, L)
+    check(ui.diff.press:IsShown(), "(pressed)")
+    W.win:Hide()                                        -- the window closes before the release arrives
+    W.win:Show()
+    ui.diff:Hide(); ui.diff:Show()                      -- and the control itself hiding
+    check(not ui.diff.press:IsShown(), "a control that hid while pressed comes back not pressed")
+    ui.help._scripts.OnMouseDown(ui.help, L)
+    ui.help:Hide(); ui.help:Show()
+    check(not ui.help.press:IsShown(), "...the small help button too")
+end
+
+do   -- the difficulty list is opaque enough that the HUD can't show through it
+    local W = fresh()
+    WoW.slash("/gsweep")
+    local menu = W._test.menu()
+    check(menu.backing ~= nil and menu.backing._color[4] >= 0.95, "the list has a near-opaque backing (" .. tostring(menu.backing and menu.backing._color[4]) .. ")")
+    check(menu.mask ~= nil, "...inside a rounded mask, so its corners match the rim")
+    check(menu.backing._color[1] < 0.1 and menu.backing._color[3] < 0.2, "...dark navy")
+    -- the stock glass body (0.90) is still there on top, with the rim
+    eq(menu.fill._texture, Gnomesweeper.Skin.TEXTURES.uiFill, "(the glass body and its rim are kept)")
+    eq(menu.border._texture, Gnomesweeper.Skin.TEXTURES.uiBorder, "(and the rim)")
+end
+
+do   -- the list opens ABOVE the result overlay, including the glass rim that overlay draws
+    local W = onWall()
+    local ui = W._test.ui
+    click(at(3, 1), L)                                  -- a wipe: the overlay is up
+    check(ui.overlay:IsShown(), "(the overlay is up)")
+    local rimLevel = ui.overlay.glass.top._level        -- the frame the overlay's rim is drawn on
+    check(rimLevel > ui.overlay._level, "(the overlay's rim sits above the overlay itself)")
+    check(W._test.menu()._level > rimLevel, "the difficulty list is above the overlay's rim (" ..
+        W._test.menu()._level .. " > " .. rimLevel .. ")")
+end
+
 done("test_polish")

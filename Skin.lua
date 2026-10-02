@@ -96,6 +96,7 @@ Skin.COLORS = {
     closeAccent  = { 0.95, 0.42, 0.38 },
     glassHover   = { 0.45, 0.85, 1.00, 0.30 },
     panelBacking = { 0.02, 0.04, 0.09, 0.42 }, -- darkens the window so the scenery doesn't compete
+    menuBacking  = { 0.02, 0.04, 0.09, 0.97 }, -- the HUD must not show through the difficulty list
     hudBg        = { 0, 0, 0, 0.35 },
     gridBg       = { 0.03, 0.06, 0.12, 0.72 },
     menuText     = { 0.62, 0.68, 0.80 },

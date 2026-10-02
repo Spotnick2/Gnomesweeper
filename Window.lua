@@ -161,7 +161,9 @@ end
 
 local function buildMenu()
     local menu = Widgets.GlassPanel(win)
-    menu:SetFrameLevel(win:GetFrameLevel() + 20)      -- above the glass rim (+10)
+    -- Above everything else in the window, including the result overlay (+15) and the glass rim that
+    -- overlay draws at its own +10, i.e. +25: a list opened while an overlay is up must not slide under it.
+    menu:SetFrameLevel(win:GetFrameLevel() + 30)
     menu:SetSize(MENU_W, #Board.PRESET_ORDER * ROW_H + 8)
     menu:SetPoint("TOP", ui.diff, "BOTTOM", 0, -3)
     menu:EnableMouse(true)

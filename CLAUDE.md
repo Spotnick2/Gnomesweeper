@@ -78,7 +78,9 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   accent colour, a hover glow, a pressed state), `IconButton`, `FaceButton` (the mascot in her ring),
   `GlassPanel`, `Tip`. Baked textures, 9-sliced for the wide buttons; **a small square is never
   sliced** (its corners would meet). Methods we add are lower-case (`b:setAccent`), so none can
-  collide with the client's.
+  collide with the client's. A `GlassPanel` has a near-opaque, masked backing under its glass body (a list over the
+  HUD must not show it through), the difficulty list sits at window level +30 (above the result
+  overlay's rim at +25), and a glass button clears its pressed look if it hides before the release.
 - **`Input.lua`** (#4): mouse gestures to actions, **pure** (every global forbidden in its test).
   `Input.New({reveal, mark, chord})` then `g:Down(tile, button)`, `g:Up(tile, button, inside)`,
   `g:Cancel()`. Every action fires from a **release**, once. Left, right or middle pressed and

@@ -69,6 +69,9 @@ function Widgets.GlassButton(parent, width, height, opts)
     -- that got the press, even after the cursor has left it.
     b:SetScript("OnMouseDown", function(self) self.press:Show() end)
     b:SetScript("OnMouseUp", function(self) self.press:Hide() end)
+    -- If it hides before the release arrives (the window closed under a held button), it must not
+    -- come back still looking pressed.
+    b:SetScript("OnHide", function(self) self.press:Hide() end)
 
     function b.setAccent(self, r, g, bl)
         self.border:SetVertexColor(r, g, bl)
@@ -129,9 +132,16 @@ function Widgets.FaceButton(parent, size)
     return b
 end
 
--- A plain glass panel (a dropdown's list): the body and the rim, no behaviour.
+-- A plain glass panel (a dropdown's list): the body and the rim, no behaviour. The glass body is
+-- translucent (0.90), so it has a near-opaque backing under it, inside the same rounded mask: a list that
+-- sits over the HUD and the tiles must not let them show through its entries (UI review, PR #31).
 function Widgets.GlassPanel(parent)
     local p = CreateFrame("Frame", nil, parent)
+    p.mask = Glass.Mask(p, "body_mask_small", 8)
+    p.backing = p:CreateTexture(nil, "BACKGROUND", nil, -1)
+    p.backing:SetAllPoints(p)
+    p.backing:SetColorTexture(unpack(C.menuBacking))
+    p.backing:AddMaskTexture(p.mask)
     p.fill = p:CreateTexture(nil, "BACKGROUND")
     p.fill:SetAllPoints(p)
     p.fill:SetTexture(T.uiFill)

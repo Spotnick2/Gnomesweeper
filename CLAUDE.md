@@ -106,7 +106,10 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     back on screen when restored. `/gsweep reset` forgets it.
   - **Measuring commands:** `/gsweep perf` times an Expert build, a first reveal, a loss and ten
     difficulty switches on a scratch board (then puts your game back); `/gsweep input` logs every
-    tile press and release with `upInside` and `IsMouseOver`, for the live input matrix.
+    tile press and release with `upInside` and `IsMouseOver`, for the live input matrix. The lines
+    are also kept in `GnomesweeperDB.inputLog` (last 300, debug only), so a `/reload` writes them to
+    `WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua` and they can be **read from disk**
+    instead of pasted. The same trick works for any future probe.
 - **`Scores.lua`** (milestone 2): personal bests per difficulty in `GnomesweeperDB`. Social
   leaderboards (guild/friends/Battle.net) are milestone 4 — not day 1.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash

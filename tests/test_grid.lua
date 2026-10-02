@@ -328,8 +328,21 @@ do
     click(5, L)
     check(chatHas("tile 5  down  LeftButton"), "...and logs a press")
     check(chatHas("upInside=true"), "...and a release with its arguments")
+    local saved = GnomesweeperDB.inputLog
+    check(type(saved) == "table" and #saved >= 2, "...and keeps the lines in the saved variables, for a /reload to write out")
+    check(saved[1]:find("tile 5  down  LeftButton", 1, true), "...each with its time and its text")
     WoW.slash("/gsweep input")
     check(chatHas("logging off"), "...and again turns it off")
+    local count = #GnomesweeperDB.inputLog
+    click(6, L)
+    eq(#GnomesweeperDB.inputLog, count, "with the log off, nothing more is kept")
+
+    -- A new session starts a fresh log, and it is capped.
+    WoW.slash("/gsweep input")
+    eq(#GnomesweeperDB.inputLog, 0, "turning it on again starts a fresh log")
+    for i = 1, 200 do click(7, L) end
+    check(#GnomesweeperDB.inputLog <= 300, "the saved log is capped (" .. #GnomesweeperDB.inputLog .. " lines)")
+    WoW.slash("/gsweep input")
 end
 
 done("test_grid")

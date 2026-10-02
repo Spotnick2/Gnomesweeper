@@ -121,11 +121,31 @@ end
 -- Mouse
 ------------------------------------------------------------
 
+-- Printed to chat AND kept in GnomesweeperDB.inputLog (the last MAX_LOG lines), so
+-- a /reload writes them to the SavedVariables file and they can be read without
+-- copying them out of the chat window. Debug data: it exists only after
+-- /gsweep input has been used.
+local MAX_LOG = 300
+
 local function log(fmt, ...)
-    if logging then print("|cff7fd4ffGnome|rsweeper input: " .. string.format(fmt, ...)) end
+    if not logging then return end
+    local line = string.format(fmt, ...)
+    print("|cff7fd4ffGnome|rsweeper input: " .. line)
+    local db = GnomesweeperDB
+    if type(db) == "table" then
+        local lines = db.inputLog
+        if type(lines) ~= "table" then lines = {}; db.inputLog = lines end
+        lines[#lines + 1] = string.format("%.3f  %s", GetTime(), line)
+        if #lines > MAX_LOG then table.remove(lines, 1) end
+    end
 end
 
-function Grid.SetLogging(on) logging = on and true or false end
+-- Turning it on starts a fresh log.
+function Grid.SetLogging(on)
+    on = on and true or false
+    if on and not logging and type(GnomesweeperDB) == "table" then GnomesweeperDB.inputLog = {} end
+    logging = on
+end
 function Grid.Logging() return logging end
 
 local function onDown(self, button)

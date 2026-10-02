@@ -33,7 +33,7 @@ local HELP = {
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
-    "/gsweep input - log every mouse press and release on the tiles (for measuring); again to stop",
+    "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
 }
 
 local function Slash(msg)
@@ -49,7 +49,8 @@ local function Slash(msg)
         for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
     elseif msg == "input" then
         GS.Grid.SetLogging(not GS.Grid.Logging())
-        Print("tile input logging " .. (GS.Grid.Logging() and "on: click some tiles." or "off."))
+        Print("tile input logging " .. (GS.Grid.Logging()
+            and "on: click some tiles, then /reload to save the log." or "off."))
     else
         if msg ~= "help" then Print("unknown option '" .. msg .. "'.") end
         for _, line in ipairs(HELP) do Print(line) end

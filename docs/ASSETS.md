@@ -55,7 +55,7 @@ as file IDs. #6 does the rest.
 - **Mine:** `inv_misc_bomb_01` (133709), the classic black bomb with a lit fuse; the candidates
   were compared at 18 px and it is the one that stays legible. (The spiked `_02`, the smiley `_04`,
   the dynamite and the red crab bomb were set aside; `inv_eng_bombfire`, 2115301, is a bomb in
-  flames for a later "boom".) **Unverified in game.**
+  flames for a later "boom".) **Measured to render** (owner's screenshots of games and losses).
 - **Flag:** the red Horde banner `inv_bannerpvp_01` (132485), **measured** to render.
 - **Wrong flag:** the flag with a red text "X" over it; **question mark:** a gold text "?". No
   textures, so nothing can come out as a green square.
@@ -64,9 +64,10 @@ as file IDs. #6 does the rest.
 ## The faces (#5)
 
 One gnome-head icon per game state, chosen from a contact sheet (placeholders until the generated
-set, #12). **Measured to render:** ready `achievement_character_gnome_male` (236446), playing
-`inv_misc_head_gnome_01` (134164), lost `inv_misc_bomb_01` (133709, the bomb: the state reads at a
-glance at 40 px). **Unverified:** won `achievement_character_gnome_female` (236445). Alternatives
+set, #12). **All four measured to render** (owner's screenshots of a win and a loss): ready
+`achievement_character_gnome_male` (236446), playing `inv_misc_head_gnome_01` (134164), won
+`achievement_character_gnome_female` (236445, a pink-haired gnome), lost `inv_misc_bomb_01` (133709,
+the bomb: the state reads at a glance at 40 px). Alternatives
 looked at: `inv_gnometoy` (4226119), a pink-haired gnome with a big grin; `inv_misc_head_gnome_02`
 (134165); `inv_misc_head_clockworkgnome_01` (134152); `inv_eng_bombfire` (2115301), a bomb in flames.
 

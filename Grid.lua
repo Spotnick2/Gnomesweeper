@@ -40,7 +40,7 @@ local paints = 0              -- tiles actually repainted (tests count this)
 -- Painting
 ------------------------------------------------------------
 
-local function setIcon(t, texture)
+local function setIcon(t, texture, desaturate)
     if texture then
         if not t.icon then
             t.icon = t:CreateTexture(nil, "ARTWORK")
@@ -49,6 +49,7 @@ local function setIcon(t, texture)
             t.icon:SetTexCoord(unpack(Skin.ICON_CROP))
         end
         t.icon:SetTexture(texture)
+        t.icon:SetDesaturated(desaturate and true or false)
         t.icon:Show()
     elseif t.icon then
         t.icon:Hide()
@@ -92,7 +93,9 @@ local function paint(i)
         t.covered = true
         t.bg:SetTexture(T.tileCovered)
         if c.state == "flag" then
-            setIcon(t, T.flag)
+            -- A wrong flag: the banner greyed and a red X over it. (A red X on the
+            -- red banner was invisible: seen in game.)
+            setIcon(t, T.flag, c.wrongFlag)
             if c.wrongFlag then setText(t, "X", Skin.COLORS.wrongFlag) else setText(t, nil) end
         elseif c.state == "question" then
             setIcon(t, nil)

@@ -148,6 +148,7 @@ function Methods.GetText(w) return w._text end
 function Methods.SetTexture(w, t) w._texture = t end
 function Methods.SetColorTexture(w, ...) w._texture = nil; w._color = { ... } end
 function Methods.SetAlpha(w, a) w._alpha = a end
+function Methods.SetDesaturated(w, v) w._desaturated = v end
 function Methods.GetAlpha(w) return w._alpha or 1 end
 function Methods.SetVertexColor(w, ...) w._vertex = { ... } end
 function Methods.SetTextColor(w, ...) w._textColor = { ... } end

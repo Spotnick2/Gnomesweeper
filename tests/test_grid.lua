@@ -276,6 +276,8 @@ do
     eq(tile(at(4, 4)).icon._texture, Skin.TEXTURES.flag, "a wrong flag still shows its flag")
     eq(tile(at(4, 4)).text:GetText(), "X", "...with a red X over it")
     eq(tile(at(4, 4)).text._textColor[1], Skin.COLORS.wrongFlag[1], "(red)")
+    eq(tile(at(4, 4)).icon._desaturated, true, "...over a greyed flag, so the red X shows (red on the red banner was invisible)")
+    eq(tile(at(3, 2)).icon._desaturated, false, "a correct flag keeps its colour")
 
     eq(tile(at(1, 1)).hl:GetAlpha(), 0, "once the game is over a covered tile has no hover glow")
     eq(tile(at(5, 4)).hl:GetAlpha(), 0, "...none of them")

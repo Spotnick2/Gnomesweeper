@@ -57,6 +57,6 @@ Skin.COLORS = {
     button      = { 0.16, 0.28, 0.5, 0.75 },
     buttonHover = { 0.25, 0.4, 0.7, 0.35 },
     menuBg      = { 0.04, 0.07, 0.15, 0.97 },
-    wrongFlag   = { 1, 0.2, 0.2 },             -- the X over a flag that wasn't on a mine
+    wrongFlag   = { 1, 0.15, 0.15 },           -- the X over a (greyed) flag that wasn't on a mine
     question    = { 1, 0.82, 0 },
 }

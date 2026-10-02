@@ -143,11 +143,18 @@ function Methods.RegisterEvent(w, e)
 end
 function Methods.UnregisterEvent(w, e) w._events[e] = nil end
 
-function Methods.SetText(w, t) w._text = t end
+function Methods.SetText(w, t)
+    w._text = t
+    if w._type == "GameTooltip" then w._lines = {} end     -- a new tooltip starts with its title
+end
+function Methods.AddLine(w, text) w._lines = w._lines or {}; w._lines[#w._lines + 1] = text end
 function Methods.GetText(w) return w._text end
 function Methods.SetTexture(w, t) w._texture = t end
 function Methods.SetColorTexture(w, ...) w._texture = nil; w._color = { ... } end
 function Methods.SetAlpha(w, a) w._alpha = a end
+function Methods.SetTextureSliceMargins(w, ...) w._slice = { ... } end
+function Methods.SetTexCoord(w, ...) w._texCoord = { ... } end
+function Methods.SetBlendMode(w, m) w._blend = m end
 function Methods.SetDesaturated(w, v) w._desaturated = v end
 function Methods.GetAlpha(w) return w._alpha or 1 end
 function Methods.SetVertexColor(w, ...) w._vertex = { ... } end

@@ -112,13 +112,17 @@ if theirs ~= "" then
         "Tools/make_textures.py matches GlassUnitFrames main (copy it back)")
     -- The textures too, byte for byte. Compared as git blob hashes: text, so
     -- no binary data passes through a text-mode pipe.
-    -- Gnomesweeper's own textures (tile_*, from Tools/make_tiles.py) are not copies.
-    for f in io.popen('dir /b "Media\\*.tga" 2>' .. NULL):lines() do
-        if not f:match("^tile_") then
-            local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
-            local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
-            check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
-        end
+    -- Named, not guessed: these are the copied material. Everything else in Media/ is
+    -- ours (tile_*, icon_*, ui_*, face_*: Tools/make_tiles.py, make_ui.py, png_to_tga.py)
+    -- and is checked by test_media instead.
+    local MATERIAL = { "body_mask", "body_mask_small", "rim5", "rim5_small", "rim_dark5", "rim_dark5_small",
+                       "shadow", "shadow_small", "bar_mask", "bar_fill", "gloss", "bar_edge", "grain",
+                       "sheen2", "track_fade" }
+    for _, name in ipairs(MATERIAL) do
+        local f = name .. ".tga"
+        local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
+        local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
+        check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
     end
 elseif not sibling then
     io.write("  (upstream material check skipped: no ../GlassUnitFrames checkout)\n")

@@ -59,6 +59,24 @@ eq(Layout.FitScale(300, 300, 1366, 768, "big"), 1, "a non-number wanted scale is
 eq(Layout.FitScale(300, 300, 1366, 768, 0), 1, "a zero wanted scale is ignored")
 
 ----------------------------------------------------------------------------
+-- The HUD strip's width, and the player's scale
+----------------------------------------------------------------------------
+eq(Layout.HudWidth(300), 272, "Beginner: the strip fills the window less its padding")
+eq(Layout.HudWidth(412), Layout.HUD_MAX, "Intermediate: capped")
+eq(Layout.HudWidth(748), Layout.HUD_MAX, "Expert: capped, so the counter, face and clock stay together")
+eq(Layout.HUD_MAX, 340, "the cap")
+
+eq(Layout.ValidUserScale(1), 1, "scale 1 is valid")
+eq(Layout.ValidUserScale(0.5), 0.5, "the smallest is valid")
+eq(Layout.ValidUserScale(1.5), 1.5, "the largest is valid")
+eq(Layout.ValidUserScale(0.49), nil, "below the range is not")
+eq(Layout.ValidUserScale(1.51), nil, "above the range is not")
+eq(Layout.ValidUserScale(nil), nil, "nil is not")
+eq(Layout.ValidUserScale("1"), nil, "a string is not")
+eq(Layout.ValidUserScale(0 / 0), nil, "NaN is not")
+eq(Layout.ValidUserScale(math.huge), nil, "infinity is not")
+
+----------------------------------------------------------------------------
 -- FormatTime
 ----------------------------------------------------------------------------
 eq(Layout.FormatTime(0), "00:00", "zero")

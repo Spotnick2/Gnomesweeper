@@ -44,15 +44,16 @@ def rgba(rgb, alpha):
     return out
 
 
-def covered(top=(0.34, 0.58, 1.00), bottom=(0.12, 0.25, 0.62)):
+def covered(top=(0.25, 0.42, 0.70), bottom=(0.10, 0.21, 0.45), edge_k=1.0):
     d = rounded_rect_sdf(S, S, INSET, RADIUS)
     shape = coverage(d)
     ys = (np.mgrid[0:S, 0:S][0] + 0.5) / S                    # 0 top .. 1 bottom
     top, bottom = np.array(top), np.array(bottom)
     colour = np.stack([lerp(top[i], bottom[i], ys) for i in range(3)], axis=-1)
 
-    # A white gloss over the top half, fading out; confined to the shape.
-    gloss = np.clip(1 - ys / 0.55, 0, 1) ** 1.6 * 0.30
+    # A narrow white highlight along the top edge, not a gloss over half the tile:
+    # glass, not shiny plastic (UI review, 2026-10-02).
+    gloss = np.clip(1 - ys / 0.20, 0, 1) ** 1.5 * 0.28
     colour = colour + gloss[..., None] * (1 - colour)
 
     # A bevel lit from the top-left: bright along the upward and leftward
@@ -60,10 +61,11 @@ def covered(top=(0.34, 0.58, 1.00), bottom=(0.12, 0.25, 0.62)):
     nx, ny = normals(d)
     edge = np.exp(-np.maximum(-d, 0) / 1.1)                    # 1 at the rim, fading inward
     light = np.clip(-(nx * 0.45 + ny * 0.9), -1, 1)
-    colour = colour + np.where(light > 0, light, 0)[..., None] * edge[..., None] * 0.55 * (1 - colour)
-    colour = colour * (1 - np.where(light < 0, -light, 0)[..., None] * edge[..., None] * 0.45)
+    # Restrained edge light: enough to read the edge, not a bright frame.
+    colour = colour + np.where(light > 0, light, 0)[..., None] * edge[..., None] * 0.30 * edge_k * (1 - colour)
+    colour = colour * (1 - np.where(light < 0, -light, 0)[..., None] * edge[..., None] * 0.35)
 
-    out = rgba((0, 0, 0), shape * 0.94)
+    out = rgba((0, 0, 0), shape * 0.90)
     out[..., :3] = np.clip(colour, 0, 1)
     return out
 
@@ -90,7 +92,7 @@ def hover():
 
 
 def exploded():
-    return covered(top=(1.00, 0.46, 0.32), bottom=(0.60, 0.10, 0.08))
+    return covered(top=(0.92, 0.36, 0.26), bottom=(0.52, 0.09, 0.07))
 
 
 TEXTURES = {"tile_covered": covered, "tile_exploded": exploded, "tile_revealed": revealed, "tile_hover": hover}

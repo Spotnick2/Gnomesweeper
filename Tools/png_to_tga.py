@@ -1,12 +1,14 @@
 """Turn a generated image into a game texture: Media/<name>.tga, uncompressed 32-bit.
 
-    python Tools/png_to_tga.py SRC NAME [--size 64] [--trim] [--circle | --round 0.18]
+    python Tools/png_to_tga.py SRC NAME [--size 64] [--crop L,T,R,B] [--trim] [--circle | --round 0.18]
                                [--margin 0.04] [--out DIR] [--preview file.png]
 
 SRC is the master image (keep masters out of git: Media/Source/ is ignored).
 WoW loads TGA or BLP, never PNG, and wants power-of-two sizes.
 
   --size N      the square output size, a power of two (default 64)
+  --crop L,T,R,B  cut this box (source pixels) out of the master first: one piece of a
+                larger picture, e.g. the mascot's face from the logo
   --trim        crop to the artwork first: the bounding box of whatever isn't
                 transparent (needs an alpha channel)
   --margin F    transparent border to keep, as a fraction of the size (default 0.04),
@@ -57,9 +59,11 @@ def shape_mask(size, circle, round_frac):
     return m.reshape(size, 4, size, 4).mean(axis=(1, 3))
 
 
-def convert(src, size, trim, margin, circle, round_frac):
+def convert(src, size, trim, margin, circle, round_frac, crop=None):
     assert size & (size - 1) == 0 and size >= 4, "--size must be a power of two"
     im = Image.open(src).convert("RGBA")
+    if crop:
+        im = im.crop(crop)
     if trim:
         box = im.getchannel("A").getbbox()
         if box is None:
@@ -94,6 +98,7 @@ def main():
     ap.add_argument("src")
     ap.add_argument("name")
     ap.add_argument("--size", type=int, default=64)
+    ap.add_argument("--crop", help="L,T,R,B in source pixels")
     ap.add_argument("--trim", action="store_true")
     ap.add_argument("--margin", type=float, default=0.04)
     shape = ap.add_mutually_exclusive_group()
@@ -103,7 +108,10 @@ def main():
     ap.add_argument("--preview")
     args = ap.parse_args()
 
-    px = convert(args.src, args.size, args.trim, args.margin, args.circle, args.round_frac)
+    crop = tuple(int(v) for v in args.crop.split(",")) if args.crop else None
+    if crop is not None and len(crop) != 4:
+        raise SystemExit("--crop wants L,T,R,B")
+    px = convert(args.src, args.size, args.trim, args.margin, args.circle, args.round_frac, crop)
     if args.out:
         os.makedirs(args.out, exist_ok=True)
         make_textures.OUT = args.out

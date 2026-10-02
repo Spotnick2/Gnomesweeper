@@ -11,6 +11,7 @@ Glass.lua
 Board.lua
 Layout.lua
 Skin.lua
+Widgets.lua
 Input.lua
 Grid.lua
 Window.lua

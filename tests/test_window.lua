@@ -58,7 +58,7 @@ do
 
     -- Beginner at the default screen: the minimum width, the board centred.
     eq(win._width, 300, "Beginner: the minimum width")
-    eq(win._height, 422, "Beginner: 150 + 216 + 56")
+    eq(win._height, 422, "Beginner: 138 + 216 + 68")
     eq(win._scale, 1, "Beginner fits at scale 1")
     local ui = W._test.ui
     eq(ui.grid._width, 216, "the board area is 9 tiles wide")
@@ -67,7 +67,7 @@ do
     eq(gp[1], "TOPLEFT", "the board is anchored top-left")
     eq(gp[2], win, "...to the window")
     eq(gp[4], 42, "...centred (42 in from the left)")
-    eq(gp[5], -150, "...below the chrome")
+    eq(gp[5], -138, "...below the chrome")
     eq(W.grid, ui.grid, "the tile grid (#4) draws into Window.grid")
     local cp = lastPoint(win)
     check(cp[1] == "CENTER" and cp[2] == UIParent, "with no saved position it opens in the middle of the screen")
@@ -89,8 +89,7 @@ do
     WoW.slash("/minewipe")
     check(not win:IsShown(), "/minewipe toggles it too")
     win:Show()
-    local close
-    for _, b in ipairs(buttons(win)) do if b._template == "UIPanelCloseButton" then close = b end end
+    local close = ui.close
     check(close ~= nil, "there is a close button")
     close._scripts.OnClick(close)
     check(not win:IsShown(), "...and it closes the window")

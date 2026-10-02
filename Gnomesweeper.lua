@@ -32,6 +32,7 @@ local HELP = {
     "/gsweep - open or close the board (also /gnomesweeper, /minewipe)",
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep reset - put the window back in the middle of the screen",
+    "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
 }
@@ -45,6 +46,25 @@ local function Slash(msg)
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")
+    elseif msg == "scale" or msg:find("^scale%s") then
+        local arg = msg:match("^scale%s*(.-)%s*$")
+        local W, L = GS.Window, GS.Layout
+        if arg == "" then
+            local want, shown = W.ScaleInfo()
+            Print(string.format("window scale %.2f%s. /gsweep scale %.1f to %.1f, or reset.", want,
+                math.abs(want - shown) > 0.005 and string.format(" (shown at %.2f: that is what fits the screen)", shown) or "",
+                L.USER_SCALE_MIN, L.USER_SCALE_MAX))
+        elseif arg == "reset" then
+            W.SetScale(nil)
+            Print("window scale back to 1.")
+        elseif L.ValidUserScale(tonumber(arg)) then
+            W.SetScale(tonumber(arg))
+            local want, shown = W.ScaleInfo()
+            Print(string.format("window scale %.2f%s.", want,
+                math.abs(want - shown) > 0.005 and string.format(" (shown at %.2f: that is what fits the screen)", shown) or ""))
+        else
+            Print(string.format("scale must be a number from %.1f to %.1f (or reset).", L.USER_SCALE_MIN, L.USER_SCALE_MAX))
+        end
     elseif msg == "perf" then
         for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
     elseif msg == "input" then

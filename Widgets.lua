@@ -1,0 +1,145 @@
+-- Widgets.lua: the Liquid Glass controls the window is built from, so the close
+-- button, the settings gear, the difficulty dropdown, the overlay's buttons and
+-- the result bar all share one look: a dark glass body, a bright rim that takes a
+-- colour, a hover glow and a pressed state.
+--
+-- Everything is baked textures from Tools/make_ui.py (9-sliced for the wide
+-- buttons), never Glass.Apply: that makes six textures, a mask and a frame per
+-- host, and its sliced mask fails on small squares. Nothing here is secure.
+--
+-- Methods we add to a widget are lower-case (b:setAccent), so none can be
+-- mistaken for, or collide with, one of the client's own.
+
+local ADDON = ...
+Gnomesweeper = Gnomesweeper or {}
+local Widgets = {}
+Gnomesweeper.Widgets = Widgets
+
+local Glass, Skin = Gnomesweeper.Glass, Gnomesweeper.Skin
+local T, C = Skin.TEXTURES, Skin.COLORS
+local SLICE = 8                              -- texture pixels; the corner radius sits inside it
+
+local function slice(tex)
+    tex:SetTextureSliceMargins(SLICE, SLICE, SLICE, SLICE)
+    local modes = Enum and Enum.UITextureSliceMode
+    tex:SetTextureSliceMode((modes and modes.Stretched) or 0)
+end
+
+-- A tooltip on `widget`: a title and any number of grey, wrapping lines.
+function Widgets.Tip(widget, title, lines)
+    if type(lines) == "string" then lines = { lines } end
+    widget:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
+        GameTooltip:SetText(title)
+        for _, line in ipairs(lines or {}) do GameTooltip:AddLine(line, 0.75, 0.78, 0.85, true) end
+        GameTooltip:Show()
+    end)
+    widget:SetScript("OnLeave", function() GameTooltip:Hide() end)
+end
+
+-- A glass button. `opts.square` for the small icon buttons: a texture 22 units
+-- across must not be sliced (its corners would meet), so it is drawn whole.
+-- b.label is the centred text; b:setAccent(r, g, b) colours the rim.
+function Widgets.GlassButton(parent, width, height, opts)
+    opts = opts or {}
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(width, height)
+
+    local function layer(name, drawLayer, texture)
+        local t = b:CreateTexture(nil, drawLayer)
+        t:SetAllPoints(b)
+        t:SetTexture(texture)
+        if not opts.square then slice(t) end
+        b[name] = t
+        return t
+    end
+    layer("fill", "BACKGROUND", T.uiFill)
+    layer("border", "BORDER", T.uiBorder)
+    local hover = layer("hover", "HIGHLIGHT", T.uiGlow)
+    hover:SetBlendMode("ADD")
+    hover:SetVertexColor(unpack(C.glassHover))
+    local press = layer("press", "ARTWORK", T.uiGlow)
+    press:SetVertexColor(0, 0, 0, 0.35)
+    press:Hide()
+
+    b.label = Glass.Font(b, opts.fontSize or 12, "CENTER")
+    b.label:SetPoint("CENTER", b, "CENTER", 0, 0)
+
+    -- Pressed while the button is down; the release always arrives on the button
+    -- that got the press, even after the cursor has left it.
+    b:SetScript("OnMouseDown", function(self) self.press:Show() end)
+    b:SetScript("OnMouseUp", function(self) self.press:Hide() end)
+
+    function b.setAccent(self, r, g, bl)
+        self.border:SetVertexColor(r, g, bl)
+        self.accent = { r, g, bl }
+    end
+    b:setAccent(unpack(C.accent))
+    return b
+end
+
+-- A square glass button with a picture on it (the close X, the settings gear).
+function Widgets.IconButton(parent, size, texture, tint)
+    local b = Widgets.GlassButton(parent, size, size, { square = true })
+    b.icon = b:CreateTexture(nil, "OVERLAY")
+    b.icon:SetSize(size - 8, size - 8)
+    b.icon:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.icon:SetTexture(texture)
+    if tint then b.icon:SetVertexColor(tint[1], tint[2], tint[3]) end
+    return b
+end
+
+-- The mascot as a button: her face in a ring, the ring coloured by the game state,
+-- sparkles over her after a win, soot after a wipe, a brighter ring on hover.
+-- b:setState("ready" | "playing" | "won" | "lost").
+function Widgets.FaceButton(parent, size)
+    local b = CreateFrame("Button", nil, parent)
+    b:SetSize(size, size)
+    local inner = size - 6
+    b.face = b:CreateTexture(nil, "BACKGROUND")
+    b.face:SetSize(inner, inner)
+    b.face:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.face:SetTexture(T.face)
+    b.overlay = b:CreateTexture(nil, "ARTWORK")
+    b.overlay:SetSize(inner, inner)
+    b.overlay:SetPoint("CENTER", b, "CENTER", 0, 0)
+    b.overlay:Hide()
+    b.ring = b:CreateTexture(nil, "OVERLAY")
+    b.ring:SetAllPoints(b)
+    b.ring:SetTexture(T.faceRing)
+    b.glow = b:CreateTexture(nil, "HIGHLIGHT")
+    b.glow:SetAllPoints(b)
+    b.glow:SetTexture(T.faceRing)
+    b.glow:SetBlendMode("ADD")
+    b.glow:SetVertexColor(1, 1, 1, 0.9)
+
+    function b.setState(self, state)
+        local ring = Skin.FACE_RING[state] or Skin.FACE_RING.ready
+        self.ring:SetVertexColor(ring[1], ring[2], ring[3])
+        local over = Skin.FACE_OVERLAY[state]
+        if over then
+            self.overlay:SetTexture(T[over])
+            self.overlay:Show()
+        else
+            self.overlay:Hide()
+        end
+        self.state = state
+    end
+    b:setState("ready")
+    return b
+end
+
+-- A plain glass panel (a dropdown's list): the body and the rim, no behaviour.
+function Widgets.GlassPanel(parent)
+    local p = CreateFrame("Frame", nil, parent)
+    p.fill = p:CreateTexture(nil, "BACKGROUND")
+    p.fill:SetAllPoints(p)
+    p.fill:SetTexture(T.uiFill)
+    slice(p.fill)
+    p.border = p:CreateTexture(nil, "BORDER")
+    p.border:SetAllPoints(p)
+    p.border:SetTexture(T.uiBorder)
+    slice(p.border)
+    p.border:SetVertexColor(unpack(C.accent))
+    return p
+end

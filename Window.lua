@@ -288,7 +288,7 @@ local function build()
     ui.face = face
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
-    ui.timer:SetWidth(64)
+    ui.timer:SetWidth(54)             -- "00:00" is about 47 wide; any more leaves a gap before the clock icon
     ui.timer:SetPoint("RIGHT", hud, "RIGHT", -12, 0)
     local clock = icon(hud, Skin.TEXTURES.clock, 22)
     clock:SetPoint("RIGHT", ui.timer, "LEFT", -6, 0)

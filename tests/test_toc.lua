@@ -40,10 +40,22 @@ end
 -- Glass.lua is a copy of GlassUnitFrames' material on its MAIN branch: only
 -- the header and the namespace lines may differ. Read through git, not the
 -- working tree, whose branch another session may have switched.
+-- Skipped ONLY when the sibling checkout is absent (as on CI). When it's
+-- there, a git failure is a failure: an unreadable main must not pass
+-- silently (Codex, plan review).
 local NULL = package.config:sub(1, 1) == "\\" and "nul" or "/dev/null"
-local upstream = io.popen('git -C ../GlassUnitFrames show main:Glass.lua 2>' .. NULL)
-local theirs = upstream and upstream:read("*a") or ""
-if upstream then upstream:close() end
+local function git(args)
+    local p = io.popen("git " .. args .. " 2>" .. NULL)
+    local out = p and p:read("*a") or ""
+    if p then p:close() end
+    return out
+end
+local sibling = io.open("../GlassUnitFrames/Glass.lua", "r")
+if sibling then sibling:close() end
+local theirs = sibling and git("-C ../GlassUnitFrames show main:Glass.lua") or ""
+if sibling then
+    check(theirs ~= "", "git can read GlassUnitFrames main:Glass.lua (the sibling exists, so this must work)")
+end
 if theirs ~= "" then
     local function body(s)
         s = s:gsub("\r", "")
@@ -53,13 +65,18 @@ if theirs ~= "" then
     end
     check(body(io.open("Glass.lua"):read("*a")) == body(theirs),
         "Glass.lua matches GlassUnitFrames main:Glass.lua (copy it back)")
-    local gen = io.popen('git -C ../GlassUnitFrames show main:Tools/make_textures.py 2>' .. NULL)
-    local g = gen and gen:read("*a") or ""
-    if gen then gen:close() end
+    local g = git("-C ../GlassUnitFrames show main:Tools/make_textures.py")
     check(g:gsub("\r", "") == io.open("Tools/make_textures.py", "rb"):read("*a"):gsub("\r", ""),
         "Tools/make_textures.py matches GlassUnitFrames main (copy it back)")
-else
-    io.write("  (Glass.lua upstream check skipped: no ../GlassUnitFrames git repo)\n")
+    -- The textures too, byte for byte. Compared as git blob hashes: text, so
+    -- no binary data passes through a text-mode pipe.
+    for f in io.popen('dir /b "Media\\*.tga" 2>' .. NULL):lines() do
+        local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
+        local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
+        check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
+    end
+elseif not sibling then
+    io.write("  (upstream material check skipped: no ../GlassUnitFrames checkout)\n")
 end
 
 done("test_toc")

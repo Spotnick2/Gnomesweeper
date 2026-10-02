@@ -46,6 +46,13 @@ $art = Get-ChildItem -LiteralPath (Join-Path $RepoRoot "Media") -File |
     Where-Object { $_.Extension -in ".tga", ".blp", ".ogg" }
 foreach ($t in $art) { Copy-Item -LiteralPath $t.FullName -Destination (Join-Path $media $t.Name) -Force }
 Write-Host "  Media\  ($($art.Count) files)"
+# Media removed from the repo must not linger either: a stale texture would
+# hide a missing-asset bug in game. Only the types copied above are pruned.
+$names = $art | Select-Object -ExpandProperty Name
+Get-ChildItem -LiteralPath $media -File | Where-Object { $_.Extension -in ".tga", ".blp", ".ogg" -and $names -notcontains $_.Name } | ForEach-Object {
+    Write-Host "  removing stale Media\$($_.Name)" -ForegroundColor DarkYellow
+    Remove-Item -LiteralPath $_.FullName -Force
+}
 
 Write-Host ""
 Write-Host "Changed files: /reload is enough. A brand-new addon folder needs a client restart." -ForegroundColor Yellow

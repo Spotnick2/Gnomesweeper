@@ -162,6 +162,9 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 - `docs/MODELS.md` — rendering creature models, from AltStable's measured pet work
   (`..\AltStable\docs\forever-api-notes.md` "Pets", `..\AltStable\Plugins\Roster\AltStableRoster.lua`).
 - `docs/REFERENCES.md` — game-logic references and their licences. `docs/ASSETS.md` — the art plan.
+- `docs/ART.md` — **the art direction**: the CurseForge logo (`docs/logo.png`) sets the tone; its
+  measured palette, how the placeholders differ from it, and a prompt for each piece of art.
+  `Tools/png_to_tga.py` turns a generated PNG into a texture.
 - In game: `/api search <name>`.
 
 ## Forever facts that matter here

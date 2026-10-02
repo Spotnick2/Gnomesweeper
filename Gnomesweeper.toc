@@ -8,4 +8,5 @@
 
 Compat.lua
 Glass.lua
+Board.lua
 Gnomesweeper.lua

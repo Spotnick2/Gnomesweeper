@@ -55,6 +55,32 @@ ui.face._scripts.OnClick(ui.face)
 W.game:Reveal(5, 5, 1)
 W.Refresh()
 WoW.tick(0.2)
+-- The tiles: every kind of click, a flood, a chord, a loss, the measuring commands.
+do
+    local G = Gnomesweeper.Grid._test
+    local function press(i, button)
+        local t = G.tiles[i]
+        t._scripts.OnMouseDown(t, button)
+        t._scripts.OnMouseUp(t, button, true)
+    end
+    W.NewGame("beginner")
+    press(1, "RightButton")                               -- a flag
+    press(41, "LeftButton")                               -- a reveal and a flood
+    press(41, "MiddleButton")                             -- a chord attempt
+    local t = G.tiles[41]
+    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseDown(t, "RightButton")
+    t._scripts.OnMouseUp(t, "LeftButton", true); t._scripts.OnMouseUp(t, "RightButton", true)
+    WoW.slash("/gsweep perf")
+    WoW.slash("/gsweep input")
+    press(2, "LeftButton")
+    WoW.slash("/gsweep input")
+    for i = 1, W.game.total do                            -- end the game on a mine
+        if W.game._mine[i] then press(i, "LeftButton"); break end
+    end
+    W.NewGame("expert")
+    W.NewGame("beginner")
+end
+
 win._scripts.OnDragStart(win)
 win._left, win._top = 100, 500
 win._scripts.OnDragStop(win)

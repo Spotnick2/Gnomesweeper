@@ -1,0 +1,19 @@
+# Compiled Lua / syntax-check output
+luac.out
+
+# Per-machine Claude Code settings
+.claude/settings.local.json
+.claude/worktrees/
+
+# Packager output
+.release/
+dist/
+*.zip
+
+# Python bytecode from Tools/
+__pycache__/
+
+# Art SOURCE masters: the client loads only the TGAs. Media/README.md records
+# the prompt and conversion for each, so they're reproducible, not lost.
+Media/**/*.png
+Media/Source/

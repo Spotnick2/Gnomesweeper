@@ -45,7 +45,8 @@ First in-game look at the window (owner's screenshots, 2026-10-02, build 1.60.1.
 `inv_misc_head_gnome_01` (134164), `Interface\Icons\INV_Misc_PocketWatch_01`,
 `Interface\WorldMap\GEAR_64GREY`, `Interface\Buttons\Arrow-Down-Up`, and the
 `UIPanelCloseButton` template. **Not what the name suggests:** `Interface\Icons\INV_BannerPVP_02` is
-the blue **Alliance** banner; the red flag is tried as `inv_bannerpvp_01` (132485), unseen yet.
+the blue **Alliance** banner. `inv_bannerpvp_01` (132485) is the red one (the Horde crest) and
+**renders**: it's the HUD flag now.
 Still unmeasured: everything not in this list, and whether `Interface\Icons\...` paths are as safe
 as file IDs. #6 does the rest.
 

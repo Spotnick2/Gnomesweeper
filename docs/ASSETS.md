@@ -38,6 +38,18 @@ measured: #6 confirms them in game. File IDs can be passed straight to `SetTextu
 Other bomb families listed there, if the misc bombs read poorly: `inv_crabbomb_*`,
 `inv_111_goldenbomb_*`, `inv_eng_bomb*`, `ability_iyyokuk_bomb_*` (coloured round bombs).
 
+## Measured in game
+
+First in-game look at the window (owner's screenshots, 2026-10-02, build 1.60.1.70170, PR #25).
+**Rendered** (no green squares): the logo `achievement_character_gnome_male` (236446), the face
+`inv_misc_head_gnome_01` (134164), `Interface\Icons\INV_Misc_PocketWatch_01`,
+`Interface\WorldMap\GEAR_64GREY`, `Interface\Buttons\Arrow-Down-Up`, and the
+`UIPanelCloseButton` template. **Not what the name suggests:** `Interface\Icons\INV_BannerPVP_02` is
+the blue **Alliance** banner. `inv_bannerpvp_01` (132485) is the red one (the Horde crest) and
+**renders**: it's the HUD flag now.
+Still unmeasured: everything not in this list, and whether `Interface\Icons\...` paths are as safe
+as file IDs. #6 does the rest.
+
 ## Element by element
 
 | Element (storyboard) | First choice (client) | Fallback | Generate? |

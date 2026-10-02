@@ -42,6 +42,11 @@ Branch `build-<build>` from `main`:
 2. `CLAUDE.md`, `AGENTS.md`, `docs/REFERENCES.md`, `.claude/skills/codex-consult/SKILL.md` — the
    dump file name they cite.
 3. `tests/wow_stubs.lua` — the dump file name in the header, and `GetBuildInfo` if it is stubbed.
+4. The event list the stub validates against: `python Tools/make_events_fixture.py` writes
+   `tests/events-<build>.txt` from the new dump. Point `EVENTS_FIXTURE` (`tests/wow_stubs.lua`) and the
+   default dump path (`tests/test_toc.lua`, `tests/test_methods.lua`) at the new build, and delete the old
+   fixture. `test_methods.lua` then re-checks every widget method the addon calls against the new dump,
+   which is the real answer to "did this build remove something we use".
 
 Then `pwsh tests\run.ps1` green, `pwsh Tools\deploy.ps1`, and a `/reload` in game. Commit, push and
 open the PR (`Closes #N`) **only when the owner asks** — the owner runs every review.

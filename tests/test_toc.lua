@@ -22,8 +22,35 @@ loadAddon({ db = { difficulty = "expert" } })
 eq(GnomesweeperDB.difficulty, "expert", "a saved setting is not overwritten")
 for _, cmd in ipairs({ "/gnomesweeper", "/gsweep", "/minewipe" }) do
     local before = #WoW.chat
-    WoW.slash(cmd)
-    check(#WoW.chat > before, cmd .. " answers")
+    WoW.slash(cmd .. " help")
+    check(#WoW.chat > before, cmd .. " help answers")
+end
+
+-- The event list the stub validates against is checked in; it must be the
+-- dump's, exactly (regenerate with Tools/make_events_fixture.py).
+do
+    local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/References/forever-api-1.60.1.70170.md"
+    local f = io.open(DUMP, "r")
+    if f then
+        local inEvents, dumpEvents, n = false, {}, 0
+        for line in f:lines() do
+            if line:match("^## ") then
+                inEvents = line:match("^## Documented events") ~= nil
+            elseif inEvents then
+                local name = line:match("^([A-Z][A-Z0-9_]+)%s+%(")
+                if name then dumpEvents[name] = true; n = n + 1 end
+            end
+        end
+        f:close()
+        local missing, extra = {}, {}
+        for e in pairs(dumpEvents) do if not WoW.KNOWN_EVENTS[e] then missing[#missing + 1] = e end end
+        for e in pairs(WoW.KNOWN_EVENTS) do if not dumpEvents[e] then extra[#extra + 1] = e end end
+        eq(#missing, 0, "every dump event is in the fixture (regenerate it): " .. table.concat(missing, ","))
+        eq(#extra, 0, "no fixture event is missing from the dump: " .. table.concat(extra, ","))
+        check(n > 1000, "the dump's event list was read (" .. n .. ")")
+    else
+        io.write("  (events fixture check skipped: no API dump at " .. DUMP .. ")\n")
+    end
 end
 
 -- Every texture the material names exists in Media/.

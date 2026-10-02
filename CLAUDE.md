@@ -177,8 +177,8 @@ Advice citing TBC/Classic APIs is usually stale.
   porting guide's "both edges" rule (for *secure* buttons) doesn't apply. **Measured (70170):**
   `OnMouseUp` passes `upInside` as a boolean that agrees with `IsMouseOver()`, and a release goes to
   the tile that got the press even after the cursor left it (see the porting guide's "Mouse input on
-  a plain Button"). Still unmeasured: the middle button and left+right held together
-  (`/gsweep input` logs them).
+  a plain Button"). **The middle button arrives too.** Still unmeasured: left+right held together
+  (`/gsweep input` logs them, and what each action did).
 - `UISpecialFrames` for Escape-to-close. `FULLSCREEN_DIALOG` strata like GlassPanel's `Window`.
 - SavedVariables persist as of 70009. Verify persistence only with a **full client exit**, never
   a `/reload`. Code must still cope when they're absent.

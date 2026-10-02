@@ -141,6 +141,9 @@ local function log(fmt, ...)
 end
 
 -- Turning it on starts a fresh log.
+-- For Window.Dispatch: it records what an action did, beside the raw events.
+function Grid.Log(fmt, ...) log(fmt, ...) end
+
 function Grid.SetLogging(on)
     on = on and true or false
     if on and not logging and type(GnomesweeperDB) == "table" then GnomesweeperDB.inputLog = {} end

@@ -333,6 +333,23 @@ do
     check(saved[1]:find("tile 5  down  LeftButton", 1, true), "...each with its time and its text")
     WoW.slash("/gsweep input")
     check(chatHas("logging off"), "...and again turns it off")
+
+    -- With the log on, each action says what the cell was and what it did.
+    do
+        local W2, game2 = onWall()
+        WoW.chat = {}
+        WoW.slash("/gsweep input")
+        click(at(2, 2), L)
+        check(chatHas("reveal on (2,2) covered, 0 flags around -> 1 cells changed (playing)"), "a reveal is described")
+        click(at(3, 1), R); click(at(3, 2), R)
+        check(chatHas("mark on (3,1) covered, 0 flags around -> 1 cells changed"), "a mark is described")
+        click(at(2, 2), M)
+        check(chatHas("chord on (2,2) revealed 3, 2 flags around -> 0 cells changed"), "a chord that does nothing says why: 3, 2 flags")
+        click(at(3, 3), R)
+        click(at(2, 2), M)
+        check(chatHas("chord on (2,2) revealed 3, 3 flags around -> 7 cells changed"), "a chord that works says what it opened")
+        WoW.slash("/gsweep input")
+    end
     local count = #GnomesweeperDB.inputLog
     click(6, L)
     eq(#GnomesweeperDB.inputLog, count, "with the log off, nothing more is kept")

@@ -354,6 +354,19 @@ function Window.Dispatch(kind, i)
     if not x then return end
     -- The option: a left click on a revealed number chords it.
     if kind == "reveal" and db().chordOnLeft and game:Cell(i).state == "revealed" then kind = "chord" end
+    -- While /gsweep input is on, say what the cell was and what the action did,
+    -- so "nothing happened" can be explained from the log alone.
+    local before
+    if Grid.Logging() then
+        local c, flags = game:Cell(i), 0
+        for dy = -1, 1 do
+            for dx = -1, 1 do
+                local j = (dx ~= 0 or dy ~= 0) and game:Index(x + dx, y + dy)
+                if j and game:Cell(j).state == "flag" then flags = flags + 1 end
+            end
+        end
+        before = string.format("(%d,%d) %s%s, %d flags around", x, y, c.state, c.count and (" " .. c.count) or "", flags)
+    end
     local list
     if kind == "reveal" then
         list = game:Reveal(x, y, GetTime())
@@ -362,6 +375,7 @@ function Window.Dispatch(kind, i)
     else
         list = game:ToggleMark(x, y)
     end
+    if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
     Grid.Refresh(list)
     Window.Refresh()
     local state = game:State()

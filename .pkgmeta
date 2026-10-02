@@ -1,0 +1,21 @@
+package-as: Gnomesweeper
+
+enable-nolib-creation: no
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# YAML list, not markdown bullets: a `*` here silently ignores nothing, which
+# is how development files end up in a published zip.
+ignore:
+  - .github
+  - .claude
+  - docs
+  - tests
+  - Tools
+  - AGENTS.md
+  - CLAUDE.md
+  - README.md
+  - CHANGELOG.md
+  - Media/README.md

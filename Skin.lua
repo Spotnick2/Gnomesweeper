@@ -14,11 +14,19 @@ Skin.TITLE = "|cff7fd4ffGnome|rsweeper"
 
 Skin.TEXTURES = {
     logo  = 236446,                                     -- achievement_character_gnome_male
-    face  = 134164,                                     -- inv_misc_head_gnome_01
     flag  = 132485,                                     -- inv_bannerpvp_01: red (_02 is the blue Alliance banner, seen in game)
     clock = "Interface\\Icons\\INV_Misc_PocketWatch_01",
     gear  = "Interface\\WorldMap\\GEAR_64GREY",
     arrow = "Interface\\Buttons\\Arrow-Down-Up",
+}
+
+-- The face in the HUD, one per game state. Placeholders from gnome heads until
+-- the generated set (#12); chosen by looking at them (docs/ASSETS.md).
+Skin.FACES = {
+    ready   = 236446,       -- achievement_character_gnome_male: goggles, a smile (the logo too)
+    playing = 134164,       -- inv_misc_head_gnome_01: serious
+    won     = 236445,       -- achievement_character_gnome_female: beaming
+    lost    = 133709,       -- inv_misc_bomb_01: the bomb; the state reads at a glance at 40 px
 }
 
 -- The board's own art: baked textures from Tools/make_tiles.py, shared by
@@ -59,4 +67,8 @@ Skin.COLORS = {
     menuBg      = { 0.04, 0.07, 0.15, 0.97 },
     wrongFlag   = { 1, 0.15, 0.15 },           -- the X over a (greyed) flag that wasn't on a mine
     question    = { 1, 0.82, 0 },
+    overlayBg   = { 0.03, 0.06, 0.13, 0.94 },
+    winRim      = { 1, 0.82, 0.30 },           -- the cleared overlay's gold rim
+    lossRim     = { 1, 0.35, 0.30 },
+    boom        = { 1, 0.42, 0.36 },           -- "Boom. Full wipe."
 }

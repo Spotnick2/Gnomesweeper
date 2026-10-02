@@ -61,6 +61,15 @@ as file IDs. #6 does the rest.
   textures, so nothing can come out as a green square.
 - **Tiles:** baked textures, `Media/tile_*.tga` (`Media/README.md`), not WoW art.
 
+## The faces (#5)
+
+One gnome-head icon per game state, chosen from a contact sheet (placeholders until the generated
+set, #12). **Measured to render:** ready `achievement_character_gnome_male` (236446), playing
+`inv_misc_head_gnome_01` (134164), lost `inv_misc_bomb_01` (133709, the bomb: the state reads at a
+glance at 40 px). **Unverified:** won `achievement_character_gnome_female` (236445). Alternatives
+looked at: `inv_gnometoy` (4226119), a pink-haired gnome with a big grin; `inv_misc_head_gnome_02`
+(134165); `inv_misc_head_clockworkgnome_01` (134152); `inv_eng_bombfire` (2115301), a bomb in flames.
+
 ## Element by element
 
 | Element (storyboard) | First choice (client) | Fallback | Generate? |

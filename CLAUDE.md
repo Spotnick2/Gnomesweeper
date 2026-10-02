@@ -18,9 +18,9 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: initialised, no gameplay yet.** The repo has the TOC, the glass material, a skeleton
-`Gnomesweeper.lua` (slash commands and the SavedVariables), the deploy script and the test
-harness. Next is M1 — Playable, starting with `Board.lua` (#2).
+**Status: M1 in progress.** Done: the scaffold (#1) and the game model, `Board.lua` (#2). Next:
+the glass window (#3) and the tile grid (#4) on top of it. Nothing is drawn yet; `/gsweep` still
+says "not playable".
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -30,7 +30,7 @@ holds the decided design, so update it when the design changes.
 
 ## Layout
 
-TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`Board.lua`] →
+TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` →
 [`Skin.lua`] → [`Models.lua`] → [`Window.lua`] → [`Scores.lua`] → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
@@ -43,10 +43,21 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`B
   `docs/GLASS-MATERIAL.md`) and copy it back. `Tools/make_textures.py` and `Media/*.tga` are copies
   too. API: `Glass.Apply(host, "large"|"small")`, `Glass.Font`, `Glass.Bar`, `Glass.Sheen`,
   `Glass.ContentLevel`, `Glass.Inset`.
-- **`Board.lua`** (milestone 1): **the game, pure Lua, no WoW API at all** — grid, lazy mine
-  placement, reveal, flood fill, chord, flags, win/loss, the timer's state (fed the time by the
-  caller). Unit-tested to the hilt; everything else is a view on it. Seeded RNG injected by the
-  caller so tests are deterministic.
+- **`Board.lua`** (#2, done): **the game, pure Lua, no WoW API at all** — and `tests/test_board.lua`
+  loads it with every global but a few builtins forbidden, so it stays that way. Everything else is
+  a view on it. The header comment is the API; in short:
+  - `Gnomesweeper.Board.New(w, h, mines, opts)` returns a board, or `nil, why`. `opts`:
+    `rng(n)` (1..n), `safeZone` (`"area"`/`"cell"`), `questionMarks`. `Board.PRESETS` /
+    `Board.PRESET_ORDER` hold Beginner, Intermediate, Expert.
+  - `b:Reveal(x, y, now)`, `b:Chord(x, y, now)`, `b:ToggleMark(x, y)` each return the **changed cells**
+    (unique row-major indices, `{}` for a no-op): repaint exactly those.
+  - `b:Cell(i)` → `{state, count | mine, exploded, wrongFlag}`; `b:Index(x, y)`; `b:State()`
+    (`ready|playing|won|lost`); `b:FlagsLeft()`; `b:Elapsed(now)` (active seconds, uncapped);
+    `b:Pause(now)` / `b:Resume(now)`; `Board.DisplaySeconds(t)` (whole, capped at 999).
+  - The clock is the caller's: `now` is always passed in (use `GetTime()`), and `Reveal`/`Chord`
+    error without it.
+  - `Board._test.FromLayout(rows)` builds a board from text rows (`*` = mine) already past its first
+    reveal; tests only.
 - **`Skin.lua`** (milestone 1): tile, number, face and icon art in one table (`Skin.TEXTURES`,
   `Skin.NUMBER_COLORS`), so art swaps never touch logic. See `docs/ASSETS.md`.
 - **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in

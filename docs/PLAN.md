@@ -40,7 +40,7 @@ Mines are **gnomish bombs** (round, riveted, red eye) — not skulls.
 
 The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`), one milestone each; this section is the overview.
 
-### M1 — Playable (day 1): #2 #3 #4 #5 #6
+### M1 — Playable (day 1): #2 #3 #4 #5 #6 #20
 - `Board.lua`: pure game model + full unit tests (rules in `CLAUDE.md`).
 - `Window.lua` + `Skin.lua`: the glass window, HUD, pooled tile grid, all three presets via the
   dropdown, states 01–04 with the overlays, Escape to close, draggable, position saved.
@@ -49,7 +49,7 @@ The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`)
   nothing in the client fits.
 - In-game measure: click registration (left/right/middle, chord), tile render cost at Expert size.
 
-### M2 — Polish: #7 #8 #9 #10 #11
+### M2 — Polish: #7 #8 #9 #10 #11 #21
 - Personal bests per difficulty (time, date), shown in the win overlay ("New personal best!").
 - Settings (gear button): question marks, safe-zone size, chord on left-click, sounds, scale.
 - Sounds: SoundKit IDs for reveal / flag / boom / win (measure each plays).

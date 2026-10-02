@@ -1,5 +1,8 @@
 # Art plan
 
+Live 3D models (the gnome face, the bomb on a wipe) are in [`MODELS.md`](MODELS.md); this file is
+the 2D art, which is also every model's fallback.
+
 **Rule: reuse the client's own art first.** Generate only what the client can't supply, and
 record every generated file's prompt and conversion in `Media/README.md` (AltStable's
 `Media/Scene/PROMPTS.md` pattern). WoW loads **TGA/BLP, never PNG**; PNG masters stay out of git

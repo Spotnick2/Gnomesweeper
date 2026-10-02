@@ -31,7 +31,7 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`Board.lua`] →
-[`Skin.lua`] → [`Window.lua`] → [`Scores.lua`] → `Gnomesweeper.lua`.
+[`Skin.lua`] → [`Models.lua`] → [`Window.lua`] → [`Scores.lua`] → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -49,6 +49,9 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → [`B
   caller so tests are deterministic.
 - **`Skin.lua`** (milestone 1): tile, number, face and icon art in one table (`Skin.TEXTURES`,
   `Skin.NUMBER_COLORS`), so art swaps never touch logic. See `docs/ASSETS.md`.
+- **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
+  `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never
+  `SetCreature`**; never a model per tile; everything degrades to the 2D art.
 - **`Window.lua`** (milestone 1): the glass window: title bar (gnome logo, title, tagline, settings,
   close), difficulty dropdown, the HUD (flag counter, gnome face, timer), the grid, the hint line,
   the win/loss overlays. Tiles are **pooled** `Button`s reused across difficulty changes (Expert is
@@ -89,6 +92,8 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 - `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\GlassUnitFrames\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
+- `docs/MODELS.md` — rendering creature models, from AltStable's measured pet work
+  (`..\AltStable\docsorever-api-notes.md` "Pets", `Plugins\Roster\AltStableRoster.lua`).
 - `docs/REFERENCES.md` — game-logic references and their licences. `docs/ASSETS.md` — the art plan.
 - In game: `/api search <name>`.
 

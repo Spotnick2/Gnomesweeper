@@ -64,6 +64,21 @@ for _, t in ipairs({ "bar_mask", "bar_fill", "gloss", "bar_edge", "grain", "shee
     check(io.open("Media/" .. t .. ".tga", "rb") ~= nil, "texture exists: " .. t)
 end
 
+-- Every texture the skin names under Media/ exists (a missing one is a green
+-- square in game, and nothing else would notice).
+do
+    local media = Gnomesweeper.Glass.MEDIA
+    local n = 0
+    for key, value in pairs(Gnomesweeper.Skin.TEXTURES) do
+        if type(value) == "string" and value:sub(1, #media) == media then
+            n = n + 1
+            local file = "Media/" .. value:sub(#media + 1) .. ".tga"
+            check(io.open(file, "rb") ~= nil, "Skin.TEXTURES." .. key .. " exists: " .. file)
+        end
+    end
+    check(n >= 4, "the skin's own tile textures were checked (" .. n .. ")")
+end
+
 -- Glass.lua is a copy of GlassUnitFrames' material on its MAIN branch: only
 -- the header and the namespace lines may differ. Read through git, not the
 -- working tree, whose branch another session may have switched.
@@ -97,10 +112,13 @@ if theirs ~= "" then
         "Tools/make_textures.py matches GlassUnitFrames main (copy it back)")
     -- The textures too, byte for byte. Compared as git blob hashes: text, so
     -- no binary data passes through a text-mode pipe.
+    -- Gnomesweeper's own textures (tile_*, from Tools/make_tiles.py) are not copies.
     for f in io.popen('dir /b "Media\\*.tga" 2>' .. NULL):lines() do
-        local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
-        local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
-        check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
+        if not f:match("^tile_") then
+            local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
+            local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
+            check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
+        end
     end
 elseif not sibling then
     io.write("  (upstream material check skipped: no ../GlassUnitFrames checkout)\n")

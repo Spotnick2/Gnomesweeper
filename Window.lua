@@ -1,8 +1,9 @@
 -- Window.lua: the glass window. Title bar, difficulty, the HUD (mines left,
 -- the face, the clock), the board area, the hint lines. It owns the current
 -- game (Window.game, a Board) and is the only thing that creates or replaces
--- one. The tile grid (#4) draws INTO Window.grid and calls Window.Refresh()
--- after every action; the overlays (#5) hang off Window.win.
+-- one. Grid.lua draws the tiles INTO Window.grid; every click comes back here
+-- through Window.Dispatch, the one place an action is carried out. The
+-- overlays (#5) hang off Window.win.
 --
 -- Nothing here is secure and nothing is parented to a protected frame, so the
 -- window works in combat.
@@ -15,7 +16,7 @@ local GS = Gnomesweeper
 local Window = {}
 GS.Window = Window
 
-local Board, Layout, Glass, Skin = GS.Board, GS.Layout, GS.Glass, GS.Skin
+local Board, Layout, Glass, Skin, Grid = GS.Board, GS.Layout, GS.Glass, GS.Skin, GS.Grid
 local PAD = Layout.PAD
 
 local LABELS = { beginner = "Beginner", intermediate = "Intermediate", expert = "Expert" }
@@ -293,8 +294,7 @@ local function build()
     local clock = icon(hud, Skin.TEXTURES.clock, 22)
     clock:SetPoint("RIGHT", ui.timer, "LEFT", -6, 0)
 
-    -- The board area. The tile grid (#4) fills it; until then it is a dark
-    -- panel, so the sizing can be seen.
+    -- The board area: a dark panel the tiles sit on (Grid.lua fills it).
     local grid = CreateFrame("Frame", nil, win)
     grid:SetFrameLevel(content)
     grid.bg = grid:CreateTexture(nil, "BACKGROUND")
@@ -302,6 +302,7 @@ local function build()
     grid.bg:SetColorTexture(unpack(Skin.COLORS.gridBg))
     ui.grid = grid
     Window.grid = grid
+    Grid.Attach(grid, function(kind, i) Window.Dispatch(kind, i) end)
 
     ui.hintStart = Glass.Font(win, 12, "CENTER")
     ui.hintStart:SetPoint("TOP", grid, "BOTTOM", 0, -8)
@@ -330,6 +331,7 @@ local function build()
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
         ui.menu:Hide()
+        Grid.Cancel()                  -- a button held when the window closes is not a click
         self:StopMovingOrSizing()
     end)
 
@@ -340,15 +342,65 @@ local function build()
 end
 
 ------------------------------------------------------------
+-- The controller
+------------------------------------------------------------
+
+-- Carries out an action on the game: Grid.lua reports "reveal" / "mark" /
+-- "chord" on tile i, the board says which cells changed, the grid repaints
+-- exactly those and the HUD follows. The one place the game is acted on.
+function Window.Dispatch(kind, i)
+    if not game then return end
+    local x, y = game:XY(i)
+    if not x then return end
+    -- The option: a left click on a revealed number chords it.
+    if kind == "reveal" and db().chordOnLeft and game:Cell(i).state == "revealed" then kind = "chord" end
+    -- While /gsweep input is on, say what the cell was and what the action did,
+    -- so "nothing happened" can be explained from the log alone.
+    local before
+    if Grid.Logging() then
+        local c, flags = game:Cell(i), 0
+        for dy = -1, 1 do
+            for dx = -1, 1 do
+                local j = (dx ~= 0 or dy ~= 0) and game:Index(x + dx, y + dy)
+                if j and game:Cell(j).state == "flag" then flags = flags + 1 end
+            end
+        end
+        before = string.format("(%d,%d) %s%s, %d flags around", x, y, c.state, c.count and (" " .. c.count) or "", flags)
+    end
+    local list
+    if kind == "reveal" then
+        list = game:Reveal(x, y, GetTime())
+    elseif kind == "chord" then
+        list = game:Chord(x, y, GetTime())
+    else
+        list = game:ToggleMark(x, y)
+    end
+    if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
+    Grid.Refresh(list)
+    Window.Refresh()
+    local state = game:State()
+    if state == "won" or state == "lost" then Grid.SetInteractive(false) end
+    return list
+end
+
+------------------------------------------------------------
 -- Entry points
 ------------------------------------------------------------
+
+-- Fit the window and (re)build the tiles for the current game.
+local function syncGame()
+    Window.Layout()
+    Grid.Rebuild(game)
+    local state = game:State()
+    if state == "won" or state == "lost" then Grid.SetInteractive(false) end
+    Window.Refresh()
+end
 
 local function ensure()
     if not game then newBoard() end
     if not win then
         build()
-        Window.Layout()
-        Window.Refresh()
+        syncGame()
     end
 end
 
@@ -356,10 +408,7 @@ end
 function Window.NewGame(preset)
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
-    if win then
-        Window.Layout()
-        Window.Refresh()
-    end
+    if win then syncGame() end
     return game
 end
 
@@ -376,7 +425,22 @@ end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end
 
+-- /gsweep perf: times the heavy operations on a scratch Expert board, then puts
+-- the real game back.
+function Window.Benchmark()
+    ensure()
+    local lines = Grid.Benchmark()
+    syncGame()
+    return lines
+end
+
 Window._test = {
     ui = ui,
     menu = function() return ui.menu end,
+    -- Swap in a hand-built board (Board._test.FromLayout), to test exact shapes.
+    SetGame = function(b)
+        game = b
+        Window.game = b
+        if win then syncGame() end
+    end,
 }

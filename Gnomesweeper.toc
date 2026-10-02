@@ -11,5 +11,7 @@ Glass.lua
 Board.lua
 Layout.lua
 Skin.lua
+Input.lua
+Grid.lua
 Window.lua
 Gnomesweeper.lua

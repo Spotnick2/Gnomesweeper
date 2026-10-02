@@ -54,6 +54,11 @@ The backlog of record is the GitHub issues (`github.com/Spotnick2/Gnomesweeper`)
 - Art: WoW-internal placeholders for every element (`docs/ASSETS.md`), generated art only where
   nothing in the client fits.
 - In-game measure: click registration (left/right/middle, chord), tile render cost at Expert size.
+  **Measured** (`/gsweep perf`, owner, 2026-10-02, build 70170, two runs): building an Expert board
+  2.9 to 3.8 ms; a first reveal and repaint 0.7 to 1.0 ms (9 to 18 cells); a loss showing all 99
+  cells 0.7 to 1.2 ms; ten difficulty switches 12 ms. The pool already existed, so the cost of
+  creating 480 buttons the first time is not in these numbers. Baked tiles are comfortably cheap,
+  so #14 (baked tile refinement) is only about looks now.
 - **Done when:** complete games at all three presets, reset and difficulty changes mid-game,
   close and reopen, and input and performance measured in game.
 

@@ -146,6 +146,12 @@ function Methods.UnregisterEvent(w, e) w._events[e] = nil end
 function Methods.SetText(w, t) w._text = t end
 function Methods.GetText(w) return w._text end
 function Methods.SetTexture(w, t) w._texture = t end
+function Methods.SetColorTexture(w, ...) w._texture = nil; w._color = { ... } end
+function Methods.SetAlpha(w, a) w._alpha = a end
+function Methods.SetDesaturated(w, v) w._desaturated = v end
+function Methods.GetAlpha(w) return w._alpha or 1 end
+function Methods.SetVertexColor(w, ...) w._vertex = { ... } end
+function Methods.SetTextColor(w, ...) w._textColor = { ... } end
 function Methods.SetMovable(w, v) w._movable = v end
 function Methods.SetClampedToScreen(w, v) w._clamped = v end
 function Methods.EnableMouse(w, v) w._mouse = v end
@@ -215,6 +221,7 @@ end
 
 function GetTime() return WoW.now end
 function IsMouseButtonDown(button) return WoW.mouseDown == true end
+function debugprofilestop() return os.clock() * 1000 end
 function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a } end
 Enum = { UITextureSliceMode = { Stretched = 0, Tiled = 1 } }
 

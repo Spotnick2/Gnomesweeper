@@ -50,6 +50,17 @@ the blue **Alliance** banner. `inv_bannerpvp_01` (132485) is the red one (the Ho
 Still unmeasured: everything not in this list, and whether `Interface\Icons\...` paths are as safe
 as file IDs. #6 does the rest.
 
+## Chosen for the board (#4)
+
+- **Mine:** `inv_misc_bomb_01` (133709), the classic black bomb with a lit fuse; the candidates
+  were compared at 18 px and it is the one that stays legible. (The spiked `_02`, the smiley `_04`,
+  the dynamite and the red crab bomb were set aside; `inv_eng_bombfire`, 2115301, is a bomb in
+  flames for a later "boom".) **Unverified in game.**
+- **Flag:** the red Horde banner `inv_bannerpvp_01` (132485), **measured** to render.
+- **Wrong flag:** the flag with a red text "X" over it; **question mark:** a gold text "?". No
+  textures, so nothing can come out as a green square.
+- **Tiles:** baked textures, `Media/tile_*.tga` (`Media/README.md`), not WoW art.
+
 ## Element by element
 
 | Element (storyboard) | First choice (client) | Fallback | Generate? |

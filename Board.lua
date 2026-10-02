@@ -17,7 +17,7 @@
 --   repaint, including the mines a loss shows and the flags a win plants.
 --
 --   b:Cell(i)       -> { state, count, mine, exploded, wrongFlag } or nil
---   b:Index(x, y)   -> i or nil (out of bounds)
+--   b:Index(x, y)   -> i or nil (out of bounds);  b:XY(i) -> x, y or nil
 --   b:State()       -> "ready" | "playing" | "won" | "lost"
 --   b:FlagsLeft()   -> mines - flags (may be negative)
 --   b:Elapsed(now)  -> ACTIVE seconds, precise and uncapped
@@ -329,6 +329,12 @@ function Board:ToggleMark(x, y)
     end
     add(i)
     return list
+end
+
+-- The coordinates of cell i (the inverse of Index), or nil.
+function Board:XY(i)
+    if not isInt(i) or i < 1 or i > self.total then return nil end
+    return (i - 1) % self.w + 1, math.floor((i - 1) / self.w) + 1
 end
 
 function Board:State() return self.status end

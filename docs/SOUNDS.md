@@ -18,7 +18,8 @@ Low kit IDs (under ~8000) are vanilla-era sounds.
 |---|---|---|---|
 | **Wipe: the mine goes off** | **7517** | `GnomeBomBotDeath` | The Walking Bomb's own death sound (file 569559, "MoltenBlastImpact"). |
 | Wipe, bigger | 17484 | `Event_Operation_Gnomergan_Explosion` | Cataclysm-era event, file 567321 |
-| Wipe: a gnome's last words | 3278 / 3272 / 1038 | `GnomeMaleFinalDeath` / `GnomeFemaleMainDeath1` / `GnomeDeath` | Match the face's sex if the face is the player |
+| **Wipe: a gnome's last words** | **1038** | `GnomeDeath` | **The owner's pick.** One file: 550358 `GnomeDeathA`. Plays right after the bomb. |
+| Wipe, alternatives | 3278 / 3272 | `GnomeMaleFinalDeath` / `GnomeFemaleMainDeath1` | Maybe to match the face's sex when the face is the player |
 | Wipe: the villain gloats | 17569–17572 | `OG_Thermaplugg_Event01..04` | Mekgineer Thermaplugg's lines |
 | Alarm (the Alarm-a-bomb) | 18871 / 12889 | `AlarmClockWarning1` / `3` | Or 10571 `Fel Reaver Alarm` for a bigger one |
 | **Field cleared** | **6131** | `Gnome Male Vocal 18 (Congratulations)` | A gnome literally says "congratulations" |

@@ -18,7 +18,9 @@ texture the skin names exists.
 
 ## Gnomesweeper art
 
-None else yet. For each generated asset, record here: the file, its purpose, the generator prompt (or
+None else yet. The direction, palette and a prompt for each piece are in `docs/ART.md`; masters go
+in `Media/Source/` (ignored by git) and `python Tools/png_to_tga.py` makes the texture.
+`tests/test_media.lua` checks every texture here is a valid power-of-two 32-bit TGA. For each generated asset, record here: the file, its purpose, the generator prompt (or
 script), the source master's name, and the exact conversion line, e.g.
 
     magick master.png -resize 64x64 -alpha on -define tga:compression=none face_ready.tga

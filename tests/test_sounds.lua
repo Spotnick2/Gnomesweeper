@@ -349,4 +349,7 @@ do  -- with the music setting on, the probe's end leaves it playing
     eq(WoW.music, S.MUSIC, "the setting on: the music plays on after the probe")
 end
 
+-- The cheer is a female gnome's (owner: the mascot is a she): /congratulate, Gnome, female.
+eq(Gnomesweeper.Sounds.KITS.win, 6122, "the win's congratulations: a female gnome")
+
 done("test_sounds")

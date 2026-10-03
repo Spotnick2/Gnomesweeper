@@ -4,6 +4,7 @@
 ## Author: Spotnick
 ## Version: @project-version@
 ## IconTexture: 133712
+## AddonCompartmentFunc: Gnomesweeper_OnAddonCompartmentClick
 ## SavedVariables: GnomesweeperDB
 
 Libs\LibStub\LibStub.lua

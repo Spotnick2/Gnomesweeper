@@ -131,4 +131,55 @@ do  -- no libraries: no button, nothing else breaks
     check(Gnomesweeper.Window.IsShown(), "...and the game still opens")
 end
 
+----------------------------------------------------------------------------
+-- #23: the addon compartment and the key binding
+----------------------------------------------------------------------------
+local function readFile(path)
+    local f = assert(io.open(path, "rb"))
+    local text = f:read("*a")
+    f:close()
+    return text
+end
+
+do  -- the compartment: the TOC names a global that clicks like the minimap button
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local toc = readFile("Gnomesweeper.toc")
+    local fname = toc:match("## AddonCompartmentFunc:%s*([%w_]+)")
+    eq(fname, "Gnomesweeper_OnAddonCompartmentClick", "the TOC names the compartment's function")
+    local fn = rawget(_G, fname)
+    eq(type(fn), "function", "...and it exists, as a global (the compartment looks it up by name)")
+    check(toc:match("## IconTexture:%s*%d+") ~= nil, "...the compartment's icon is the TOC's IconTexture")
+    fn("Gnomesweeper", "LeftButton")                     -- the compartment's call: (addonName, buttonName)
+    eq(Gnomesweeper.Window.IsShown(), true, "a left-click in the compartment opens the board")
+    fn("Gnomesweeper", "LeftButton")
+    eq(Gnomesweeper.Window.IsShown(), false, "...and closes it")
+    WoW.settings.opened = nil
+    fn("Gnomesweeper", "RightButton")
+    eq(WoW.settings.opened, "cat:Gnomesweeper", "a right-click opens the settings")
+end
+
+do  -- the key binding: Bindings.xml's code, and its names in Key Bindings
+    loadAddon()
+    local xml = readFile("Bindings.xml")
+    local name, header, body = xml:match('<Binding name="([%w_]+)" header="([%w_]+)">%s*(.-)%s*</Binding>')
+    eq(name, "GNOMESWEEPER_TOGGLE", "Bindings.xml has the toggle")
+    check(xml:match('category=') == nil, "...in no category of its own: the client files it under AddOns")
+    eq(rawget(_G, "BINDING_NAME_" .. name), "Open or close the board", "...its line in Key Bindings")
+    eq(rawget(_G, "BINDING_HEADER_" .. header), "Gnomesweeper", "...under the Gnomesweeper header")
+    local run = assert(loadstring(body))
+    eq(Gnomesweeper.Window.IsShown(), false, "(the board closed, not even built)")
+    run()
+    eq(Gnomesweeper.Window.IsShown(), true, "the key opens the board (building it the first time)")
+    run()
+    eq(Gnomesweeper.Window.IsShown(), false, "...and closes it")
+end
+
+do  -- deploy and the package carry Bindings.xml (the client finds it by name, not in the TOC)
+    local deploy = readFile("Tools/deploy.ps1")
+    check(deploy:find('".xml"', 1, true) ~= nil, "deploy copies the root's .xml files")
+    local pkg = readFile(".pkgmeta")
+    check(not pkg:find("Bindings", 1, true), "...and the package doesn't ignore it")
+end
+
 done("test_minimap")

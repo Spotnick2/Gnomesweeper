@@ -234,6 +234,12 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
   `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
   `GnomesweeperDB[key]`). Without the libraries there is simply no button.
+- **`Bindings.xml`** (#23): a key to open or close the board, in Key Bindings > AddOns > Gnomesweeper
+  (`BINDING_HEADER_GNOMESWEEPER` / `BINDING_NAME_GNOMESWEEPER_TOGGLE` in `Gnomesweeper.lua`). Not in the
+  TOC: the client finds it by name; deploy copies root `.xml`. **The addon compartment** (the default
+  minimap's addon list, `Blizzard_Minimap/Mainline/AddonCompartment.lua` in the forever source): the
+  TOC's `AddonCompartmentFunc` names `Gnomesweeper_OnAddonCompartmentClick`, which clicks like the
+  minimap button (`Minimap.Click`: left toggles, right opens the settings).
 - **`Effects.lua`** (#10): the celebrations, all client `AnimationGroup`s on a few textures (no OnUpdate
   of ours), each built once with `play`/`stop`/`isPlaying`. **The burst**: the gold starburst turning
   behind the face while a win shows (`Window.Refresh`): no longer a spinning starburst (owner: harsh); a

@@ -1,0 +1,6 @@
+<Bindings>
+	<!-- #23: Key Bindings > AddOns > Gnomesweeper. The names are the globals in Gnomesweeper.lua. -->
+	<Binding name="GNOMESWEEPER_TOGGLE" header="GNOMESWEEPER">
+		Gnomesweeper.Window.Toggle()
+	</Binding>
+</Bindings>

@@ -7,6 +7,11 @@
 -- Its position and whether it is shown are LibDBIcon's own table,
 -- GnomesweeperDB.minimap ({ hide, minimapPos, ... }). Showing or hiding it is a
 -- setting (Options.lua: "minimapButton"), so it goes through Options.Set.
+--
+-- The addon compartment (#23), the minimap's addon list on the default UI: the
+-- TOC's AddonCompartmentFunc names a global that clicks the same way. (Blizzard's
+-- forever source has it, Blizzard_Minimap/Mainline/AddonCompartment.lua; it calls
+-- the function with the addon's name and the mouse button.)
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -34,17 +39,24 @@ function Minimap_.SetShown(v)
     Minimap_.Apply()
 end
 
+-- One click, from the minimap button or the addon compartment: left opens or
+-- closes the board, right opens the settings.
+function Minimap_.Click(button)
+    if button == "RightButton" then
+        GS.Options.Open()
+    else
+        GS.Window.Toggle()
+    end
+end
+
+-- The TOC's AddonCompartmentFunc: a global, as the compartment requires.
+function Gnomesweeper_OnAddonCompartmentClick(_, button) Minimap_.Click(button) end
+
 local launcher = {
     type = "launcher",
     label = "Gnomesweeper",
     icon = GS.Skin.TEXTURES.face,
-    OnClick = function(_, button)
-        if button == "RightButton" then
-            GS.Options.Open()
-        else
-            GS.Window.Toggle()
-        end
-    end,
+    OnClick = function(_, button) Minimap_.Click(button) end,
     OnTooltipShow = function(tip)
         tip:AddLine("Gnomesweeper")
         tip:AddLine("Left-click: open or close the board", 0.75, 0.78, 0.85)

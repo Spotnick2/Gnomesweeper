@@ -17,6 +17,13 @@ Low kit IDs (under ~8000) are vanilla-era sounds.
 with `/gsweep sounds`**: it plays every candidate below, 3 s apart, then the music, and saves what
 the client said (`GnomesweeperDB.soundProbe`); swap the picks in `Sounds.KITS`.
 
+**Measured in game** (owner, 1.60.1.70205, 2026-10-03, PR #42): **the music (53189), the bomb (7517)
+then the gnome's death (1038), and the win (6131: a "hurray" and "Congratulations") all play.**
+`PlayMusic` honours the game's Music toggle: with music off in the game's sound settings it is
+silent. Not yet measured: the reveal and flag clicks by name, the other candidates (`/gsweep sounds`
+not run yet), whether the zone's music comes back after `StopMusic`, and whether the track loops.
+The owner once heard the zone's music and ours together; the music log is in place to catch when.
+
 ## Effects (#9)
 
 `PlaySound(kit, "SFX")` is the global; `C_Sound.PlaySound(kit, uiSoundSubType, ...)` takes a

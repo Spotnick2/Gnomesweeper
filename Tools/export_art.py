@@ -48,6 +48,10 @@ PIECES = {
 # The mine, the exploded mine and the flag too: on the board WoW's bomb and the
 # pennant read better (owner, #12).
 ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "title", "laurels"]
+# The Modern theme's tiles (#14, owner): in the game under their own names, so the
+# Classic tiles (Tools/make_tiles.py's tile_covered...) are never overwritten.
+THEMED = {"tile_covered": "tile_modern_covered", "tile_revealed": "tile_modern_revealed",
+          "tile_exploded": "tile_modern_exploded"}
 
 
 def master(name, size, wide):
@@ -66,7 +70,8 @@ def master(name, size, wide):
 def main():
     STAGED.mkdir(parents=True, exist_ok=True)
     for name, (msize, tsize, opts) in PIECES.items():
-        out = MEDIA if name in ADOPTED else STAGED
+        out = MEDIA if (name in ADOPTED or name in THEMED) else STAGED
+        outname = THEMED.get(name, name)
         im = master(name, msize, opts is None)
         if opts is None:
             # Not Pillow's TGA writer: it appends a 26-byte footer that tests/test_media.lua rejects.
@@ -75,8 +80,8 @@ def main():
             make_textures.write_tga(name, np.asarray(sized).astype(float) / 255.0)
         else:
             subprocess.run([sys.executable, str(ROOT / "Tools" / "png_to_tga.py"), str(SOURCE / (name + ".png")),
-                            name, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)
-        print(f"{name:14} -> {out.relative_to(ROOT)}")
+                            outname, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)
+        print(f"{name:14} -> {out.relative_to(ROOT)}{'/' + outname if outname != name else ''}")
 
 
 if __name__ == "__main__":

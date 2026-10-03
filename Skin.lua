@@ -54,7 +54,23 @@ Skin.TEXTURES = {
     tileRevealed = MEDIA .. "tile_revealed",
     tileExploded = MEDIA .. "tile_exploded",
     tileHover = MEDIA .. "tile_hover",
+    -- the Modern theme's tiles (#14): generated, Tools/export_art.py
+    tileModernCovered = MEDIA .. "tile_modern_covered",
+    tileModernRevealed = MEDIA .. "tile_modern_revealed",
+    tileModernExploded = MEDIA .. "tile_modern_exploded",
 }
+
+-- The board's themes (#14, owner): only the tiles change. Classic is ours from
+-- Tools/make_tiles.py (the default); Modern the generated ice-blue glass. Both keep
+-- WoW's bomb and our pennant, and the number colours read on both revealed tiles.
+Skin.THEME_ORDER = { "classic", "modern" }
+Skin.THEMES = {
+    classic = { label = "Classic", covered = Skin.TEXTURES.tileCovered,
+                revealed = Skin.TEXTURES.tileRevealed, exploded = Skin.TEXTURES.tileExploded },
+    modern = { label = "Modern", covered = Skin.TEXTURES.tileModernCovered,
+               revealed = Skin.TEXTURES.tileModernRevealed, exploded = Skin.TEXTURES.tileModernExploded },
+}
+function Skin.Theme(key) return Skin.THEMES[key] or Skin.THEMES.classic end
 
 -- The mascot's face for each game state (the expressions, #12), and the colour of
 -- her ring.

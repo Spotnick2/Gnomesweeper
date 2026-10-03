@@ -42,11 +42,12 @@ pigtails and eyes, brass goggles, a red collar. **The prompts are in [ART-PROMPT
 The full-resolution originals are in `Media/Source/Generated/` (ignored by git, as all of
 `Media/Source/` and every PNG: about 66 MB of masters, references and previews stay local).
 
-**In the game** (`Skin.TEXTURES`): the four expressions, the title lettering and the laurels.
-**Staged, not used** (`Media/Source/GameTextures/`): the mine, the exploded mine and the flag (on the
-board, WoW's bomb and the pennant read better: at tile size the generated mine is a small brass
-gear, owner, 2026-10-03), and the three tiles (a bright ice-blue covered tile, a different look from
-the calmer one the UI review chose; the owner decides).
+**In the game** (`Skin.TEXTURES`): the four expressions, the title lettering, the laurels, and the
+three tiles as the **Modern** theme (#14, owner: `tile_modern_covered|revealed|exploded`, renamed by
+`export_art.py`'s `THEMED` so the Classic tiles from `make_tiles.py` stay). **Staged, not used**
+(`Media/Source/GameTextures/`): the mine, the exploded mine and the flag (on the board, in both
+themes, WoW's bomb and the pennant read better: at tile size the generated mine is a small brass
+gear, owner, 2026-10-03).
 
 | Master | Purpose | PNG master | Staged TGA | Prompt |
 |---|---|---|---|---|

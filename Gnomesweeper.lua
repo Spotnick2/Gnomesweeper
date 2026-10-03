@@ -19,6 +19,7 @@ local DEFAULTS = {
     music = false,             -- Gnomeregan's music while the board is open (#22)
     fireworks = true,          -- fireworks on a new personal best (#10)
     hideInCombat = true,       -- a fight puts the window away, its end brings it back (#37)
+    theme = "classic",         -- the board's tiles: classic or modern (#14)
 }
 
 local function EnsureDefaults()

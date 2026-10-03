@@ -1095,6 +1095,7 @@ end
 
 -- Fit the window and (re)build the tiles for the current game.
 local function syncGame()
+    Grid.SetTheme(db().theme)
     Window.Layout()
     Grid.Rebuild(game)
     if over() then Grid.SetInteractive(false) end
@@ -1158,6 +1159,7 @@ function Window.ScoresReset()
 end
 
 function Window.SettingsChanged()
+    if win then Grid.SetTheme(db().theme) end
     Window.Refresh()
     GS.Sounds.UpdateMusic()
 end

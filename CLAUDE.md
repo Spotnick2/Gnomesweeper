@@ -75,7 +75,11 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   art of #12 (the expressions, the title lettering, the laurels: `Tools/export_art.py` from
   `Media/Source/Generated/`, `Media/README.md`). **On the board, WoW's bomb (133709) and our pennant**:
   the generated mine and flag read worse at tile size (owner), and are staged. The bomb and the
-  settings gear are the client's (`docs/ASSETS.md`). `Skin.FACE` maps each game state to its expression;
+  settings gear are the client's (`docs/ASSETS.md`). **Two board themes (#14, owner)**: `Skin.THEMES` / `THEME_ORDER`, **Classic** (the
+  default, `make_tiles.py`'s tiles) and **Modern** (the generated ice-blue tiles, `tile_modern_*`); only
+  the three tiles change (both keep the bomb, the pennant and the number colours). `GnomesweeperDB.theme`,
+  the "Board" choice in Options; `Grid.SetTheme` repaints the tiles in place, the game untouched.
+  `Skin.FACE` maps each game state to its expression;
   `Skin.TITLE_CROP` crops the lettering to its drawn part. `Skin.RARITY` has WoW's
   item-quality colours and `Skin.DIFFICULTY_QUALITY` maps Beginner/Intermediate/Expert to
   uncommon/rare/epic (`Skin.DifficultyColor(key)`); **legendary is held back** for a much harder

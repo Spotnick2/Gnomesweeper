@@ -115,9 +115,8 @@ end
 
 GS.HELP = HELP
 
--- The key binding (#23, Bindings.xml): its section and its line in Key Bindings > AddOns.
--- Globals, as the client looks them up by name.
-BINDING_HEADER_GNOMESWEEPER = "Gnomesweeper"
+-- The key binding (#23, Bindings.xml, its own "Gnomesweeper" section): its line in Key
+-- Bindings. A global, as the client looks it up by name.
 BINDING_NAME_GNOMESWEEPER_TOGGLE = "Open or close the board"
 
 SLASH_GNOMESWEEPER1 = "/gnomesweeper"

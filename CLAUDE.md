@@ -234,8 +234,10 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
   `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
   `GnomesweeperDB[key]`). Without the libraries there is simply no button.
-- **`Bindings.xml`** (#23): a key to open or close the board, in Key Bindings > AddOns > Gnomesweeper
-  (`BINDING_HEADER_GNOMESWEEPER` / `BINDING_NAME_GNOMESWEEPER_TOGGLE` in `Gnomesweeper.lua`). Not in the
+- **`Bindings.xml`** (#23): a key to open or close the board, in Key Bindings > **Gnomesweeper**, a
+  section of its own (`category="Gnomesweeper"`, as Leatrix Maps does: **measured**, a binding with no
+  category lands in "Other" and a `header` there shows as a raw `HEADER_` row);
+  `BINDING_NAME_GNOMESWEEPER_TOGGLE` in `Gnomesweeper.lua`. Not in the
   TOC: the client finds it by name; deploy copies root `.xml`. **The addon compartment** (the default
   minimap's addon list, `Blizzard_Minimap/Mainline/AddonCompartment.lua` in the forever source): the
   TOC's `AddonCompartmentFunc` names `Gnomesweeper_OnAddonCompartmentClick`, which clicks like the

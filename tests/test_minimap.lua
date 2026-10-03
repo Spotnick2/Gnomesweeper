@@ -162,11 +162,13 @@ end
 do  -- the key binding: Bindings.xml's code, and its names in Key Bindings
     loadAddon()
     local xml = readFile("Bindings.xml")
-    local name, header, body = xml:match('<Binding name="([%w_]+)" header="([%w_]+)">%s*(.-)%s*</Binding>')
+    local name, cat, body = xml:match('<Binding name="([%w_]+)" category="([^"]+)">%s*(.-)%s*</Binding>')
     eq(name, "GNOMESWEEPER_TOGGLE", "Bindings.xml has the toggle")
-    check(xml:match('category=') == nil, "...in no category of its own: the client files it under AddOns")
+    -- Measured (owner's screenshot): without a category it lands in "Other", and a header
+    -- shows as a raw HEADER_ row. A category of its own is Leatrix Maps' way (its own section).
+    eq(cat, "Gnomesweeper", "...in a Gnomesweeper section of its own")
+    check(not xml:find("header=", 1, true), "...with no header (a raw row, measured)")
     eq(rawget(_G, "BINDING_NAME_" .. name), "Open or close the board", "...its line in Key Bindings")
-    eq(rawget(_G, "BINDING_HEADER_" .. header), "Gnomesweeper", "...under the Gnomesweeper header")
     local run = assert(loadstring(body))
     eq(Gnomesweeper.Window.IsShown(), false, "(the board closed, not even built)")
     run()

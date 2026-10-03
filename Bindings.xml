@@ -1,6 +1,8 @@
 <Bindings>
-	<!-- #23: Key Bindings > AddOns > Gnomesweeper. The names are the globals in Gnomesweeper.lua. -->
-	<Binding name="GNOMESWEEPER_TOGGLE" header="GNOMESWEEPER">
+	<!-- #23: Key Bindings > Gnomesweeper (its own section, as Leatrix Maps does: a binding with no
+	     category lands in "Other", and a header there shows as a raw HEADER_ row). The name is the
+	     BINDING_NAME_ global in Gnomesweeper.lua. -->
+	<Binding name="GNOMESWEEPER_TOGGLE" category="Gnomesweeper">
 		Gnomesweeper.Window.Toggle()
 	</Binding>
 </Bindings>

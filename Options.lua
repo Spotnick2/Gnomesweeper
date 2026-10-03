@@ -266,6 +266,40 @@ about.name = "About"
 
 local function aboutLabel(text, template, width) return label(about, text, template, width) end
 
+Options.LINKS = {
+    { "CurseForge", "https://www.curseforge.com/wow/addons/gnomesweeper" },
+    { "GitHub", "https://github.com/Spotnick2/Gnomesweeper" },
+}
+
+-- A link the player can copy: addons can't open a browser or touch the
+-- clipboard, so it is a read-only edit box that selects itself on a click, for
+-- Ctrl+C (GlassPanel's Share window does the same). Typing puts the link back.
+local function linkBox(url)
+    local box = CreateFrame("EditBox", nil, about)
+    box:SetSize(400, 22)
+    box:SetAutoFocus(false)
+    box:SetFontObject("ChatFontNormal")
+    box:SetTextInsets(6, 6, 0, 0)
+    box.bg = box:CreateTexture(nil, "BACKGROUND")
+    box.bg:SetAllPoints(box)
+    box.bg:SetColorTexture(0, 0, 0, 0.5)
+    box.url = url
+    box:SetText(url)
+    box:SetCursorPosition(0)
+    box:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
+    box:SetScript("OnEditFocusLost", function(self) self:HighlightText(0, 0) end)
+    box:SetScript("OnMouseUp", function(self) self:HighlightText() end)
+    box:SetScript("OnTextChanged", function(self, userInput)
+        if userInput then
+            self:SetText(self.url)
+            self:HighlightText()
+        end
+    end)
+    box:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
+    box:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
+    return box
+end
+
 local function buildAbout()
     local y = -16
     local function add(fs, height, indent)
@@ -287,6 +321,19 @@ local function buildAbout()
     }) do add(aboutLabel(line, nil, 620), 18, 4) end
 
     y = y - 10
+    add(aboutLabel("Links", "GameFontNormalLarge"), 24)
+    about.links = {}
+    for _, link in ipairs(Options.LINKS) do
+        local name = aboutLabel(link[1], nil, 90)
+        name:SetPoint("TOPLEFT", about, "TOPLEFT", 20, y - 4)
+        local box = linkBox(link[2])
+        box:SetPoint("TOPLEFT", about, "TOPLEFT", 110, y)
+        about.links[#about.links + 1] = box
+        y = y - 26
+    end
+    add(aboutLabel("Click a link, then Ctrl+C to copy it.", "GameFontHighlightSmall"), 22, 4)
+
+    y = y - 6
     add(aboutLabel("Commands", "GameFontNormalLarge"), 24)
     about.commands = {}
     for _, line in ipairs(GS.HELP or {}) do

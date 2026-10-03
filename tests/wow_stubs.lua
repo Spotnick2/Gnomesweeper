@@ -62,7 +62,7 @@ local function newWidget(wtype, parent, name)
 end
 
 function CreateFrame(ftype, name, parent, template)
-    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene" or ftype == "CheckButton",
+    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene" or ftype == "CheckButton" or ftype == "EditBox",
         "CreateFrame: unexpected frame type " .. tostring(ftype))
     local w = newWidget(ftype, parent or UIParent, name)
     w._template = template
@@ -160,6 +160,8 @@ function Methods.AddLine(w, text) w._lines = w._lines or {}; w._lines[#w._lines 
 function Methods.GetText(w) return w._text end
 function Methods.SetTexture(w, t) w._texture = t end
 function Methods.SetChecked(w, v) w._checked = v and true or false end
+-- An edit box's selection: HighlightText() selects all, (0, 0) none.
+function Methods.HighlightText(w, a, b) w._selected = not (a == 0 and b == 0) end
 function Methods.GetChecked(w) return w._checked or false end
 -- A button's state textures: Set* makes one, Get* returns it (so its tex coords can be set).
 for _, part in ipairs({ "Normal", "Pushed", "Highlight", "Checked" }) do

@@ -162,7 +162,10 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   its first show and never hidden by us, Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
-  unpackaged; how to play; the commands from `GS.HELP`, minus the "(for measuring)" ones). Neither
+  unpackaged; how to play; **links** to CurseForge and GitHub in read-only edit boxes to copy from,
+  `Options.LINKS`; the commands from `GS.HELP`, minus the "(for measuring)" ones). **The recipe is
+  shared**, for every Forever addon: the porting guide's "An Options page with sub-pages and an About
+  page" (update it there when something new is measured here). Neither
   page is a named frame (no globals). Showing the page never builds the game window: a size set there
   is saved and used when the window is built (`Window.SetScale` doesn't build it).
   **Blizzard's `SettingsPanel` is in the HIGH strata and our window in FULLSCREEN_DIALOG, above it**:

@@ -216,6 +216,22 @@ do
     for _, fs in ipairs(about.commands) do cmds[#cmds + 1] = fs:GetText() end
     cmds = table.concat(cmds, "\n")
     check(cmds:find("/gsweep scores", 1, true) ~= nil, "...the commands")
+    -- Links: read-only boxes to copy from.
+    eq(#about.links, 2, "two links")
+    eq(about.links[1]:GetText(), "https://www.curseforge.com/wow/addons/gnomesweeper", "CurseForge")
+    eq(about.links[2]:GetText(), "https://github.com/Spotnick2/Gnomesweeper", "GitHub")
+    local box = about.links[1]
+    eq(box._type, "EditBox", "...in edit boxes")
+    box._scripts.OnEditFocusGained(box)
+    check(box._selected, "a click selects the whole link, ready for Ctrl+C")
+    box:SetText("https://evil.example")
+    box._scripts.OnTextChanged(box, true)
+    eq(box:GetText(), "https://www.curseforge.com/wow/addons/gnomesweeper", "typing puts the link back")
+    check(box._selected, "...selected again")
+    box._scripts.OnEditFocusLost(box)
+    check(not box._selected, "losing focus clears the selection")
+    box._scripts.OnTextChanged(box, false)
+    eq(box:GetText(), "https://www.curseforge.com/wow/addons/gnomesweeper", "(a change by the code itself is left alone)")
     check(cmds:find("/gsweep perf", 1, true) == nil and cmds:find("/gsweep assets", 1, true) == nil,
         "...but not the ones for measuring")
 end

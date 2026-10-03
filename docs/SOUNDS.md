@@ -28,9 +28,10 @@ measured: whether the track loops.
 **The owner's picks after listening** (2026-10-03): the clicks are fine ("a normal mouse click");
 the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 3272 after the bomb,
 5925 / 5931 on the first open of a session); an **alert when the clock passes your best** (once a
-game), provisionally 18871, to be picked from Blizzard's warning sounds (`/gsweep sounds` now
-auditions those); the new-game button 4779 "doesn't sound like much": a better one (something about
-mines) is still to find. The API can't list the client's sound kits (they are game data,
+game): **4574 `IG_PVP_UPDATE`**, the owner's pick after the audition (25477, the battleground
+countdown, was the other contender); the new game: **file 566083 `GnomeRoboArmFidget01Fidget02`**, a
+gnomish arm, played with `PlaySoundFile` (a file ID, not a kit), in place of the big red button 4779
+that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
 `SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 

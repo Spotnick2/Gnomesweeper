@@ -42,8 +42,10 @@ Sounds.KITS = {
     win = 6131,          -- a gnome: "hurray", "Congratulations"
     greetMale = 5925,    -- GnomeMaleZanyNPCGreetings: the first open of a session
     greetFemale = 5931,  -- GnomeFemaleNerdyNPCGreetings
-    alert = 18871,       -- the clock just passed your best (provisional: owner to pick)
-    newGame = 4779,      -- G_ButtonBigRed: provisional (owner: "doesn't sound like much")
+    alert = 4574,        -- SOUNDKIT.IG_PVP_UPDATE: the clock just passed your best (owner's pick)
+    -- A table is a FILE ID, played with PlaySoundFile (it takes file IDs on Forever,
+    -- porting guide); a number is a sound kit, played with PlaySound.
+    newGame = { file = 566083 },   -- GnomeRoboArmFidget01Fidget02: a gnomish arm whirs (owner's pick)
 }
 Sounds.WIPE_DELAY = 0.7  -- seconds from the bomb to the gnome; tune by ear
 Sounds.MUSIC = 53189     -- gnomeragon01-zone
@@ -65,6 +67,7 @@ function Sounds.Play(name)
     if db().sounds == false then return nil end
     local kit = Sounds.KITS[name]
     if not kit then return nil end
+    if type(kit) == "table" then return (PlaySoundFile(kit.file, "SFX")) end
     return (PlaySound(kit, "SFX"))
 end
 
@@ -202,8 +205,6 @@ Sounds.CANDIDATES = {
     { 4574, "alert: IG_PVP_UPDATE" },
     { 8459, "alert: PVP_THROUGH_QUEUE (the battleground is ready)" },
     { 25477, "alert: UI_BATTLEGROUND_COUNTDOWN_TIMER" },
-    { 4779, "new game: G_ButtonBigRed (Mimiron's button, the current pick)" },
-    { 15252, "new game: UL_Gnomewing_ButtonBigRed_Close" },
 }
 Sounds.PROBE_GAP = 3       -- seconds between candidates
 Sounds.MUSIC_PROBE = 12    -- seconds of music at the end

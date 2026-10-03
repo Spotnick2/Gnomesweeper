@@ -22,9 +22,10 @@ local function click(i, b)
 end
 local function kits()
     local out = {}
-    for _, s in ipairs(WoW.sounds) do out[#out + 1] = s.kit end
+    for _, s in ipairs(WoW.sounds) do out[#out + 1] = s.kit or ("file:" .. s.file) end
     return table.concat(out, ",")
 end
+local function shown(entry) return type(entry) == "table" and ("file:" .. entry.file) or tostring(entry) end
 local function chatHas(text)
     for _, line in ipairs(WoW.chat) do if line:find(text, 1, true) then return true end end
     return false
@@ -107,11 +108,13 @@ do
     WoW.sounds = {}
     local ui = W._test.ui
     ui.face._scripts.OnClick(ui.face)
-    eq(kits(), tostring(K.newGame), "the face starts a new game with the big red button")
+    eq(kits(), "file:566083", "the face starts a new game with the gnomish arm (a file ID)")
+    eq(WoW.sounds[1].file, 566083, "...played with PlaySoundFile, as a file ID")
+    eq(WoW.sounds[1].channel, "SFX", "...on the sound effects channel")
     WoW.sounds = {}
     onWall(W); click(at(3, 1)); WoW.sounds = {}
     ui.overlay.button._scripts.OnClick(ui.overlay.button)
-    eq(kits(), tostring(K.newGame), "...so does Try again")
+    eq(kits(), shown(K.newGame), "...so does Try again")
     WoW.sounds = {}
     W.NewGame("expert")
     eq(kits(), "", "a new game the player didn't click for (a difficulty change) is silent")

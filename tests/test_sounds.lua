@@ -168,6 +168,33 @@ do
     eq(WoW.music, S.MUSIC, "...and on")
 end
 
+do  -- a zone event while ours plays: play it again (the owner heard both at once)
+    local W, S = fresh({ music = true })
+    eq(WoW.music, S.MUSIC, "(playing)")
+    WoW.music = 99999                                     -- the zone started its own music
+    WoW.fire("ZONE_CHANGED")
+    eq(WoW.music, S.MUSIC, "a sub-zone change: ours again")
+    WoW.music = 99999
+    WoW.fire("ZONE_CHANGED_INDOORS")
+    eq(WoW.music, S.MUSIC, "...going indoors too")
+    WoW.music = 99999
+    WoW.fire("ZONE_CHANGED_NEW_AREA")
+    eq(WoW.music, S.MUSIC, "...a new area too")
+    WoW.music = 99999
+    WoW.fire("PLAYER_ENTERING_WORLD")
+    eq(WoW.music, S.MUSIC, "...and entering the world")
+    W.win:Hide()
+    WoW.music = 99999
+    WoW.fire("ZONE_CHANGED")
+    eq(WoW.music, 99999, "not ours to play while the board is closed: the zone's stays")
+    local log = table.concat(GnomesweeperDB.musicLog, "\n")
+    check(log:find("ZONE_CHANGED: PlayMusic(53189) again", 1, true) ~= nil, "the log records each replay")
+    check(log:find("StopMusic (music true, window false, combat false)", 1, true) ~= nil, "...and why it stopped")
+    check(log:find("ZONE_CHANGED (not playing)", 1, true) ~= nil, "...and a zone event while it wasn't playing")
+    for _ = 1, 100 do WoW.fire("ZONE_CHANGED") end
+    eq(#GnomesweeperDB.musicLog, 60, "the log keeps the last 60 lines")
+end
+
 do  -- a /reload in the middle of a fight: no music until it ends
     WoW.inCombat = true
     loadAddon({ db = { music = true } })

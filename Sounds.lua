@@ -16,6 +16,13 @@
 -- gates it (the setting on, the window shown, not in combat), run whenever any of
 -- those changes. StopMusic() only when this addon started it: it is the client's
 -- shared music, not our handle.
+--
+-- The owner heard the zone's music AND ours "sometimes" (70205). Soundtrack (a
+-- music addon) replays its track on every zone event, so it would never notice
+-- the client starting a zone's music on a sub-zone change; we didn't. So while
+-- ours plays, every zone event plays it again. Every music decision is logged
+-- (GnomesweeperDB.musicLog, the last 60), so the next overlap can be matched to
+-- what happened, read from disk after a /reload.
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -91,6 +98,18 @@ end
 local playing = false    -- this addon started the music and hasn't stopped it
 local inCombat = false
 
+local LOG_MAX = 60
+local function log(fmt, ...)
+    local l = GnomesweeperDB and GnomesweeperDB.musicLog
+    if type(l) ~= "table" then
+        if not GnomesweeperDB then return end
+        l = {}
+        GnomesweeperDB.musicLog = l
+    end
+    l[#l + 1] = string.format("%.1f  ", GetTime()) .. string.format(fmt, ...)
+    while #l > LOG_MAX do table.remove(l, 1) end
+end
+
 local function eligible()
     return db().music == true and GS.Window.IsShown() and not inCombat
 end
@@ -101,10 +120,22 @@ function Sounds.UpdateMusic()
         if not playing then
             PlayMusic(Sounds.MUSIC)
             playing = true
+            log("PlayMusic(%d)", Sounds.MUSIC)
         end
     elseif playing then
         StopMusic()
         playing = false
+        log("StopMusic (music %s, window %s, combat %s)", tostring(db().music), tostring(GS.Window.IsShown()), tostring(inCombat))
+    end
+end
+
+-- A zone event while ours plays: play it again, over whatever the zone started.
+local function reassert(event)
+    if playing then
+        PlayMusic(Sounds.MUSIC)
+        log("%s: PlayMusic(%d) again", event, Sounds.MUSIC)
+    else
+        log("%s (not playing)", event)
     end
 end
 
@@ -114,7 +145,15 @@ local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("PLAYER_REGEN_DISABLED")
 events:RegisterEvent("PLAYER_REGEN_ENABLED")
+for _, e in ipairs({ "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "ZONE_CHANGED_NEW_AREA", "PLAYER_ENTERING_WORLD" }) do
+    events:RegisterEvent(e)
+end
 events:SetScript("OnEvent", function(_, event)
+    if event:find("^ZONE_CHANGED") or event == "PLAYER_ENTERING_WORLD" then
+        reassert(event)
+        return
+    end
+    log("%s", event)
     if event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
     elseif event == "PLAYER_REGEN_ENABLED" then

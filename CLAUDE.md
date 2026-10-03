@@ -220,6 +220,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   while it is open our window steps aside (hidden, so its clock pauses) and comes back when it closes,
   if it was open and the player didn't show or close it meanwhile (`Window.shownCount`); that is
   hooked on `SettingsPanel` itself, so it also holds when Settings is opened from the game menu.
+  **Asking for the board while Settings is open** (`Window.Open`/`Toggle`: `/gsweep`, the key, the
+  compartment) doesn't draw it over Settings: it opens when Settings closes (`Options.ReturnAfterSettings`).
   The best times, the list's column and the tooltip show the **current game's** first-click rule, so
   a rule changed mid-game shows with the next game, the one it applies to. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
   time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
@@ -234,6 +236,18 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
   `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
   `GnomesweeperDB[key]`). Without the libraries there is simply no button.
+- **`Bindings.xml`** (#23): a key to open or close the board, in Key Bindings > **Gnomesweeper**, a
+  section of its own (`category="Gnomesweeper"`, as Leatrix Maps does: **measured**, a binding with no
+  category lands in "Other" and a `header` there shows as a raw `HEADER_` row);
+  `BINDING_NAME_GNOMESWEEPER_TOGGLE` in `Gnomesweeper.lua`. Not in the
+  TOC: the client finds it by name; deploy copies root `.xml`. **The addon compartment** (the default
+  minimap's addon list, `Blizzard_Minimap/Mainline/AddonCompartment.lua` in the forever source): the
+  TOC's `AddonCompartmentFunc` names `Gnomesweeper_OnAddonCompartmentClick`, which clicks like the
+  minimap button (`Minimap.Click`: left toggles, right opens the settings), and `...FuncOnEnter/OnLeave`
+  show the same tooltip (no drag line). The TOC's `IconTexture` is her face (`Mediaace_mascot`), so the
+  compartment, the AddOns list and the minimap button match.
+  **Measured (70205):** `AddonCompartmentFrame` is the client's, shown in `MinimapCluster` as a small
+  16x16 button with the addon count (easy to miss), and Gnomesweeper is in its `registeredAddons`.
 - **`Effects.lua`** (#10): the celebrations, all client `AnimationGroup`s on a few textures (no OnUpdate
   of ours), each built once with `play`/`stop`/`isPlaying`. **The burst**: the gold starburst turning
   behind the face while a win shows (`Window.Refresh`): no longer a spinning starburst (owner: harsh); a
@@ -391,6 +405,8 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 ```
 
 - Default AddOns path: `C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns`.
+- Deploy ends with **RESTART the client** when it brought a new file or a changed TOC (the client
+  reads those only at start), else "/reload is enough".
 - Deploy rewrites `## Version: @project-version@` to `dev` **in the deployed copy only**. Never
   commit a literal version over that token (it has happened twice on sibling projects).
 - In game: `/console scriptErrors 1`, then `/reload`. A brand-new addon folder needs a client

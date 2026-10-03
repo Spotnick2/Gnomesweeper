@@ -131,4 +131,97 @@ do  -- no libraries: no button, nothing else breaks
     check(Gnomesweeper.Window.IsShown(), "...and the game still opens")
 end
 
+----------------------------------------------------------------------------
+-- #23: the addon compartment and the key binding
+----------------------------------------------------------------------------
+local function readFile(path)
+    local f = assert(io.open(path, "rb"))
+    local text = f:read("*a")
+    f:close()
+    return text
+end
+
+do  -- the compartment: the TOC names a global that clicks like the minimap button
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local toc = readFile("Gnomesweeper.toc")
+    local fname = toc:match("## AddonCompartmentFunc:%s*([%w_]+)")
+    eq(fname, "Gnomesweeper_OnAddonCompartmentClick", "the TOC names the compartment's function")
+    local fn = rawget(_G, fname)
+    eq(type(fn), "function", "...and it exists, as a global (the compartment looks it up by name)")
+    -- The TOC's IconTexture is the icon in the compartment and the AddOns list: her face, as the
+    -- minimap button's (owner), and a file that exists.
+    local icon = toc:match("## IconTexture:%s*([^\r\n]+)")
+    eq(icon, Gnomesweeper.Skin.TEXTURES.face, "the compartment's and AddOns list's icon: the mascot's face, as the minimap button")
+    local rel = icon:gsub("^Interface\\AddOns\\Gnomesweeper\\", ""):gsub("\\", "/")
+    local f = io.open(rel .. ".tga", "rb")
+    check(f ~= nil, "...a texture that exists in Media/")
+    if f then f:close() end
+    fn("Gnomesweeper", "LeftButton")                     -- the compartment's call: (addonName, buttonName)
+    eq(Gnomesweeper.Window.IsShown(), true, "a left-click in the compartment opens the board")
+    fn("Gnomesweeper", "LeftButton")
+    eq(Gnomesweeper.Window.IsShown(), false, "...and closes it")
+    WoW.settings.opened = nil
+    fn("Gnomesweeper", "RightButton")
+    eq(WoW.settings.opened, "cat:Gnomesweeper", "a right-click opens the settings")
+
+    -- Its tooltip (review of #58): what the clicks do, so right-click can be found.
+    for _, field in ipairs({ "OnEnter", "OnLeave" }) do
+        local g = toc:match("## AddonCompartmentFunc" .. field .. ":%s*([%w_]+)")
+        eq(type(g and rawget(_G, g)), "function", "the TOC's AddonCompartmentFunc" .. field .. " names a global function")
+    end
+    local row = CreateFrame("Button")
+    Gnomesweeper_OnAddonCompartmentEnter("Gnomesweeper", row)
+    eq(GameTooltip._owner, row, "hovering its row: a tooltip on it")
+    eq(GameTooltip._lines[1], "Gnomesweeper", "...naming it")
+    eq(GameTooltip._lines[3], "Right-click: settings", "...and saying what right-click does")
+    eq(#GameTooltip._lines, 3, "...no 'drag' line (that's the minimap button's)")
+    Gnomesweeper_OnAddonCompartmentLeave("Gnomesweeper", row)
+    check(not GameTooltip:IsShown(), "leaving it hides the tooltip")
+end
+
+do  -- the key binding: Bindings.xml's code, and its names in Key Bindings
+    loadAddon()
+    local xml = readFile("Bindings.xml")
+    -- Every binding, its attributes in any order (review of #58).
+    local bindings = {}
+    for attrs, body in xml:gmatch("<Binding%s+(.-)>%s*(.-)%s*</Binding>") do
+        bindings[#bindings + 1] = { name = attrs:match('name%s*=%s*"([^"]+)"'),
+                                    category = attrs:match('category%s*=%s*"([^"]+)"'),
+                                    header = attrs:match("header%s*="), body = body }
+    end
+    eq(#bindings, 1, "Bindings.xml has one binding")
+    for _, b in ipairs(bindings) do
+        -- Measured (owner's screenshot): without a category it lands in "Other", and a header
+        -- shows as a raw HEADER_ row. A category of its own is Leatrix Maps' way.
+        eq(b.category, "Gnomesweeper", b.name .. ": in a Gnomesweeper section of its own")
+        check(not b.header, b.name .. ": no header (a raw row, measured)")
+        check(type(rawget(_G, "BINDING_NAME_" .. b.name)) == "string", b.name .. ": its line in Key Bindings")
+        check(loadstring(b.body) ~= nil, b.name .. ": its code compiles")
+    end
+    eq(bindings[1].name, "GNOMESWEEPER_TOGGLE", "the toggle")
+    eq(rawget(_G, "BINDING_NAME_GNOMESWEEPER_TOGGLE"), "Open or close the board", "...its line")
+    local run = assert(loadstring(bindings[1].body))
+    eq(Gnomesweeper.Window.IsShown(), false, "(the board closed, not even built)")
+    run()
+    eq(Gnomesweeper.Window.IsShown(), true, "the key opens the board (building it the first time)")
+    run()
+    eq(Gnomesweeper.Window.IsShown(), false, "...and closes it")
+end
+
+do  -- deploy and the package carry Bindings.xml (the client finds it by name, not in the TOC)
+    local deploy = readFile("Tools/deploy.ps1")
+    check(deploy:find('".xml"', 1, true) ~= nil, "deploy copies the root's .xml files")
+    -- The package: no ignore entry (a path or a glob) matches it (review of #58).
+    local pkg = readFile(".pkgmeta")
+    local block = pkg:match("\nignore:%s*\n(.-)\n%S") or pkg:match("\nignore:%s*\n(.*)$") or ""
+    local entries = 0
+    for entry in block:gmatch("%-%s*\"?([^\"\r\n]+)\"?") do
+        entries = entries + 1
+        local pattern = "^" .. entry:gsub("[%.%-%+%(%)%[%]%^%$%%]", "%%%0"):gsub("%*", ".*") .. "$"
+        check(not ("Bindings.xml"):match(pattern), "the package's ignore entry '" .. entry .. "' doesn't drop Bindings.xml")
+    end
+    check(entries > 5, "(the ignore list was read: " .. entries .. " entries)")
+end
+
 done("test_minimap")

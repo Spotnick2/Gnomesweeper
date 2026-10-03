@@ -327,7 +327,12 @@ do  -- the best times panel: the trophy, /gsweep scores
     check(W.win:IsShown() and p:IsShown(), "/gsweep scores opens the window too")
 
     -- The other first-click rule has its own bests.
+    -- Mid-game, a rule change shows with the next game (the one it applies to).
     GnomesweeperDB.safeZone = "cell"
+    p:Hide(); WoW.slash("/gsweep scores")
+    eq(p.rows.beginner.time:GetText(), "00:35", "a rule changed mid-game: this game's rule still shows")
+    eq(p.rule:GetText(), "First click: always opens an area.", "...and says which")
+    W.NewGame()
     p:Hide(); WoW.slash("/gsweep scores")
     eq(p.rows.beginner.time:GetText(), "-", "the XP rule shows its own bests")
     eq(p.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "...and says so")

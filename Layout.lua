@@ -11,7 +11,7 @@ Gnomesweeper = Gnomesweeper or {}
 local Layout = {}
 Gnomesweeper.Layout = Layout
 
-Layout.TILE = 24              -- one tile, in window units (the user scale comes with #8)
+Layout.TILE = 24              -- one tile, in window units (the user scale is a setting, #8)
 Layout.PAD = 14               -- side padding
 Layout.MIN_WIDTH = 300        -- Beginner's 9 tiles are narrower than the title bar
 Layout.CHROME_TOP = 138       -- title block 10..50, difficulty 58..82, HUD 90..130, a gap

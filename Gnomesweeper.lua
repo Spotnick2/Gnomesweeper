@@ -14,7 +14,7 @@ local DEFAULTS = {
     difficulty = "beginner",
     safeZone = "area",         -- "area": the first click opens an area; "cell": XP's single safe cell
     questionMarks = false,
-    chordOnLeft = false,       -- left-click a satisfied number to chord it (the settings panel, #8, will offer it)
+    chordOnLeft = false,       -- left-click a satisfied number to chord it (a setting, #8)
 }
 
 local function EnsureDefaults()
@@ -27,6 +27,7 @@ end
 local function Print(msg)
     print("|cff7fd4ffGnome|rsweeper: " .. msg)
 end
+GS.Print = Print
 
 -- Also listed on Options > AddOns > Gnomesweeper > About (all but the "(for measuring)" ones).
 local HELP = {

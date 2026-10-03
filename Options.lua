@@ -97,9 +97,12 @@ function Options.Set(key, v)
     return true
 end
 
--- The scale one step up or down, on the step grid, within the limits.
+-- The scale one step up or down to the next point on the step grid, within the
+-- limits: from 127%, up is 130% and down is 120% (never a whole step skipped).
 function Options.StepScale(dir)
-    local v = math.floor(Options.Get("scale") / Options.SCALE_STEP + 0.5) * Options.SCALE_STEP + dir * Options.SCALE_STEP
+    local n = Options.Get("scale") / Options.SCALE_STEP
+    n = dir > 0 and math.floor(n + 1e-6) + 1 or math.ceil(n - 1e-6) - 1
+    local v = n * Options.SCALE_STEP
     v = math.max(Layout.USER_SCALE_MIN, math.min(Layout.USER_SCALE_MAX, v))
     return Options.Set("scale", math.floor(v * 100 + 0.5) / 100)
 end
@@ -108,6 +111,7 @@ local function percent(v) return string.format("%d%%", math.floor(v * 100 + 0.5)
 
 -- "Shown at 90% so it fits the screen.", or nil when the window shows as asked.
 local function fitNote()
+    if not GS.Window.win then return nil end           -- never build the window just to say this
     local want, shown = GS.Window.ScaleInfo()
     if math.abs(want - shown) > 0.005 then return "Shown at " .. percent(shown) .. " so it fits the screen." end
     return nil
@@ -117,7 +121,7 @@ end
 -- Options > AddOns > Gnomesweeper (Blizzard's look, Blizzard's templates)
 ------------------------------------------------------------
 
-local page = CreateFrame("Frame", "GnomesweeperOptions")
+local page = CreateFrame("Frame")
 page.name = "Gnomesweeper"
 local category
 
@@ -127,12 +131,14 @@ local CHECK_ART = {
 }
 local RADIO_ART = "Interface\\Buttons\\UI-RadioButton"   -- 4 cells: normal, checked, highlight, pushed
 
-local function pageLabel(text, template)
-    local fs = page:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
+local function label(parent, text, template, width)
+    local fs = parent:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
     fs:SetJustifyH("LEFT")
+    if width then fs:SetWidth(width) end
     fs:SetText(text)
     return fs
 end
+local function pageLabel(text, template) return label(page, text, template) end
 
 -- A check or radio button from the client's template, or our own from its art
 -- when the template is missing (a missing template returns a bare frame).
@@ -201,8 +207,7 @@ local function buildPage()
                 local rb = checkButton(true)
                 rb:SetPoint("TOPLEFT", page, "TOPLEFT", 28, y)
                 rb.value = choice[1]
-                -- Re-sync the group either way: a refused choice snaps back.
-                rb:SetScript("OnClick", function() Options.Set(item.key, choice[1]); Options.Refresh() end)
+                rb:SetScript("OnClick", function() Options.Set(item.key, choice[1]) end)
                 local fs = pageLabel(choice[2])
                 fs:SetPoint("LEFT", rb, "RIGHT", 4, 0)
                 c.radios[i] = rb
@@ -256,22 +261,10 @@ end)
 -- Click-casting is under its page. More sub-pages (guild scores) go the same way.
 ------------------------------------------------------------
 
-local about = CreateFrame("Frame", "GnomesweeperAbout")
+local about = CreateFrame("Frame")
 about.name = "About"
 
-local function version()
-    local ok, v = pcall(C_AddOns.GetAddOnMetadata, ADDON, "Version")
-    if not ok or type(v) ~= "string" or v == "" or v:find("@", 1, true) then return "dev" end
-    return v
-end
-
-local function aboutLabel(text, template, width)
-    local fs = about:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
-    fs:SetJustifyH("LEFT")
-    if width then fs:SetWidth(width) end
-    fs:SetText(text)
-    return fs
-end
+local function aboutLabel(text, template, width) return label(about, text, template, width) end
 
 local function buildAbout()
     local y = -16
@@ -282,7 +275,7 @@ local function buildAbout()
     end
     about.title = add(aboutLabel("Gnomesweeper", "GameFontNormalHuge"), 30)
     about.tagline = add(aboutLabel(GS.TAGLINE, "GameFontHighlightLarge"), 26, 2)
-    about.version = add(aboutLabel("Version " .. version() .. "  " .. "\194\183" .. "  for World of Warcraft: Forever  " .. "\194\183" .. "  by Spotnick",
+    about.version = add(aboutLabel("Version " .. GS.API.AddOnVersion(ADDON) .. "  " .. "\194\183" .. "  for World of Warcraft: Forever  " .. "\194\183" .. "  by Spotnick",
         "GameFontHighlightSmall"), 30, 2)
 
     add(aboutLabel("How to play", "GameFontNormalLarge"), 24)
@@ -312,21 +305,21 @@ end)
 
 -- While Blizzard's Settings window is open, ours steps aside (it would draw over
 -- it), and comes back when it closes, if it was open.
-local steppedAside = false
+local steppedAside       -- Window.shownCount when it stepped aside, or nil
 local function watchSettingsWindow()
     local sp = rawget(_G, "SettingsPanel")
     if not (sp and sp.HookScript) then return end
     sp:HookScript("OnShow", function()
         if GS.Window.IsShown() then
-            steppedAside = true
             GS.Window.win:Hide()
+            steppedAside = GS.Window.shownCount
         end
     end)
     sp:HookScript("OnHide", function()
-        if steppedAside then
-            steppedAside = false
-            GS.Window.Open()
-        end
+        -- Shown again meanwhile (and maybe closed again): the player decided; leave it.
+        local back = steppedAside == GS.Window.shownCount
+        steppedAside = nil
+        if back then GS.Window.Open() end
     end)
 end
 
@@ -350,7 +343,7 @@ end
 -- The gear and /gsweep settings: open the page, or say where it is.
 function Options.Open()
     if Options.OpenPage() then return true end
-    print("|cff7fd4ffGnome|rsweeper: the settings are in the game's Options > AddOns > Gnomesweeper.")
+    GS.Print("the settings are in the game's Options > AddOns > Gnomesweeper.")
     return false
 end
 

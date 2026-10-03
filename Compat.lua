@@ -23,6 +23,18 @@ function API.SafeFrame(ftype, parent, template, proof)
     return CreateFrame(ftype, nil, parent), false
 end
 
+-- The addon's version from its TOC, or "dev" for an unpackaged copy (the
+-- packager replaces the @project-version@ token). GetAddOnMetadata moved from a
+-- global to C_AddOns on Retail; either, or neither, is handled.
+function API.AddOnVersion(addon)
+    local ns = rawget(_G, "C_AddOns")
+    local get = (type(ns) == "table" and ns.GetAddOnMetadata) or rawget(_G, "GetAddOnMetadata")
+    if type(get) ~= "function" then return "dev" end
+    local ok, v = pcall(get, addon, "Version")
+    if not ok or type(v) ~= "string" or v == "" or v:find("@", 1, true) then return "dev" end
+    return v
+end
+
 -- The player's full name, with the surname every Forever character has.
 -- Lifted from AltStable's API.PlayerFullName (measured there on 69977 and 70009):
 -- through 69977 UnitName("player") returned "First Surname" as one string; on

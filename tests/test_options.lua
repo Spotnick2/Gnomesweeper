@@ -243,4 +243,60 @@ do  -- a client without the templates: our own art, nothing missing
     eq(GnomesweeperDB.questionMarks, true, "...and it still works")
 end
 
+do  -- the review of #39
+    -- Off the grid (a /gsweep scale value): the next point each way, no step skipped.
+    local W, O = fresh()
+    GnomesweeperDB.scale = 1.27; O.StepScale(1)
+    eq(GnomesweeperDB.scale, 1.3, "127% up is 130%")
+    GnomesweeperDB.scale = 1.27; O.StepScale(-1)
+    eq(GnomesweeperDB.scale, 1.2, "127% down is 120%")
+    GnomesweeperDB.scale = 1.23; O.StepScale(-1)
+    eq(GnomesweeperDB.scale, 1.2, "123% down is 120%")
+    GnomesweeperDB.scale = 1.2; O.StepScale(1)
+    eq(GnomesweeperDB.scale, 1.3, "on the grid, up a whole step")
+    O.Set("scale", 1)
+
+    -- Settings open, then the player shows and closes the window themselves: it stays closed.
+    WoW.fire("PLAYER_LOGIN")
+    SettingsPanel:Show()
+    check(not W.win:IsShown(), "(stepped aside)")
+    WoW.slash("/gsweep")
+    check(W.win:IsShown(), "(the player opens it over Settings)")
+    W.win:Hide()
+    SettingsPanel:Hide()
+    check(not W.win:IsShown(), "a window the player closed meanwhile is not brought back")
+    W.Open()
+    SettingsPanel:Show(); WoW.slash("/gsweep"); SettingsPanel:Hide()
+    check(W.win:IsShown(), "...one they opened stays open")
+end
+
+do  -- the Options page never builds the window
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local page = Gnomesweeper.Options._test.page
+    page:Hide(); page:Show()
+    eq(Gnomesweeper.Window.win, nil, "showing the Options page doesn't build the game window")
+    page.controls.scale.plus._scripts.OnClick(page.controls.scale.plus)
+    eq(GnomesweeperDB.scale, 1.1, "...a size set there is saved")
+    eq(Gnomesweeper.Window.win, nil, "...without building it either")
+    WoW.slash("/gsweep")
+    eq(Gnomesweeper.Window.ScaleInfo(), 1.1, "...and the window uses it when it is built")
+    eq(rawget(_G, "GnomesweeperOptions"), nil, "no global for the page")
+    eq(rawget(_G, "GnomesweeperAbout"), nil, "...nor for About")
+end
+
+do  -- the version on a client without C_AddOns, or with the old global
+    loadAddon()
+    local API = Gnomesweeper.API
+    local saved = C_AddOns
+    C_AddOns = nil
+    eq(API.AddOnVersion("Gnomesweeper"), "dev", "no C_AddOns: dev, no error")
+    GetAddOnMetadata = function(_, key) return key == "Version" and "v0.9" or nil end
+    eq(API.AddOnVersion("Gnomesweeper"), "v0.9", "...the old global if it is there")
+    GetAddOnMetadata = nil
+    C_AddOns = saved
+    WoW.metadata.Version = ""
+    eq(API.AddOnVersion("Gnomesweeper"), "dev", "an empty version: dev")
+end
+
 done("test_options")

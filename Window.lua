@@ -26,9 +26,14 @@ local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 
 local win, game
+Window.shownCount = 0
 -- The current game's scores category (Scores.Category), nil for a board that
 -- isn't a preset (the tests' hand-built ones): those never touch the scores.
 local category
+-- The current game's first-click rule ("area" or "cell"): what the best times,
+-- the list and the tooltip show, so a rule changed mid-game shows with the next
+-- game, the one it applies to (#39 review).
+local rule = "area"
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
 local fillBests             -- the best times panel's refresh (defined with the panel)
@@ -62,7 +67,8 @@ local function newBoard()
         questionMarks = db().questionMarks,
     }))
     Window.game = game
-    category = Scores.Category(key, db().safeZone)
+    rule = db().safeZone == "cell" and "cell" or "area"
+    category = Scores.Category(key, rule)
     lastWin = nil
 end
 
@@ -79,9 +85,9 @@ local function bestTime(record)
     return Layout.FormatTime(Board.DisplaySeconds(record.time))
 end
 
--- A difficulty's best, played and won, under the current first-click rule.
+-- A difficulty's best, played and won, under the current game's first-click rule.
 local function statsFor(key)
-    local cat = Scores.Category(key, db().safeZone)
+    local cat = Scores.Category(key, rule)
     local played, won = Scores.Stats(peek(), cat)
     return Scores.Best(peek(), cat), played, won
 end
@@ -475,7 +481,7 @@ end
 local BESTS_W, BESTS_ROW = 264, 44
 
 local function bestsRuleText()
-    return db().safeZone == "cell" and "First click: one safe tile (Windows XP's rule)."
+    return rule == "cell" and "First click: one safe tile (Windows XP's rule)."
         or "First click: always opens an area."
 end
 
@@ -687,6 +693,7 @@ local function build()
     -- opening it resumes. It also refits, so a reopen after a resolution or UI
     -- scale change is never the wrong size.
     win:SetScript("OnShow", function()
+        Window.shownCount = Window.shownCount + 1    -- Options: was it shown again since it stepped aside?
         game:Resume(GetTime())
         Window.Layout()
         Window.Refresh()
@@ -816,10 +823,11 @@ end
 
 -- The player's own scale (/gsweep scale), nil to go back to 1. The window still
 -- never exceeds the screen: the number wanted and the number shown can differ.
+-- Saved even before the window exists (the Options page can set it first); it
+-- is applied when the window is built.
 function Window.SetScale(n)
-    ensure()
     db().scale = n
-    Window.Layout()
+    if win then Window.Layout() end
 end
 
 -- The scale wanted, and the one actually in use.
@@ -847,6 +855,7 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")
         if ui.overlay then ui.overlay:Hide() end
         if ui.result then showResultBar(false) end
         if win then syncGame() end

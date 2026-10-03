@@ -161,12 +161,16 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
   its first show and never hidden by us, Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
-  order (GlassRaidFrames' Click-casting way): **About** (version from `C_AddOns.GetAddOnMetadata`,
-  "dev" unpackaged; how to play; the commands from `GS.HELP`, minus the "(for measuring)" ones).
+  order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
+  unpackaged; how to play; the commands from `GS.HELP`, minus the "(for measuring)" ones). Neither
+  page is a named frame (no globals). Showing the page never builds the game window: a size set there
+  is saved and used when the window is built (`Window.SetScale` doesn't build it).
   **Blizzard's `SettingsPanel` is in the HIGH strata and our window in FULLSCREEN_DIALOG, above it**:
   while it is open our window steps aside (hidden, so its clock pauses) and comes back when it closes,
-  if it was open; that is hooked on `SettingsPanel` itself, so it also holds when Settings is opened
-  from the game menu. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
+  if it was open and the player didn't show or close it meanwhile (`Window.shownCount`); that is
+  hooked on `SettingsPanel` itself, so it also holds when Settings is opened from the game menu.
+  The best times, the list's column and the tooltip show the **current game's** first-click rule, so
+  a rule changed mid-game shows with the next game, the one it applies to. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
   time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
   says when the window is shown smaller to fit).
 - **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name

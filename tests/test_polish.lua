@@ -204,13 +204,17 @@ do
 
     GameTooltip._text = nil
     ui.help._scripts.OnEnter(ui.help)
-    eq(GameTooltip._text, "Clearing around a number", "the ? explains it")
+    eq(GameTooltip._text, "How to play", "the ? explains how to play")
     local body = table.concat(GameTooltip._lines, " ")
     check(body:find("revealed number", 1, true), "...naming a revealed number")
     check(body:find("aren't flagged", 1, true), "...that it reveals the tiles around it that aren't flagged")
     check(body:find("number of flags", 1, true) and body:find("equals the number", 1, true), "...only when the flags match the number")
     check(body:find("wrong flag", 1, true) and body:find("reveal a mine", 1, true), "...and that a wrong flag can reveal a mine")
     check(body:find("left and right", 1, true), "...and the left+right way")
+    check(body:find("Right-click plants a flag", 1, true), "...the basic clicks too")
+    check(body:find("gnome starts a new game", 1, true), "...and what the gnome does")
+    eq(ui.help._points[1][2], ui.gear, "the ? sits with the icons in the title bar, beside the gear")
+    eq(ui.trophy._points[1][2], ui.help, "...the trophy left of it")
     ui.help._scripts.OnLeave(ui.help)
 
     -- The footer fits under the board at every difficulty (the window height includes it).
@@ -242,7 +246,8 @@ do
     check(ui.result:IsShown(), "...and the result moves to the footer")
     eq(ui.result.title:GetText(), "Boom. Full wipe.", "...still saying what happened")
     eq(ui.result.button.label:GetText(), "Try again", "...with the button to try again")
-    check(not ui.hintKeys:IsShown() and not ui.hintMid:IsShown() and not ui.help:IsShown(), "(in place of the controls)")
+    check(not ui.hintKeys:IsShown() and not ui.hintMid:IsShown(), "(in place of the controls)")
+    check(ui.help:IsShown(), "(the ? stays in the title bar)")
     for i = 1, 20 do
         local t = tile(i)
         eq((t.bg._texture or "") .. "|" .. (t.icon and t.icon._texture or "") .. "|" .. (t.text and t.text:GetText() or ""),
@@ -254,7 +259,7 @@ do
     ui.result.button._scripts.OnClick(ui.result.button)
     eq(W.game:State(), "ready", "the result bar's button starts a new game")
     check(not ui.result:IsShown(), "...the result bar goes")
-    check(ui.hintKeys:IsShown() and ui.hintMid:IsShown() and ui.help:IsShown(), "...and the controls come back")
+    check(ui.hintKeys:IsShown() and ui.hintMid:IsShown(), "...and the controls come back")
     eq(#WoW.frames, frames, "(no frames were created)")
 
     -- A win: the time stays in the footer.

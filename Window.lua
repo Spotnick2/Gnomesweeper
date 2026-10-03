@@ -339,7 +339,6 @@ end
 local function showResultBar(on)
     ui.hintKeys:SetShown(not on)
     ui.hintMid:SetShown(not on)
-    ui.help:SetShown(not on)
     ui.result:SetShown(on)
 end
 
@@ -358,18 +357,6 @@ local function buildFooter()
     ui.hintMid:SetPoint("TOP", ui.grid, "BOTTOM", 0, -41)
     ui.hintMid:SetTextColor(unpack(C.hint))
     ui.hintMid:SetText("Middle-click: Clear around number")
-
-    -- A small ? beside it explains what that does.
-    local help = Widgets.GlassButton(win, 16, 16, { square = true, fontSize = 11 })
-    help:SetFrameLevel(Glass.ContentLevel(win))
-    help:SetPoint("LEFT", ui.hintMid, "RIGHT", 6, 0)
-    help.label:SetText("?")
-    Widgets.Tip(help, "Clearing around a number", {
-        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
-        "It only works when the number of flags around it equals the number.",
-        "A wrong flag makes it reveal a mine, so check your flags first.",
-    })
-    ui.help = help
 
     -- The result bar: what the overlay said, and the button to play again.
     local r = CreateFrame("Frame", nil, win)
@@ -646,7 +633,21 @@ local function build()
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
-    ui.trophy:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    -- How to play: the ? with the other icons (owner), between the trophy and the gear.
+    local help = Widgets.GlassButton(win, 22, 22, { square = true, fontSize = 13 })
+    help:SetFrameLevel(content)
+    help:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    help.label:SetText("?")
+    Widgets.Tip(help, "How to play", {
+        "Left-click reveals a tile. Right-click plants a flag on a mine you've found.",
+        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
+        "It only works when the number of flags around it equals the number.",
+        "A wrong flag makes it reveal a mine, so check your flags first.",
+        "The gnome starts a new game; during a game, it gives this one up.",
+    })
+    ui.help = help
+
+    ui.trophy:SetPoint("RIGHT", ui.help, "LEFT", -5, 0)
     ui.music:SetPoint("RIGHT", ui.trophy, "LEFT", -5, 0)
     ui.trophy:setAccent(unpack(C.gold))
     ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)

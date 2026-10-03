@@ -101,11 +101,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   `Glass.Apply` per tile**: it makes 6 textures, a mask and a frame per host, and its sliced mask
   is measured to fail on small squares. **The new-game wave (#43)**: `Grid.Shuffle()` re-covers the tiles
   in a diagonal wave from the top-left (each fades in and drops `SHUFFLE_DROP` units), `SHUFFLE_SPREAD`
-  + `SHUFFLE_FALL` = one second, **after a one-second lead** (`SHUFFLE_LEAD`: the arm's sound builds
-  slowly; the owner heard the wave end before the sound) during which the old board waits, taking no
-  clicks, with its overlay gone and its clock stopped; `Grid.Shuffle(swap)` makes the new game when the
-  lead ends. A rebuild in the lead (a difficulty picked) drops that pending game rather than making it
-  too. All from one `OnUpdate` that exists only while it runs; a press during it
+  + `SHUFFLE_FALL` = three seconds, the arm's sound (both start on the click), from one `OnUpdate` that exists only while it runs; a press during it
   finishes it and isn't a click, and a rebuild or the window closing finishes it too. Only the player's
   new game plays it (`playerNewGame` in Window: the face, Play again, Try again, with the arm's sound).
   Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**

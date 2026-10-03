@@ -807,12 +807,8 @@ end
 -- change or a setting starts one quietly.
 function playerNewGame()
     GS.Sounds.NewGame()
-    -- The result goes at once and the clock stops; the board waits while the arm
-    -- whirs (Grid.SHUFFLE_LEAD), then the new game waves in.
-    if ui.overlay then ui.overlay:Hide() end
-    if ui.result then showResultBar(false) end
-    setTicking(false)
-    Grid.Shuffle(function() Window.NewGame() end)
+    Window.NewGame()
+    Grid.Shuffle()
 end
 
 local function syncGame()

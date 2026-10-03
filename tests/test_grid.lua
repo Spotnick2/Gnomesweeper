@@ -290,9 +290,9 @@ do
 
     -- The face starts again.
     ui.face._scripts.OnClick(ui.face)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     eq(W.game:State(), "ready", "the face starts a new game")
     eq(tile(at(3, 1)).bg._texture, Skin.TEXTURES.tileCovered, "...with every tile covered again")
+    for _ = 1, 200 do WoW.tick(0.016) end                -- the new-game wave (#43) lands in three seconds
     eq(tile(at(1, 1)).hl:GetAlpha(), 1, "...and the hover glow back once the wave lands")
 end
 

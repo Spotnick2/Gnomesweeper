@@ -184,7 +184,6 @@ do
 
     -- A new game takes the burst off.
     ui.face._scripts.OnClick(ui.face)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     check(boom.burst == nil or not boom.burst:IsShown(), "a new game clears the burst")
     eq(boom.icon == nil or not boom.icon:IsShown(), true, "...and the bomb")
 end
@@ -253,7 +252,6 @@ do
 
     local frames = #WoW.frames
     ui.result.button._scripts.OnClick(ui.result.button)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     eq(W.game:State(), "ready", "the result bar's button starts a new game")
     check(not ui.result:IsShown(), "...the result bar goes")
     check(ui.hintKeys:IsShown() and ui.hintMid:IsShown() and ui.help:IsShown(), "...and the controls come back")

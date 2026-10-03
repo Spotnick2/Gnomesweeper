@@ -173,7 +173,6 @@ do
     -- The face is a new game.
     local old = W.game
     ui.face._scripts.OnClick(ui.face)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     check(W.game ~= old, "clicking the face starts a new game")
     eq(W.game:State(), "ready", "...which is ready")
     eq(W.game.w, 9, "...at the same difficulty")

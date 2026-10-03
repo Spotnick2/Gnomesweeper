@@ -62,7 +62,6 @@ do
     check(ui.face.overlay:IsShown() and ui.face.overlay._texture == Skin.TEXTURES.faceSoot, "...with soot over her")
 
     ui.face._scripts.OnClick(ui.face)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     eq(ui.face.state, "ready", "the face starts a new game, and goes back to ready")
     check(not ui.face.overlay:IsShown(), "...and the soot is gone")
 
@@ -141,7 +140,6 @@ do
     -- Both overlays are one frame, re-dressed: no second one is built.
     local frames = #WoW.frames
     ui.face._scripts.OnClick(ui.face)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     check(not o:IsShown(), "a new game puts the overlay away")
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout(WALL))
     click(at(1, 1), L); click(at(5, 1), L)
@@ -160,11 +158,11 @@ do   -- the button starts a new game
     local old = W.game
     local o = ui.overlay
     o.button._scripts.OnClick(o.button)
-    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     check(W.game ~= old, "Try again starts a new game")
     eq(W.game:State(), "ready", "...which is ready")
     check(not o:IsShown(), "...and the overlay goes")
     eq(tile(1).bg._texture, Skin.TEXTURES.tileCovered, "...with the board covered again")
+    for _ = 1, 200 do WoW.tick(0.016) end                -- the new-game wave (#43) lands in three seconds
     eq(tile(1).hl:GetAlpha(), 1, "...and tiles live again once the wave lands")
 end
 

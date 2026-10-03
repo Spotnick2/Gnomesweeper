@@ -224,19 +224,15 @@ end
 
 ------------------------------------------------------------
 -- The new-game wave (#43): the tiles re-cover in a diagonal wave from the top-
--- left, each fading in and dropping a few units into place, about a second in
--- all, while the gnomish arm whirs. One OnUpdate, only while it runs: no
+-- left, each fading in and dropping a few units into place, three seconds in
+-- all: as long as the gnomish arm's sound, which starts on the same click (the
+-- owner tried a one-second wave, then a second's wait before it: neither felt right). One OnUpdate, only while it runs: no
 -- animation group per tile (Expert is 480).
 ------------------------------------------------------------
 
-Grid.SHUFFLE_SPREAD = 0.65   -- seconds from the first tile starting to the last
-Grid.SHUFFLE_FALL = 0.35     -- seconds one tile takes
+Grid.SHUFFLE_SPREAD = 2.3    -- seconds from the first tile starting to the last
+Grid.SHUFFLE_FALL = 0.7      -- seconds one tile takes
 Grid.SHUFFLE_DROP = 8        -- units a tile drops from
-Grid.SHUFFLE_LEAD = 1        -- seconds the arm whirs before the new board comes in (owner: the
-                             -- sound builds slowly; the wave used to be over before it was heard)
-
-local swapFn                 -- the new game, still to make during the lead (Grid.Shuffle(swap))
-local swapping               -- making it now: its rebuild (Grid.Rebuild) must not end the wave
 
 local driver                 -- the frame whose OnUpdate runs the wave
 
@@ -260,16 +256,8 @@ local function waveAt(elapsed)
     return landed
 end
 
--- Ends the wave: every tile in place. Still in the lead, the new game is made
--- first (a click or the window closing skips straight to it).
 function Grid.FinishShuffle()
     if not shuffling then return end
-    if swapFn then
-        local swap = swapFn
-        swapFn, swapping = nil, true
-        swap()
-        swapping = false
-    end
     shuffling = nil
     driver:SetScript("OnUpdate", nil)
     for i = 1, game.total do
@@ -280,26 +268,14 @@ function Grid.FinishShuffle()
     Grid.SetInteractive(game:State() == "ready" or game:State() == "playing")
 end
 
--- The wave. With `swap` (a function making the new game), the old board stays
--- still for SHUFFLE_LEAD seconds first, taking no clicks, while the sound
--- builds; then `swap` runs and the new tiles wave in.
-function Grid.Shuffle(swap)
+function Grid.Shuffle()
     if not game then return end
     Grid.FinishShuffle()
-    shuffling, swapFn = 0, swap
+    shuffling = 0
     Grid.SetInteractive(false)                           -- no hover glow while tiles fly in
-    if not swap then waveAt(0) end
+    waveAt(0)
     driver:SetScript("OnUpdate", function(_, dt)
         shuffling = shuffling + dt
-        if swapFn then
-            if shuffling < Grid.SHUFFLE_LEAD then return end
-            local make = swapFn
-            swapFn, swapping = nil, true
-            make()                                       -- the new board (its rebuild leaves the wave alone)
-            swapping = false
-            Grid.SetInteractive(false)
-            shuffling = 0
-        end
         if waveAt(shuffling) then Grid.FinishShuffle() end
     end)
 end
@@ -323,9 +299,7 @@ end
 -- A new game: every tile placed and painted for `board`, the pool grown only if
 -- this board is bigger than any before it, the rest hidden.
 function Grid.Rebuild(board)
-    -- A new board mid-wave starts from a whole one; a game still waiting in the lead
-    -- is dropped, not made (this rebuild IS the new game).
-    if not swapping then swapFn = nil; Grid.FinishShuffle() end
+    Grid.FinishShuffle()                 -- a new board mid-wave starts from a whole one
     game = board
     input:Cancel()
     interactive = true
@@ -392,5 +366,4 @@ Grid._test = {
     paints = function() return paints end,
     input = function() return input end,
     driver = function() return driver end,
-    game = function() return game end,
 }

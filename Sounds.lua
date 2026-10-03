@@ -119,6 +119,7 @@ end
 
 local playing = false    -- this addon started the music and hasn't stopped it
 local inCombat = false
+local probeMusic = false -- /gsweep sounds wants the music now, even with the setting off
 
 local LOG_MAX = 60
 local function log(fmt, ...)
@@ -132,8 +133,10 @@ local function log(fmt, ...)
     while #l > LOG_MAX do table.remove(l, 1) end
 end
 
+-- The one check. The probe's music is one more reason to play, under the same
+-- window and combat rules, so it is started, stopped and owned like any other.
 local function eligible()
-    return db().music == true and GS.Window.IsShown() and not inCombat
+    return (db().music == true or probeMusic) and GS.Window.IsShown() and not inCombat
 end
 
 -- Starts or stops the music to match the one check. Safe to call any time.
@@ -229,15 +232,17 @@ function Sounds.Probe()
     local t = #list * Sounds.PROBE_GAP
     C_Timer.After(t, function()
         if run ~= probeRun then return end
-        local ok, r1 = pcall(PlayMusic, Sounds.MUSIC)
-        results.music = { file = Sounds.MUSIC, ok = ok, returned = tostring(r1) }
-        GS.Print(string.format("music: PlayMusic(%d), Gnomeregan's zone music, for %d s.", Sounds.MUSIC, Sounds.MUSIC_PROBE))
+        -- Through the one check: no music with the board closed or in combat.
+        probeMusic = true
+        Sounds.UpdateMusic()
+        results.music = { file = Sounds.MUSIC, started = playing }
+        GS.Print(playing and string.format("music: Gnomeregan's zone music (%d), for %d s.", Sounds.MUSIC, Sounds.MUSIC_PROBE)
+            or "music: skipped (the board is closed, or you're in combat).")
     end)
     C_Timer.After(t + Sounds.MUSIC_PROBE, function()
         if run ~= probeRun then return end
-        StopMusic()
-        playing = false
-        Sounds.UpdateMusic()
+        probeMusic = false
+        Sounds.UpdateMusic()                               -- stops it, unless the setting wants it on
         GS.Print("done. /reload saves what the client said; tell me what you heard.")
     end)
 end
@@ -246,11 +251,10 @@ end
 local probing = false
 function Sounds.ToggleProbe()
     if probing then
-        probeRun = probeRun + 1
+        probeRun = probeRun + 1                            -- the remaining callbacks do nothing
         probing = false
-        StopMusic()
-        playing = false
-        Sounds.UpdateMusic()
+        probeMusic = false
+        Sounds.UpdateMusic()                               -- stops only music this addon started
         GS.Print("sound check stopped.")
         return
     end

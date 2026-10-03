@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **A new personal best** shows your time to the tenth and how much you beat the old one by ("0.8 s faster than 00:22.1"). **Reset best times** in the settings wipes them all (click twice).
+- **Celebrations**: a gold burst turns behind the gnome when you clear the field, smoke rises from the tile that blew, and the gnome flinches while you hold a tile down. **A new personal best** gets a fanfare, a bigger line that pulses, and **fireworks** over the board (turn them off in the settings).
 - **A new game reshuffles the field**: the tiles come back in a wave from the top-left while a gnomish arm whirs. A click skips it.
 - **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
 - **Gnomeregan's music** while the board is open (off by default): the note in the title bar turns it on and off. It stops when you close the board (your zone's music comes back), and never plays in combat.

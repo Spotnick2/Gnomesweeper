@@ -31,7 +31,9 @@ the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 32
 game): **kit 8456**, the owner's pick (a PvP warning; after auditioning 4574 `IG_PVP_UPDATE` and
 25477, the battleground countdown); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
 file is 566083; the owner found the kit ID in Classic's data), a gnomish arm, in place of the big red
-button 4779 that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
+button 4779 that "doesn't sound like much". **A new personal best** (#10): the fanfare **878**
+`IG_QUEST_LIST_COMPLETE` (provisional; `/gsweep sounds` auditions 31578, 63971, 73277), then the
+gnome's cheer a second later, and with the fireworks **8569** (the owner's pick). The API can't list the client's sound kits (they are game data,
 `SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 

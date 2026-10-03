@@ -41,6 +41,8 @@ Options.ITEMS = {
       note = "Clicks, flags, the bomb and the cheers. The game's own sound settings apply too." },
     { key = "music", kind = "toggle", label = "Gnomeregan music",
       note = "While the board is open; never in combat. Also the note in the title bar." },
+    { key = "fireworks", kind = "toggle", label = "Fireworks",
+      note = "Over the board when you beat your best time." },
     { key = "scale", kind = "scale", label = "Window size",
       get = function() return db().scale or 1 end,
       set = function(v)
@@ -262,6 +264,16 @@ local function buildPage()
         y = y - 26
         page.controls[item.key] = c
     end
+
+    -- Reset the best times (owner). Two clicks: the first only arms it for a few
+    -- seconds (no popup: none has been measured on Forever, and two clicks guard
+    -- as well).
+    y = y - 6
+    local reset = pageButton(Options.RESET_LABEL, 190, function(self) Options.ResetClick(self) end)
+    reset:SetPoint("TOPLEFT", page, "TOPLEFT", 16, y)
+    page.reset = reset
+    local note = pageLabel("Every difficulty's best time and games won, for both first-click rules.", "GameFontHighlightSmall")
+    note:SetPoint("LEFT", reset, "RIGHT", 10, 0)
     views[#views + 1] = function()
         if not page:IsShown() then return end
         for _, fn in ipairs(refreshers) do fn() end
@@ -388,6 +400,38 @@ local function watchSettingsWindow()
         local back = steppedAside == GS.Window.shownCount
         steppedAside = nil
         if back then GS.Window.Open() end
+    end)
+end
+
+------------------------------------------------------------
+-- Resetting the best times: arm, then confirm
+------------------------------------------------------------
+
+Options.RESET_LABEL = "Reset best times..."
+Options.RESET_ARMED = "Click again to reset"
+Options.RESET_WINDOW = 5     -- seconds the second click has
+
+local armed = 0              -- bumped to disarm a pending confirmation
+
+function Options.ResetClick(button)
+    if button.armed then
+        button.armed = false
+        armed = armed + 1
+        button:SetText(Options.RESET_LABEL)
+        GS.Scores.Reset(GnomesweeperDB)
+        GS.Window.ScoresReset()
+        GS.Print("best times reset.")
+        return
+    end
+    button.armed = true
+    button:SetText(Options.RESET_ARMED)
+    armed = armed + 1
+    local mine = armed
+    C_Timer.After(Options.RESET_WINDOW, function()
+        if mine == armed then
+            button.armed = false
+            button:SetText(Options.RESET_LABEL)
+        end
     end)
 end
 

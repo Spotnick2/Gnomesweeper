@@ -34,6 +34,8 @@ Skin.TEXTURES = {
     close = MEDIA .. "icon_close",
     arrow = MEDIA .. "icon_arrow",
     burst = MEDIA .. "icon_burst",
+    smoke = MEDIA .. "fx_smoke",            -- puffs rising from the tile that went off (#10)
+    glow = MEDIA .. "fx_glow",              -- the soft glow behind the mascot on a win (#10)
     gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
     mine = 133709,                                      -- inv_misc_bomb_01: the classic black bomb (art needed, #13)
     -- the glass controls (9-sliced, margin 8)
@@ -91,6 +93,7 @@ Skin.NUMBER_COLORS = {
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 
 Skin.COLORS = {
+    smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board
     musicOn = { 0.82, 0.92, 1 },      -- the note when the music plays
     musicOff = { 0.50, 0.55, 0.62 },  -- greyed under its red slash
     gold         = { 0.98, 0.77, 0.38 },       -- the logo's lettering, #fbc560

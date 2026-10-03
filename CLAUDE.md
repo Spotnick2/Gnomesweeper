@@ -35,7 +35,7 @@ holds the decided design, so update it when the design changes.
 
 TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
-`Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → `Options.lua` → `Minimap.lua` →
+`Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
 `Sounds.lua` → `Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
@@ -144,7 +144,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     panel) puts the overlay away, `Window.DismissEnd()`, and the result stays in the footer as a
     **result bar** with its Play again / Try again button, in place of the controls; the finished
     board is untouched. It does not come back on later clicks, and a new game (the button, the face,
-    the difficulty list) clears both. The golden burst and the loss smoke are #10's.
+    the difficulty list) clears both. The burst, the smoke and the fireworks are `Effects.lua`'s (#10).
   - **The footer:** "Choose a tile to begin." (ready only), `Left-click: Reveal     Right-click: Flag`,
     `Middle-click: Clear around number`. (The **?** that explains clearing moved to the title bar.)
   - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`
@@ -162,7 +162,10 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   checks the value (refused: nothing changes), saves it, applies it, and refreshes the page. The slash
   commands go through it too. Question marks and the first-click rule are part of a board: they apply
   from the next game, and a board nobody has touched (every tile covered: no reveal, no mark) is
-  replaced at once. The same value again does nothing.
+  replaced at once. The same value again does nothing. **Reset best times...** on the page (owner)
+  forgets every best and count (`Scores.Reset`): the first click only arms it for `RESET_WINDOW`
+  (5 s), a second resets (no popup: none measured on Forever); `Window.ScoresReset` drops the best
+  to beat.
   **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
   more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
   it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
@@ -193,6 +196,20 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
   `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
   `GnomesweeperDB[key]`). Without the libraries there is simply no button.
+- **`Effects.lua`** (#10): the celebrations, all client `AnimationGroup`s on a few textures (no OnUpdate
+  of ours), each built once with `play`/`stop`/`isPlaying`. **The burst**: the gold starburst turning
+  behind the face while a win shows (`Window.Refresh`): no longer a spinning starburst (owner: harsh); a
+  gold ring ripples out once and a soft glow (`Media/fx_glow`) breathes, the spell-proc glow's rhythm. **The smoke**: three puffs (`Media/fx_smoke`,
+  `Tools/make_ui.py`) rising from the tile that went off, looping while the wipe shows. **The pulse**:
+  the overlay's bigger "New personal best!" line (`o.newBest`, 16 pt, gold, swelling to 110%; the quiet `o.best` keeps
+  "Best 00:42"). **Fireworks** on a new personal best (the owner's idea): seven bursts in gold, the
+  difficulty's rarity colour and white, at random places over the board, staggered, with kit 8569;
+  a **Fireworks** setting (on). The effects sit on `ui.fx`, a frame at window level +12: over the
+  tiles, under the end overlay. **The surprised face**: `Grid.Attach`'s third argument tells Window
+  when a tile is held (the first button down, the last up, or `Grid.Cancel`), and the face
+  `setPressed`s while the game can be played: `Skin.TEXTURES.facePressed` once that art exists
+  (`docs/ART.md` #4), a 12% flinch until then. The animation methods are the dump's
+  `SimpleAnim*API`; `test_methods` checks each against its type's group.
 - **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound
   kits played with the global `PlaySound(kit, "SFX")` (the game's sound toggle and volume apply;
   `PlaySoundFile` refuses game paths here, and `C_Sound.PlaySound`'s second argument is an enum, not
@@ -359,6 +376,9 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_effects.lua`** is the celebrations: the burst and the smoke following the game, the face while
+  a tile is held (one button, two, a window closing mid-press, a finished game, the real art), and a new
+  best's fanfare, cheer and fireworks (on the board, staggered, off by the setting).
 - **`test_sounds.lua`** is the sounds and music on the stub's recorded `PlaySound`/`PlayMusic`/
   `StopMusic` and its clock (`WoW.advance` runs `C_Timer`s): every effect, the delayed gnome and its
   cancelling, the music's one check (window, combat, setting, a login in combat), the note button,

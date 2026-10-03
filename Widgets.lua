@@ -131,6 +131,20 @@ function Widgets.FaceButton(parent, size)
         end
         self.state = state
     end
+    -- While a tile is held down (#10): the surprised face once its art exists
+    -- (Skin.TEXTURES.facePressed, docs/ART.md); until then the gnome flinches a little.
+    function b.setPressed(self, on)
+        on = on and true or false
+        if self.pressed == on then return end
+        self.pressed = on
+        if T.facePressed then
+            self.face:SetTexture(on and T.facePressed or T.face)
+        else
+            local s = on and math.floor(inner * 0.88 + 0.5) or inner
+            self.face:SetSize(s, s)
+        end
+    end
+
     b:setState("ready")
     return b
 end

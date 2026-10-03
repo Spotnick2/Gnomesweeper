@@ -42,10 +42,13 @@ Sounds.KITS = {
     win = 6131,          -- a gnome: "hurray", "Congratulations"
     greetMale = 5925,    -- GnomeMaleZanyNPCGreetings: the first open of a session
     greetFemale = 5931,  -- GnomeFemaleNerdyNPCGreetings
+    best = 878,          -- a new personal best: SOUNDKIT.IG_QUEST_LIST_COMPLETE (provisional, #10)
+    fireworks = 8569,    -- the fireworks on a new personal best (the owner's pick)
     alert = 8456,        -- the clock just passed your best: the owner's pick (a PvP warning)
     newGame = 4935,      -- GnomeRoboArmFidget01Fidget02: a gnomish arm whirs (owner's pick; its file is 566083)
 }
 Sounds.WIPE_DELAY = 0.7  -- seconds from the bomb to the gnome; tune by ear
+Sounds.BEST_DELAY = 1.0  -- seconds from a new best's fanfare to the gnome's cheer
 Sounds.MUSIC = 53189     -- gnomeragon01-zone
 
 local function db() return GnomesweeperDB end
@@ -82,13 +85,18 @@ end
 -- After an action on the board (Window.Dispatch): what it did, by sound.
 -- `kind` is reveal/chord/mark, `was` and `now` the game's state before and
 -- after, `cell` the acted-on cell after the action, `changed` how many cells.
-function Sounds.Action(kind, was, now, cell, changed)
+function Sounds.Action(kind, was, now, cell, changed, newBest)
     if changed == 0 then return end
     if now == "lost" and was ~= "lost" then
         Sounds.Play("boom")
         later(Sounds.WIPE_DELAY, voice("wipeMale", "wipeFemale"))
     elseif now == "won" and was ~= "won" then
-        Sounds.Play("win")
+        if newBest then
+            Sounds.Play("best")                          -- the fanfare first, then the gnome cheers
+            later(Sounds.BEST_DELAY, "win")
+        else
+            Sounds.Play("win")
+        end
     elseif kind == "mark" then
         Sounds.Play(cell.state == "covered" and "unflag" or "flag")
     else
@@ -103,6 +111,9 @@ function Sounds.Greet()
     greeted = true
     Sounds.Play(voice("greetMale", "greetFemale"))
 end
+
+-- The fireworks on a new personal best (the setting is checked by Window).
+function Sounds.Fireworks() Sounds.Play("fireworks") end
 
 -- The clock just passed the best to beat (Window's clock tick, once per game).
 function Sounds.BestPassed() Sounds.Play("alert") end
@@ -205,6 +216,11 @@ Sounds.CANDIDATES = {
     { 4574, "alert: IG_PVP_UPDATE" },
     { 8459, "alert: PVP_THROUGH_QUEUE (the battleground is ready)" },
     { 25477, "alert: UI_BATTLEGROUND_COUNTDOWN_TIMER" },
+    { 878, "new best: IG_QUEST_LIST_COMPLETE (the current pick)" },
+    { 31578, "new best: UI_EPICLOOT_TOAST" },
+    { 63971, "new best: UI_LEGENDARY_LOOT_TOAST" },
+    { 73277, "new best: UI_WORLDQUEST_COMPLETE" },
+    { 8569, "fireworks (the owner's pick)" },
     { 4935, "new game: GnomeRoboArmFidget01Fidget02 (the owner's pick)" },
 }
 Sounds.PROBE_GAP = 3       -- seconds between candidates

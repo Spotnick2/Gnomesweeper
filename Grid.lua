@@ -182,6 +182,15 @@ function Grid.Logging() return logging end
 
 local shuffling              -- seconds into the new-game wave, or nil
 local swallowed = {}         -- buttons held since a press that ended the wave
+local held = {}              -- buttons down on a tile right now (the face looks surprised, #10)
+local onPress                -- Grid.Attach's third argument: onPress(true) on the first, false on the last
+
+local function release(button)
+    if held[button] then
+        held[button] = nil
+        if not next(held) and onPress then onPress(false) end
+    end
+end
 
 local function onDown(self, button)
     log("tile %d  down  %s", self.index, tostring(button))
@@ -197,6 +206,9 @@ local function onDown(self, button)
         return
     end
     input:Down(self.index, button)
+    local first = not next(held)
+    held[button] = true
+    if first and onPress then onPress(true) end
 end
 
 local function onUp(self, button, upInside)
@@ -209,6 +221,7 @@ local function onUp(self, button, upInside)
             tostring(upInside), tostring(self:IsMouseOver()))
     end
     if swallowed[button] then swallowed[button] = nil; return end   -- the gesture that ended the wave
+    release(button)
     input:Up(self.index, button, inside)
 end
 
@@ -305,8 +318,11 @@ end
 
 function Grid.Shuffling() return shuffling ~= nil end
 
-function Grid.Attach(parent, action)
-    host, act = parent, action
+-- Tile i's frame (the effects anchor to it: the smoke over the tile that went off).
+function Grid.Tile(i) return tiles[i] end
+
+function Grid.Attach(parent, action, pressed)
+    host, act, onPress = parent, action, pressed
     driver = CreateFrame("Frame", nil, parent)
     input = Input.New({
         reveal = function(i) act("reveal", i) end,
@@ -318,6 +334,7 @@ end
 function Grid.Cancel()
     if input then input:Cancel() end
     for b in pairs(swallowed) do swallowed[b] = nil end   -- a release lost to a closing window mustn't eat the next press
+    for b in pairs(held) do release(b) end
 end
 
 -- A new game: every tile placed and painted for `board`, the pool grown only if

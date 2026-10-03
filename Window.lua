@@ -609,12 +609,9 @@ local function build()
     local content = Glass.ContentLevel(win)
 
     -- Title bar: the mascot, the name, the tagline, the settings gear, close.
-    ui.logo = win:CreateTexture(nil, "ARTWORK")
-    ui.logo:SetSize(40, 40)
-    ui.logo:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -10)
-    ui.logo:SetTexture(T.logo)
     local title = Glass.Font(win, 19, "LEFT")
-    title:SetPoint("TOPLEFT", ui.logo, "TOPRIGHT", 9, -2)
+    -- No portrait beside it: the mascot is the HUD's new-game button (owner: a second one was redundant).
+    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
     title:SetText(Skin.TITLE)
     local tagline = Glass.Font(win, 11, "LEFT")
     tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)

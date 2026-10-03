@@ -112,7 +112,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (the mascot, name, tagline, the trophy for the best times, the settings gear (#8),
+  - Title bar (name and tagline, no portrait: the mascot is the HUD's face; the music note, the trophy
+    for the best times, the settings gear (#8),
     close), a difficulty
     button in the difficulty's **rarity colour** with a small **hand-rolled** list (not Blizzard's
     dropdown API, which no sibling has measured on Forever; each row gives the name and

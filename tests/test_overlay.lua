@@ -42,7 +42,7 @@ do
     local ui = W._test.ui
     eq(ui.face.state, "ready", "a new game: the mascot is ready")
     eq(ui.face.face._texture, Skin.TEXTURES.face, "...and her face is the logo's gnome")
-    eq(ui.logo._texture, Skin.TEXTURES.face, "...the same one in the title bar (one mascot, not three characters)")
+    eq(ui.logo, nil, "...and only there: no second portrait in the title bar (owner: redundant)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.ready[1], "...in the ready ring")
     check(not ui.face.overlay:IsShown(), "...with nothing over her")
     eq(ui.overlay, nil, "...and no overlay has even been built")

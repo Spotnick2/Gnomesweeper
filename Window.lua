@@ -963,6 +963,7 @@ local function build()
         Grid.Cancel()                  -- a button held when the window closes is not a click
         Grid.FinishShuffle()           -- a reopened board is never half-drawn
         ui.mascot.stop()               -- she's still while nobody sees her (#48)
+        ui.face:setPressed(false, true) -- and not left surprised (no lingering on a closed window)
         GS.Sounds.Cancel()
         GS.Sounds.UpdateMusic()        -- the music is for the board: it stops with it
         self:StopMovingOrSizing()

@@ -237,7 +237,9 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   a **Fireworks** setting (on). The effects sit on `ui.fx`, a frame at window level +12: over the
   tiles, under the end overlay. **The surprised face**: `Grid.Attach`'s third argument tells Window
   when a tile is held (the first button down, the last up, or `Grid.Cancel`), and the face
-  `setPressed`s while the game can be played: her surprised face, `Skin.TEXTURES.facePressed` (#12).
+  `setPressed`s while the game can be played: her surprised face, `Skin.TEXTURES.facePressed` (#12), kept
+  at least `Widgets.FACE_PRESS_MIN` (0.35 s) after a quick click so it can be seen (owner); the window
+  closing lets go at once.
   **The mascot moves (#48, level 1)**: `Effects.Mascot(ui.face.face)`, four groups on the face *texture*
   (the button and ring stay still): a bounce on a win and a shudder on a wipe (from `Dispatch`, on the
   action that ends the game, only if shown), a nod on the player's new game (`playerNewGame`), and a 2%

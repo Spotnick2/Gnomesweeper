@@ -49,6 +49,7 @@ do
     click(41, L)
     eq(W.game:State(), "playing", "(the first click started the game)")
     eq(ui.face.state, "playing", "playing: the mascot follows the game")
+    WoW.advance(0.5)                                     -- (her surprise after the click lingers a moment)
     eq(ui.face.face._texture, Skin.TEXTURES.facePlaying, "...focused, goggles down (her playing face, #12)")
 
     for i = 1, W.game.total do                          -- end it on a mine

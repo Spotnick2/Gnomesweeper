@@ -75,6 +75,25 @@ function Layout.FormatTime(seconds)
     return string.format("%02d:%02d", math.floor(seconds / 60), seconds % 60)
 end
 
+-- The clock against the best to beat (#46, owner): "normal" far from it (or with no
+-- best), "near" in its last CLOCK_NEAR_SHARE (at most CLOCK_NEAR_MAX seconds), "last"
+-- in its last CLOCK_LAST seconds (the clock flashes), "over" once past it. Exactly at
+-- the best is not over (the alert fires past it, too). The window shows "normal" before
+-- the first reveal and after a new best, whatever this says.
+Layout.CLOCK_NEAR_SHARE = 0.25
+Layout.CLOCK_NEAR_MAX = 10
+Layout.CLOCK_LAST = 3
+
+function Layout.ClockState(elapsed, best)
+    -- 0 is a real best (a first click that clears the board: Codex, #52); below it, damaged.
+    if type(best) ~= "number" or best < 0 then return "normal" end
+    local left = best - elapsed
+    if left < 0 then return "over" end
+    if left <= Layout.CLOCK_LAST then return "last" end
+    if left <= math.min(Layout.CLOCK_NEAR_MAX, best * Layout.CLOCK_NEAR_SHARE) then return "near" end
+    return "normal"
+end
+
 -- "00:42.6": with tenths (truncated, like the whole seconds), for two times that
 -- would otherwise both read 00:42. Not past the display cap, which has no tenths.
 function Layout.FormatTenths(seconds, cap)

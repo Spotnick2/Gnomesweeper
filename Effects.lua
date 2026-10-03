@@ -268,4 +268,30 @@ function Effects.Fireworks(parent)
     return h
 end
 
+------------------------------------------------------------
+-- A flash: a region blinking, until stopped (#46: the clock's last 3 seconds)
+------------------------------------------------------------
+
+Effects.FLASH_HALF = 0.25    -- seconds from bright to dim
+
+function Effects.Flash(region)
+    local ag = region:CreateAnimationGroup()
+    ag:SetLooping("REPEAT")
+    local dim = ag:CreateAnimation("Alpha")
+    dim:SetFromAlpha(1)
+    dim:SetToAlpha(0.3)
+    dim:SetDuration(Effects.FLASH_HALF)
+    dim:SetOrder(1)
+    local bright = ag:CreateAnimation("Alpha")
+    bright:SetFromAlpha(0.3)
+    bright:SetToAlpha(1)
+    bright:SetDuration(Effects.FLASH_HALF)
+    bright:SetOrder(2)
+    local h = { ag = ag }
+    function h.play() if not ag:IsPlaying() then ag:Play() end end
+    function h.stop() ag:Stop() end
+    function h.isPlaying() return ag:IsPlaying() end
+    return h
+end
+
 Effects._test = {}

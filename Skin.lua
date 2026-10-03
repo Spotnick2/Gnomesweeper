@@ -110,6 +110,10 @@ Skin.LAUREL_CROP = { 99 / 512, 415 / 512, 7 / 128, 118 / 128 }
 Skin.ASPECT = { title = (459 - 53) / (124 - 4), laurels = (415 - 99) / (118 - 7) }
 
 Skin.COLORS = {
+    -- The clock against your best (#46): WoW's countdown convention (yellow, then red).
+    clockNormal = { 1, 1, 1 },
+    clockNear = { 1, 0.82, 0 },       -- NORMAL_FONT_COLOR's yellow: closing in on your best
+    clockOver = { 1, 0.13, 0.13 },    -- RED_FONT_COLOR: past it
     smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board
     musicOn = { 0.82, 0.92, 1 },      -- the note when the music plays
     musicOff = { 0.50, 0.55, 0.62 },  -- greyed under its red slash

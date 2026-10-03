@@ -238,6 +238,13 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   tiles, under the end overlay. **The surprised face**: `Grid.Attach`'s third argument tells Window
   when a tile is held (the first button down, the last up, or `Grid.Cancel`), and the face
   `setPressed`s while the game can be played: her surprised face, `Skin.TEXTURES.facePressed` (#12).
+  **The mascot moves (#48, level 1)**: `Effects.Mascot(ui.face.face)`, four groups on the face *texture*
+  (the button and ring stay still): a bounce on a win and a shudder on a wipe (from `Dispatch`, on the
+  action that ends the game, only if shown), a nod on the player's new game (`playerNewGame`), and a 2%
+  breath every ~5 s while a game is played and the window shown (`Refresh`; a REPEAT group, the rest an
+  end delay on its last animation). A one-shot stops the rest; the breath resumes after it if wanted.
+  `NewGame`, `SetGame` and the window closing stop her. Frames (level 2) and a 3D gnome (level 3) wait
+  on art and #20/#21.
   The animation methods are the dump's
   `SimpleAnim*API`; `test_methods` checks each against its type's group.
 - **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound

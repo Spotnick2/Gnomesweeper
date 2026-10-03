@@ -103,6 +103,7 @@ function Methods.IsPlaying(ag) return ag._playing == true end
 function Methods.SetLooping(ag, l) ag._looping = l end
 function Methods.SetDegrees(a, d) a._degrees = d end
 function Methods.SetStartDelay(a, d) a._delay = d end
+function Methods.SetEndDelay(a, d) a._endDelay = d end
 function Methods.SetDuration(a, d) a._duration = d end
 function Methods.CreateMaskTexture(w, name) return newWidget("MaskTexture", w, name) end
 function Methods.CreateFontString(w, name) return newWidget("FontString", w, name) end

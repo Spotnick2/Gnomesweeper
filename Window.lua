@@ -64,7 +64,7 @@ end
 -- The game
 ------------------------------------------------------------
 
-local moves = 0       -- actions that changed the board this game (#32: is there progress to lose?)
+local reveals = 0     -- reveals and chords that changed the board this game (#32: progress to lose)
 local beat            -- the best to beat this game (its time at the start), or nil
 local passed          -- the clock went past it this game (the alert played)
 
@@ -79,7 +79,7 @@ local function newBoard()
     rule = db().safeZone == "cell" and "cell" or "area"
     category = Scores.Category(key, rule)
     lastWin = nil
-    moves = 0
+    reveals = 0
     local best = type(db().scores) == "table" and Scores.Best(db().scores, category)
     beat, passed = best and best.time or nil, false
 end
@@ -303,14 +303,19 @@ end
 ------------------------------------------------------------
 
 local MENU_W, ROW_H, BEST_W = 262, 24, 44
-local CONFIRM_H = 56        -- the question under the rows (#32)
+local MENU_H = #Board.PRESET_ORDER * ROW_H + 8   -- the list's rows
+local CONFIRM_H = 62        -- the question under the rows (#32): room for its text on two lines
 local FACE_TIP_W, FACE_TIP_H = 250, 46   -- the first launch's pointer at the face (#45)
 
--- Something to lose (#32, owner): a game in progress past its first move. A flag is
--- a move too, so "a reveal after the first, or any flag" is just this. A fresh board,
--- or one whose only move was the first reveal, has none; a finished game has none.
+-- Something to lose (#32, owner: "a reveal beyond the first, or any flag"): a flag on
+-- the board (read from it, so one placed and taken off again isn't progress), or a
+-- second reveal or chord. A board not started yet counts too if it has flags. A first
+-- reveal alone, or a finished game, has nothing to lose.
 local function hasProgress()
-    return game ~= nil and game:State() == "playing" and moves >= 2
+    if not game then return false end
+    local s = game:State()
+    if s ~= "ready" and s ~= "playing" then return false end
+    return reveals >= 2 or game:FlagsLeft() < game.mines
 end
 
 -- The question inside the list: "Start Expert? This game will be lost."
@@ -321,23 +326,26 @@ local function askFor(key)
     local col = Skin.DifficultyColor(key)
     c.start:setAccent(col[1], col[2], col[3])
     c:Show()
-    ui.menu:SetHeight(#Board.PRESET_ORDER * ROW_H + 8 + CONFIRM_H)
+    ui.menu:SetHeight(MENU_H + CONFIRM_H)
     if not ui.menu:IsShown() then ui.menu:Show() end
 end
 
-local function pickDifficulty(key)
+-- The one place a difficulty change is decided (the list and /gsweep <difficulty>):
+-- the same one closes the list, progress asks, anything else switches.
+local function chooseDifficulty(key)
     if key == difficultyKey() then ui.menu:Hide(); return end
     if hasProgress() then askFor(key); return end
     ui.menu:Hide()
     Window.NewGame(key)
 end
+local pickDifficulty = chooseDifficulty
 
 local function buildMenu()
     local menu = Widgets.GlassPanel(win)
     -- Above everything else in the window, including the result overlay (+15) and the glass rim that
     -- overlay draws at its own +10, i.e. +25: a list opened while an overlay is up must not slide under it.
     menu:SetFrameLevel(win:GetFrameLevel() + 30)
-    menu:SetSize(MENU_W, #Board.PRESET_ORDER * ROW_H + 8)
+    menu:SetSize(MENU_W, MENU_H)
     menu:SetPoint("TOP", ui.diff, "BOTTOM", 0, -3)
     menu:EnableMouse(true)
     for i, key in ipairs(Board.PRESET_ORDER) do
@@ -390,6 +398,8 @@ local function buildMenu()
     c:SetPoint("TOPLEFT", menu, "TOPLEFT", 4, -4 - #Board.PRESET_ORDER * ROW_H)
     c.text = Glass.Font(c, 12, "CENTER")
     c.text:SetPoint("TOP", c, "TOP", 0, -4)
+    c.text:SetWidth(MENU_W - 24)
+    c.text:SetWordWrap(true)                   -- a wider font wraps rather than spills past the list
     c.text:SetTextColor(unpack(C.menuText))
     c.start = Widgets.GlassButton(c, 110, 22, { fontSize = 11 })
     c.start:SetPoint("BOTTOMRIGHT", c, "BOTTOM", -4, 4)
@@ -410,7 +420,7 @@ local function buildMenu()
         self:SetScript("OnUpdate", nil)
         c:Hide()
         c.key = nil
-        self:SetHeight(#Board.PRESET_ORDER * ROW_H + 8)
+        self:SetHeight(MENU_H)
     end)
     Window.Floating(menu)
     menu:Hide()
@@ -850,6 +860,7 @@ local function build()
     tip.arrow:SetPoint("TOP", tip, "BOTTOM", 0, 2)
     tip.arrow:SetTexture(T.arrow)
     tip.arrow:SetVertexColor(unpack(C.gold))
+    Window.Floating(tip)                       -- one floating panel at a time: the list or Best times put it away
     tip:Hide()
     ui.faceTip = tip
     Widgets.Tip(ui.face, "New game", "Same difficulty.")
@@ -965,7 +976,7 @@ function Window.Dispatch(kind, i)
         list = game:ToggleMark(x, y)
     end
     if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
-    if #list > 0 then moves = moves + 1 end
+    if #list > 0 and kind ~= "mark" then reveals = reveals + 1 end   -- flags are read off the board (#32)
     local state = game:State()
     recordScores(was, state)             -- first, so the refresh below shows a new best
     local newBest = state == "won" and was ~= "won" and lastWin and lastWin.new
@@ -979,6 +990,9 @@ function Window.Dispatch(kind, i)
     Window.Refresh()
     -- Only the action that ENDS the game brings the overlay up: a click on a
     -- finished board does nothing, and must not bring back one put away.
+    -- The game ended (a right or middle click outside the list can do it): a question
+    -- about throwing it away no longer applies.
+    if (state == "won" or state == "lost") and state ~= was and ui.menu.confirm:IsShown() then ui.menu:Hide() end
     if (state == "won" or state == "lost") and state ~= was then
         Grid.SetInteractive(false)
         Window.ShowEnd()
@@ -1030,10 +1044,11 @@ end
 
 function Window.Open(preset)
     ensure()
+    local switch = preset and Board.PRESETS[preset] and preset ~= difficultyKey()
+    -- Nothing to lose: the new board before showing (one layout, not two).
+    if switch and not hasProgress() then Window.NewGame(preset); switch = false end
     win:Show()
-    if preset and Board.PRESETS[preset] and preset ~= difficultyKey() then
-        if hasProgress() then askFor(preset) else Window.NewGame(preset) end   -- the same question (#32)
-    end
+    if switch then chooseDifficulty(preset) end           -- the same question as the list (#32)
 end
 
 function Window.Toggle()
@@ -1099,7 +1114,8 @@ Window._test = {
     SetGame = function(b, cat)
         game = b
         Window.game = b
-        category, lastWin, moves = cat, nil, 0
+        category, lastWin = cat, nil
+        reveals = b:State() == "playing" and 1 or 0        -- a hand-built board is past its first reveal
         local best = cat and type(db().scores) == "table" and Scores.Best(db().scores, cat)
         beat, passed = best and best.time or nil, false
         rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")

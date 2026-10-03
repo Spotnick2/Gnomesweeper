@@ -113,6 +113,52 @@ do
     check(W.game ~= g, "a finished game: switches at once")
 end
 
+do  -- the review of #50
+    local W = fresh({ seenFaceTip = true })
+    local ui = W._test.ui
+    local c = ui.menu.confirm
+    local function pick(key) press(ui.diff); press(ui.rows[key]) end
+
+    -- Flags on a board not started yet: something to lose.
+    click(5, R); click(6, R)
+    eq(W.game:State(), "ready", "(flags, no reveal yet)")
+    local g = W.game
+    pick("expert")
+    check(W.game == g and c:IsShown(), "flags before the first reveal: it asks")
+    press(c.keep)
+
+    -- A flag placed and taken off again isn't progress.
+    click(5, R); click(6, R)                             -- both flags off
+    click(7, R); click(7, R)                             -- on and off again
+    click(41)                                            -- the first reveal
+    eq(W.game:State(), "playing", "(the first reveal, no flag left)")
+    g = W.game
+    pick("intermediate")
+    check(W.game ~= g, "a flag that came off again isn't progress: switches at once")
+    eq(c:IsShown(), false, "...without asking")
+
+    -- The game ends while the question is up: it goes.
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..." }))
+    click(2)                                             -- a second reveal: progress
+    pick("beginner")
+    check(c:IsShown(), "(the question is up)")
+    click(3, R)                                          -- a wrong flag
+    local t = tile(2)
+    t._scripts.OnMouseDown(t, "MiddleButton"); t._scripts.OnMouseUp(t, "MiddleButton", true)
+    eq(W.game:State(), "lost", "(a middle-click outside the list ends the game)")
+    check(not ui.menu:IsShown(), "the game ended: the question about throwing it away goes")
+
+    -- The question can wrap: it has a width.
+    eq(c.text._width, 262 - 24, "the question has a width, so a wider font wraps inside the list")
+end
+
+do  -- the pointer is one of the floating panels: Best times puts it away
+    local W = fresh()
+    check(W._test.ui.faceTip:IsShown(), "(the pointer, first launch)")
+    press(W._test.ui.trophy)
+    check(not W._test.ui.faceTip:IsShown(), "opening Best times puts the pointer away (it would sit over it)")
+end
+
 ----------------------------------------------------------------------------
 -- #45: the first launch's pointer at the face
 ----------------------------------------------------------------------------

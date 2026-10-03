@@ -34,13 +34,27 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
-LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
+LibDBIcon-1.0) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
 `Sounds.lua` → `Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
   when needed instead of rewriting them.
+- **`Locales\`** (#36): **every player-facing string goes through `GS.L`, keyed by the English
+  text itself** (`L["Field cleared!"]`): a key with no translation reads back as itself, so English
+  needs no table and a missing translation shows English, never nil. Text built from parts is one
+  format string (`L["Won %d of %d"]`) so a language can reorder it. `enUS.lua` holds the mechanism and
+  `GS.LOCALE` (the decimal mark, the months), `GS.Decimal(fmt, v)` and `GS.FormatDate(t)`; `frFR.lua`
+  fills French when `GetLocale()` is `frFR` (the owner reviews it: French is the one verified language)
+  and adds French spacing (a non-breaking space before `! ? : ;`). **Stays English:** slash commands and
+  their arguments, the name, the measuring probes ("(for measuring)"), and every saved value (keys,
+  never translated text). The vocabulary is fixed in `frFR.lua`'s header: the field (`le champ`) is
+  never the scores (`meilleurs temps`). **`test_locale.lua`** guards it: every `L["..."]` in the code
+  has a French entry with the same placeholders, no French entry is stale, and a pseudo-language
+  bracketing every translated string is run through every screen: any visible text left unbracketed
+  bypassed `L` and fails. New text: wrap it in `L[...]`, add its French, and the test tells you if
+  you forgot either.
 - **`Glass.lua`**: the material, **copied** from GlassUnitFrames' **`main`** branch
   (`git -C ..\GlassUnitFrames show main:Glass.lua`), with only the header and namespace lines
   changed. `tests/test_toc.lua` fails when the two drift; it reads `main` through git because other
@@ -245,7 +259,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   minimap's addon list, `Blizzard_Minimap/Mainline/AddonCompartment.lua` in the forever source): the
   TOC's `AddonCompartmentFunc` names `Gnomesweeper_OnAddonCompartmentClick`, which clicks like the
   minimap button (`Minimap.Click`: left toggles, right opens the settings), and `...FuncOnEnter/OnLeave`
-  show the same tooltip (no drag line). The TOC's `IconTexture` is her face (`Mediaace_mascot`), so the
+  show the same tooltip (no drag line). The TOC's `IconTexture` is her face (`Media\face_mascot`), so the
   compartment, the AddOns list and the minimap button match.
   **Measured (70205):** `AddonCompartmentFrame` is the client's, shown in `MinimapCluster` as a small
   16x16 button with the addon count (easy to miss), and Gnomesweeper is in its `registeredAddons`.
@@ -484,6 +498,9 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
   addon. PR reviews from Codex use the owner's global `$wow-addon-review` skill
   (`~/.codex/skills/wow-addon-review`); post each review on the PR.
 - A new client build: `/client-update` (`.claude/skills/client-update/`).
+- **Tags are `vX.Y.Z`, never `-beta` or `-alpha`** (owner, after v0.1.0-beta): the packager marks
+  a file beta from the tag's name, and CurseForge hides beta files from most players, on a game
+  that is itself in beta.
 - Releases: CurseForge's packager from the tag webhook, reading `.pkgmeta`. Every tag needs a
   `CHANGELOG.md` entry, written for players (what's in it, not how it got there). CI
   (`.github/workflows/package-check.yml`, AltStable's) runs the Lua 5.1 tests and a packager dry run on

@@ -18,10 +18,11 @@ GS.Window = Window
 
 local Board, Layout, Glass, Skin, Grid, Widgets = GS.Board, GS.Layout, GS.Glass, GS.Skin, GS.Grid, GS.Widgets
 local Scores, API = GS.Scores, GS.API
+local L = GS.L             -- the player's language (#36: Locales\)
 local PAD = Layout.PAD
 local T, C = Skin.TEXTURES, Skin.COLORS
 
-local LABELS = { beginner = "Beginner", intermediate = "Intermediate", expert = "Expert" }
+local LABELS = { beginner = L["Beginner"], intermediate = L["Intermediate"], expert = L["Expert"] }
 local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 -- The title lettering: 28 high (the tagline then ends clear of the difficulty button
@@ -57,7 +58,7 @@ end
 -- "9x9 . 10 mines", from the board's own presets, never typed in twice.
 local function details(key)
     local p = Board.PRESETS[key]
-    return string.format("%d%s%d %s %d mines", p.w, MULT, p.h, DOT, p.mines)
+    return string.format(L["%d%s%d %s %d mines"], p.w, MULT, p.h, DOT, p.mines)
 end
 
 ------------------------------------------------------------
@@ -120,11 +121,12 @@ end
 -- The difficulty button's tooltip: the best and the record, asked on each hover.
 local function difficultyTip()
     local best, played, won = statsFor(difficultyKey())
-    local lines = { "Starts a new game." }
+    local lines = { L["Starts a new game."] }
     if best then
-        lines[#lines + 1] = "Best: " .. bestTime(best) .. (bestName(best) and (" by " .. bestName(best)) or "")
+        lines[#lines + 1] = bestName(best) and string.format(L["Best: %s by %s"], bestTime(best), bestName(best))
+            or string.format(L["Best: %s"], bestTime(best))
     end
-    lines[#lines + 1] = played > 0 and string.format("Won %d of %d", won, played) or "Not played yet."
+    lines[#lines + 1] = played > 0 and string.format(L["Won %d of %d"], won, played) or L["Not played yet."]
     return lines
 end
 
@@ -146,21 +148,21 @@ local function margin()
     if not prev then return nil end
     local now = game:Elapsed(GetTime())
     local tenths = math.floor(prev.time * 10 + 1e-9) - math.floor(now * 10 + 1e-9)
-    if tenths >= 1 then return string.format("%.1f s", tenths / 10) end
+    if tenths >= 1 then return GS.Decimal("%.1f", tenths / 10) .. " s" end
     local d = prev.time - now
-    if d < 0.01 then return "<0.01 s" end                -- never "0.00 s" (Codex, #47): bests compare precisely
-    return string.format("%.2f s", d)
+    if d < 0.01 then return "<" .. GS.Decimal("%.2f", 0.01) .. " s" end   -- never "0.00 s" (Codex, #47): bests compare precisely
+    return GS.Decimal("%.2f", d) .. " s"
 end
 
 local function shownTime(t, tenths)
-    return tenths and Layout.FormatTenths(t, Board.DisplaySeconds(math.huge)) or Layout.FormatTime(Board.DisplaySeconds(t))
+    return tenths and Layout.FormatTenths(t, Board.DisplaySeconds(math.huge), GS.LOCALE.decimal) or Layout.FormatTime(Board.DisplaySeconds(t))
 end
 
 -- What the end of a won game says about the best: the text and its colour.
 local function bestLine()
     if not lastWin then return nil end
-    if lastWin.new then return "New personal best!", C.gold end
-    if lastWin.previous then return "Best " .. shownTime(lastWin.previous.time, sameSecond()), C.hint end
+    if lastWin.new then return L["New personal best!"], C.gold end
+    if lastWin.previous then return string.format(L["Best %s"], shownTime(lastWin.previous.time, sameSecond())), C.hint end
     return nil
 end
 
@@ -353,7 +355,7 @@ end
 local function askFor(key)
     local c = ui.menu.confirm
     c.key = key
-    c.text:SetText("Start " .. LABELS[key] .. "? This game will be lost.")
+    c.text:SetText(string.format(L["Start %s? This game will be lost."], LABELS[key]))
     local col = Skin.DifficultyColor(key)
     c.start:setAccent(col[1], col[2], col[3])
     c:Show()
@@ -440,7 +442,7 @@ local function buildMenu()
     c.text:SetTextColor(unpack(C.menuText))
     c.start = Widgets.GlassButton(c, 110, 22, { fontSize = 11 })
     c.start:SetPoint("BOTTOMRIGHT", c, "BOTTOM", -4, 4)
-    c.start.label:SetText("Start")
+    c.start.label:SetText(L["Start"])
     c.start:SetScript("OnClick", function()
         local key = c.key
         menu:Hide()
@@ -448,7 +450,7 @@ local function buildMenu()
     end)
     c.keep = Widgets.GlassButton(c, 110, 22, { fontSize = 11 })
     c.keep:SetPoint("BOTTOMLEFT", c, "BOTTOM", 4, 4)
-    c.keep.label:SetText("Keep game")
+    c.keep.label:SetText(L["Keep game"])
     c.keep:SetScript("OnClick", function() menu:Hide() end)
     c:Hide()
     menu.confirm = c
@@ -479,17 +481,17 @@ local function buildFooter()
     ui.hintStart = Glass.Font(win, 12, "CENTER")
     ui.hintStart:SetPoint("TOP", ui.grid, "BOTTOM", 0, -8)
     ui.hintStart:SetTextColor(unpack(C.gold))
-    ui.hintStart:SetText("Choose a tile to begin.")
+    ui.hintStart:SetText(L["Choose a tile to begin."])
 
     ui.hintKeys = Glass.Font(win, 11, "CENTER")
     ui.hintKeys:SetPoint("TOP", ui.grid, "BOTTOM", 0, -25)
     ui.hintKeys:SetTextColor(unpack(C.hint))
-    ui.hintKeys:SetText("Left-click: Reveal     Right-click: Flag")
+    ui.hintKeys:SetText(L["Left-click: Reveal     Right-click: Flag"])
 
     ui.hintMid = Glass.Font(win, 11, "CENTER")
     ui.hintMid:SetPoint("TOP", ui.grid, "BOTTOM", 0, -41)
     ui.hintMid:SetTextColor(unpack(C.hint))
-    ui.hintMid:SetText("Middle-click: Clear around number")
+    ui.hintMid:SetText(L["Middle-click: Clear around number"])
 
     -- The result bar: what the overlay said, and the button to play again.
     local r = CreateFrame("Frame", nil, win)
@@ -533,9 +535,10 @@ local function endTexts()
     if game:State() == "won" then
         -- Tenths when they decide something: a new best, or a time in the same second as the best.
         local tenths = sameSecond() or (lastWin and lastWin.new) or false
-        return "Field cleared!", C.gold, "Time " .. shownTime(game:Elapsed(GetTime()), tenths), "Play again", C.winRim
+        return L["Field cleared!"], C.gold, string.format(L["Time %s"], shownTime(game:Elapsed(GetTime()), tenths)),
+            L["Play again"], C.winRim
     end
-    return "Boom. Full wipe.", C.boom, "Wrong flags are crossed out.", "Try again", C.lossRim
+    return L["Boom. Full wipe."], C.boom, L["Wrong flags are crossed out."], L["Try again"], C.lossRim
 end
 
 local function buildOverlay()
@@ -559,7 +562,7 @@ local function buildOverlay()
     o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
 
     o.newBest:SetTextColor(unpack(C.gold))
-    o.newBest:SetText("New personal best!")
+    o.newBest:SetText(L["New personal best!"])
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
     -- The storyboard's laurels around it (#12): behind the text, open at the top.
@@ -584,12 +587,12 @@ local function buildOverlay()
     o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
     o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
     -- "See the field", not "View board": the owner read "board" as the scoreboard (#7).
-    o.view.label:SetText("See the field")
+    o.view.label:SetText(L["See the field"])
     o.view:SetScript("OnClick", function() Window.DismissEnd() end)
 
     -- And a click on the panel itself does the same.
     o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
-    Widgets.Tip(o, "Click to see the field", "Play again or Try again stays at the bottom, and the face starts a new game.")
+    Widgets.Tip(o, L["Click to see the field"], L["Play again or Try again stays at the bottom, and the face starts a new game."])
     o:Hide()
     ui.overlay = o
 end
@@ -611,7 +614,7 @@ function Window.ShowEnd()
         local isNew = lastWin and lastWin.new
         local by = margin()
         o:SetHeight(isNew and (by and NEW_BEST_H + 17 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
-        if by then o.beaten:SetText(by .. " faster than " .. shownTime(lastWin.previous.time, true)) end
+        if by then o.beaten:SetText(string.format(L["%s faster than %s"], by, shownTime(lastWin.previous.time, true))) end
         o.beaten:SetShown(by ~= nil)
         o.time:SetText(sub)
         o.time:Show()
@@ -645,7 +648,7 @@ function Window.DismissEnd()
     ui.result.title:SetText(title)
     local best = game:State() == "won" and bestLine()
     local by = margin()
-    local newText = by and ("New best (-" .. by .. ")") or "New best!"
+    local newText = by and string.format(L["New best (-%s)"], by) or L["New best!"]
     ui.result.sub:SetText(best and (sub .. "  " .. DOT .. "  " .. (lastWin.new and newText or best)) or sub)
     ui.result.button.label:SetText(button)
     ui.result.button:setAccent(rim[1], rim[2], rim[3])
@@ -660,8 +663,8 @@ end
 local BESTS_W, BESTS_ROW = 264, 44
 
 local function bestsRuleText()
-    return rule == "cell" and "First click: one safe tile (Windows XP's rule)."
-        or "First click: always opens an area."
+    return rule == "cell" and L["First click: one safe tile (Windows XP's rule)."]
+        or L["First click: always opens an area."]
 end
 
 -- Fills the panel from the saved scores. Reads only: never creates them.
@@ -674,13 +677,13 @@ function fillBests()
         if best then
             row.time:SetText(bestTime(best))
             local who = bestName(best) or "?"
-            if type(best.at) == "number" and best.at > 0 then who = who .. "  " .. DOT .. "  " .. date("%d %b %Y", best.at) end
+            if type(best.at) == "number" and best.at > 0 then who = who .. "  " .. DOT .. "  " .. GS.FormatDate(best.at) end
             row.who:SetText(who)
         else
             row.time:SetText("-")
-            row.who:SetText(played > 0 and "No win yet" or "Not played yet")
+            row.who:SetText(played > 0 and L["No win yet"] or L["Not played yet"])
         end
-        row.record:SetText(played > 0 and string.format("won %d of %d", won, played) or "")
+        row.record:SetText(played > 0 and string.format(L["won %d of %d"], won, played) or "")
     end
     p.rule:SetText(bestsRuleText())
 end
@@ -695,7 +698,7 @@ local function buildBests()
     p.title = Glass.Font(p, 16, "LEFT")
     p.title:SetPoint("TOPLEFT", p, "TOPLEFT", 14, -14)
     p.title:SetTextColor(unpack(C.gold))
-    p.title:SetText("Best times")
+    p.title:SetText(L["Best times"])
     p.close = Widgets.IconButton(p, 20, T.close, { 1, 0.9, 0.9 })
     p.close:SetPoint("TOPRIGHT", p, "TOPRIGHT", -8, -8)
     p.close:setAccent(unpack(C.closeAccent))
@@ -794,13 +797,13 @@ local function build()
     ui.close:SetPoint("TOPRIGHT", win, "TOPRIGHT", -10, -10)
     ui.close:setAccent(unpack(C.closeAccent))
     ui.close:SetScript("OnClick", function() win:Hide() end)
-    Widgets.Tip(ui.close, "Close", "Escape closes it too.")
+    Widgets.Tip(ui.close, L["Close"], L["Escape closes it too."])
 
     ui.gear = Widgets.IconButton(win, 22, T.gear, { 0.82, 0.92, 1 })
     ui.gear:SetFrameLevel(content)
     ui.gear:SetPoint("RIGHT", ui.close, "LEFT", -5, 0)
     ui.gear:SetScript("OnClick", function() GS.Options.Open() end)
-    Widgets.Tip(ui.gear, "Settings", "Opens Options > AddOns > Gnomesweeper: question marks, the first click, left-click clearing, the window size.")
+    Widgets.Tip(ui.gear, L["Settings"], L["Opens Options > AddOns > Gnomesweeper: question marks, the first click, left-click clearing, the window size."])
 
     -- The music button: the note, greyed with a red slash when the music is off.
     ui.music = Widgets.IconButton(win, 22, T.music)
@@ -810,9 +813,9 @@ local function build()
     ui.music.slash:SetPoint("CENTER", ui.music, "CENTER", 0, 0)
     ui.music.slash:SetTexture(T.mute)
     ui.music:SetScript("OnClick", function() GS.Options.Set("music", not db().music) end)
-    Widgets.Tip(ui.music, "Gnomeregan music", function()
-        return { db().music and "On: click to turn it off." or "Off: click to play it while the board is open.",
-                 "It never plays in combat." }
+    Widgets.Tip(ui.music, L["Gnomeregan music"], function()
+        return { db().music and L["On: click to turn it off."] or L["Off: click to play it while the board is open."],
+                 L["It never plays in combat."] }
     end)
 
     -- The sounds button (#55, owner): the speaker, beside the note, greyed and slashed when off.
@@ -823,9 +826,9 @@ local function build()
     ui.sound.slash:SetPoint("CENTER", ui.sound, "CENTER", 0, 0)
     ui.sound.slash:SetTexture(T.mute)
     ui.sound:SetScript("OnClick", function() GS.Options.Set("sounds", db().sounds == false) end)
-    Widgets.Tip(ui.sound, "Sounds", function()
-        return { db().sounds ~= false and "On: click to mute the clicks, the bomb and the cheers." or "Muted: click to hear them again.",
-                 "The game's own sound settings apply too. The music has its own button." }
+    Widgets.Tip(ui.sound, L["Sounds"], function()
+        return { db().sounds ~= false and L["On: click to mute the clicks, the bomb and the cheers."] or L["Muted: click to hear them again."],
+                 L["The game's own sound settings apply too. The music has its own button."] }
     end)
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
@@ -835,12 +838,12 @@ local function build()
     help:SetFrameLevel(content)
     help:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
     help.label:SetText("?")
-    Widgets.Tip(help, "How to play", {
-        "Left-click reveals a tile. Right-click plants a flag on a mine you've found.",
-        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
-        "It only works when the number of flags around it equals the number.",
-        "A wrong flag makes it reveal a mine, so check your flags first.",
-        "The gnome starts a new game; during a game, it gives this one up.",
+    Widgets.Tip(help, L["How to play"], {
+        L["Left-click reveals a tile. Right-click plants a flag on a mine you've found."],
+        L["Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged."],
+        L["It only works when the number of flags around it equals the number."],
+        L["A wrong flag makes it reveal a mine, so check your flags first."],
+        L["The gnome starts a new game; during a game, it gives this one up."],
     })
     ui.help = help
 
@@ -849,7 +852,7 @@ local function build()
     ui.sound:SetPoint("RIGHT", ui.music, "LEFT", -5, 0)
     ui.trophy:setAccent(unpack(C.gold))
     ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)
-    Widgets.Tip(ui.trophy, "Best times", "Your best at each difficulty, shared by all your characters.")
+    Widgets.Tip(ui.trophy, L["Best times"], L["Your best at each difficulty, shared by all your characters."])
 
     -- Difficulty: a glass button in the difficulty's rarity colour, and the list it opens.
     ui.diff = Widgets.GlassButton(win, 150, 24, { fontSize = 13 })
@@ -863,7 +866,7 @@ local function build()
         ui.faceTip:Hide()                          -- it sits over this button the first time (#45)
         ui.menu:SetShown(not ui.menu:IsShown())
     end)
-    Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
+    Widgets.Tip(ui.diff, L["Difficulty"], difficultyTip)
     buildMenu()
 
     -- The HUD strip: mines left, the mascot (a new game), the clock. Its width is capped
@@ -901,10 +904,10 @@ local function build()
     tip.text:SetWidth(FACE_TIP_W - 84)
     tip.text:SetWordWrap(true)
     tip.text:SetTextColor(unpack(C.menuText))
-    tip.text:SetText("Click the gnome for a new game. During a game, it gives this one up.")
+    tip.text:SetText(L["Click the gnome for a new game. During a game, it gives this one up."])
     tip.ok = Widgets.GlassButton(tip, 60, 22, { fontSize = 11 })
     tip.ok:SetPoint("RIGHT", tip, "RIGHT", -8, 0)
-    tip.ok.label:SetText("Got it")
+    tip.ok.label:SetText(L["Got it"])
     tip.ok:setAccent(unpack(C.gold))
     tip.ok:SetScript("OnClick", function() tip:Hide() end)
     tip.arrow = tip:CreateTexture(nil, "OVERLAY")
@@ -915,7 +918,7 @@ local function build()
     Window.Floating(tip)                       -- one floating panel at a time: the list or Best times put it away
     tip:Hide()
     ui.faceTip = tip
-    Widgets.Tip(ui.face, "New game", "Same difficulty.")
+    Widgets.Tip(ui.face, L["New game"], L["Same difficulty."])
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
     ui.timer:SetWidth(54)             -- "00:00" is about 47 wide; any more leaves a gap before the clock

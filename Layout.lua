@@ -96,11 +96,11 @@ end
 
 -- "00:42.6": with tenths (truncated, like the whole seconds), for two times that
 -- would otherwise both read 00:42. Not past the display cap, which has no tenths.
-function Layout.FormatTenths(seconds, cap)
+function Layout.FormatTenths(seconds, cap, decimal)
     seconds = math.max(0, seconds)
     if cap and seconds >= cap then return Layout.FormatTime(cap) end
     local whole = math.floor(seconds)
-    return Layout.FormatTime(whole) .. "." .. math.floor((seconds - whole) * 10 + 1e-9)
+    return Layout.FormatTime(whole) .. (decimal or ".") .. math.floor((seconds - whole) * 10 + 1e-9)
 end
 
 -- A saved position is the window's top-left corner in UIParent units, measured

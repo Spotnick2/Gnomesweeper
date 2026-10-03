@@ -28,44 +28,45 @@ GS.Options = Options
 local Layout = GS.Layout
 
 local function db() return GnomesweeperDB end
+local L = GS.L             -- the player's language (#36)
 
 -- The board themes, from Skin's list (#14): a new theme needs no edit here.
 local function themeChoices()
     local list = {}
-    for _, key in ipairs(GS.Skin.THEME_ORDER) do list[#list + 1] = { key, GS.Skin.THEMES[key].label } end
+    for _, key in ipairs(GS.Skin.THEME_ORDER) do list[#list + 1] = { key, L[GS.Skin.THEMES[key].label] } end
     return list
 end
 
 Options.ITEMS = {
-    { key = "questionMarks", kind = "toggle", label = "Question marks",
-      note = "Right-click: flag, then ?, then clear.", nextGame = true },
-    { key = "safeZone", kind = "choice", label = "First click",
-      choices = { { "area", "Opens an area" }, { "cell", "One safe tile" } },
-      note = "One safe tile is Windows XP's rule. Each rule keeps its own best times.", nextGame = true },
-    { key = "theme", kind = "choice", label = "Board", choices = themeChoices(),
-      note = "Modern: ice-blue glass tiles. Only the look changes; your game stays as it is.",
+    { key = "questionMarks", kind = "toggle", label = L["Question marks"],
+      note = L["Right-click: flag, then ?, then clear."], nextGame = true },
+    { key = "safeZone", kind = "choice", label = L["First click"],
+      choices = { { "area", L["Opens an area"] }, { "cell", L["One safe tile"] } },
+      note = L["One safe tile is Windows XP's rule. Each rule keeps its own best times."], nextGame = true },
+    { key = "theme", kind = "choice", label = L["Board"], choices = themeChoices(),
+      note = L["Modern: ice-blue glass tiles. Only the look changes; your game stays as it is."],
       -- A saved theme this version doesn't know (damaged, or from a later one) shows
       -- as Classic, the one drawn (review of #57).
       get = function() return GS.Skin.THEMES[db().theme] and db().theme or "classic" end,
       set = function(v) db().theme = v; GS.Window.SettingsChanged() end },
-    { key = "chordOnLeft", kind = "toggle", label = "Clear with left-click",
-      note = "Left-click a number whose flags match." },
-    { key = "sounds", kind = "toggle", label = "Sounds",
-      note = "Clicks, flags, the bomb and the cheers. The game's own sound settings apply too." },
-    { key = "music", kind = "toggle", label = "Gnomeregan music",
-      note = "While the board is open; never in combat. Also the note in the title bar." },
-    { key = "hideInCombat", kind = "toggle", label = "Hide in combat",
-      note = "A fight puts the window away, paused; it comes back when the fight ends." },
-    { key = "fireworks", kind = "toggle", label = "Fireworks",
-      note = "Over the board when you beat your best time." },
-    { key = "scale", kind = "scale", label = "Window size",
+    { key = "chordOnLeft", kind = "toggle", label = L["Clear with left-click"],
+      note = L["Left-click a number whose flags match."] },
+    { key = "sounds", kind = "toggle", label = L["Sounds"],
+      note = L["Clicks, flags, the bomb and the cheers. The game's own sound settings apply too."] },
+    { key = "music", kind = "toggle", label = L["Gnomeregan music"],
+      note = L["While the board is open; never in combat. Also the note in the title bar."] },
+    { key = "hideInCombat", kind = "toggle", label = L["Hide in combat"],
+      note = L["A fight puts the window away, paused; it comes back when the fight ends."] },
+    { key = "fireworks", kind = "toggle", label = L["Fireworks"],
+      note = L["Over the board when you beat your best time."] },
+    { key = "scale", kind = "scale", label = L["Window size"],
       get = function() return db().scale or 1 end,
       set = function(v)
           if math.abs(v - 1) < 0.001 then v = nil end    -- 100% is no saved scale at all
           GS.Window.SetScale(v)
       end },
-    { key = "minimapButton", kind = "toggle", label = "Minimap button",
-      note = "Left-click opens or closes the board, right-click opens these settings. Drag it around the minimap.",
+    { key = "minimapButton", kind = "toggle", label = L["Minimap button"],
+      note = L["Left-click opens or closes the board, right-click opens these settings. Drag it around the minimap."],
       get = function() return GS.Minimap.Shown() end,
       set = function(v) GS.Minimap.SetShown(v) end },
 }
@@ -145,7 +146,7 @@ local function percent(v) return string.format("%d%%", math.floor(v * 100 + 0.5)
 local function fitNote()
     if not GS.Window.win then return nil end           -- never build the window just to say this
     local want, shown = GS.Window.ScaleInfo()
-    if math.abs(want - shown) > 0.005 then return "Shown at " .. percent(shown) .. " so it fits the screen." end
+    if math.abs(want - shown) > 0.005 then return string.format(L["Shown at %s so it fits the screen."], percent(shown)) end
     return nil
 end
 
@@ -244,7 +245,7 @@ local function buildPage()
 
     local title = pageLabel("Gnomesweeper", "GameFontNormalHuge")
     title:SetPoint("TOPLEFT", canvas, "TOPLEFT", 16, -16)
-    local sub = pageLabel(GS.TAGLINE .. "  /gsweep opens the board; the gear in its title bar opens this page.",
+    local sub = pageLabel(GS.TAGLINE .. "  " .. L["/gsweep opens the board; the gear in its title bar opens this page."],
         "GameFontHighlightSmall")
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 2, -6)
 
@@ -317,7 +318,7 @@ local function buildPage()
     local reset = pageButton(Options.RESET_LABEL, 190, function(self) Options.ResetClick(self) end)
     reset:SetPoint("TOPLEFT", canvas, "TOPLEFT", 16, y)
     page.reset = reset
-    local note = pageLabel("Every difficulty's best time and games won, for both first-click rules.", "GameFontHighlightSmall")
+    local note = pageLabel(L["Every difficulty's best time and games won, for both first-click rules."], "GameFontHighlightSmall")
     note:SetPoint("LEFT", reset, "RIGHT", 10, 0)
     canvas:SetHeight(-y + 40)                  -- what's on it: the scroll range follows
     views[#views + 1] = function()
@@ -340,7 +341,7 @@ end)
 ------------------------------------------------------------
 
 local about = CreateFrame("Frame")
-about.name = "About"
+about.name = L["About"]
 about:Hide()                -- see `page`: or its first show is blank
 
 local function aboutLabel(text, template, width) return label(about, text, template, width) end
@@ -349,7 +350,7 @@ Options.LINKS = {
     { "CurseForge", "https://www.curseforge.com/wow/addons/gnomesweeper" },
     { "GitHub", "https://github.com/Spotnick2/Gnomesweeper" },
     -- One person tests it on one setup: players' reports are how the rest is found (#11).
-    { "Report a bug", "https://github.com/Spotnick2/Gnomesweeper/issues/new/choose" },
+    { L["Report a bug"], "https://github.com/Spotnick2/Gnomesweeper/issues/new/choose" },
 }
 
 -- A link the player can copy: addons can't open a browser or touch the
@@ -390,19 +391,21 @@ local function buildAbout()
     end
     about.title = add(aboutLabel("Gnomesweeper", "GameFontNormalHuge"), 30)
     about.tagline = add(aboutLabel(GS.TAGLINE, "GameFontHighlightLarge"), 26, 2)
-    about.version = add(aboutLabel("Version " .. GS.API.AddOnVersion(ADDON) .. "  " .. "\194\183" .. "  for World of Warcraft: Forever  " .. "\194\183" .. "  by Spotnick",
+    about.version = add(aboutLabel(string.format(L["Version %s  \194\183  for World of Warcraft: Forever  \194\183  by Spotnick"], GS.API.AddOnVersion(ADDON)),
         "GameFontHighlightSmall"), 30, 2)
 
-    add(aboutLabel("How to play", "GameFontNormalLarge"), 24)
+    add(aboutLabel(L["How to play"], "GameFontNormalLarge"), 24)
     for _, line in ipairs({
-        "Left-click reveals a tile. Right-click flags it. Clear every tile that isn't a mine.",
-        "A number says how many mines touch it. Middle-click a number (or hold left and right) to reveal",
-        "the tiles around it, once its flags match. A wrong flag reveals a mine.",
-        "The first click is always safe. The rules are Windows XP Minesweeper's.",
+        -- One whole sentence per line: a translation can't split a sentence where English does.
+        L["Left-click reveals a tile. Right-click flags it. Clear every tile that isn't a mine."],
+        L["A number says how many mines touch it."],
+        L["Middle-click a number (or hold left and right) to reveal the tiles around it, once its flags match."],
+        L["A wrong flag reveals a mine. The first click is always safe."],
+        L["The rules are Windows XP Minesweeper's."],
     }) do add(aboutLabel(line, nil, 620), 18, 4) end
 
     y = y - 10
-    add(aboutLabel("Links", "GameFontNormalLarge"), 24)
+    add(aboutLabel(L["Links"], "GameFontNormalLarge"), 24)
     about.links = {}
     for _, link in ipairs(Options.LINKS) do
         local name = aboutLabel(link[1], nil, 110)
@@ -412,10 +415,10 @@ local function buildAbout()
         about.links[#about.links + 1] = box
         y = y - 26
     end
-    add(aboutLabel("Click a link, then Ctrl+C to copy it.", "GameFontHighlightSmall"), 22, 4)
+    add(aboutLabel(L["Click a link, then Ctrl+C to copy it."], "GameFontHighlightSmall"), 22, 4)
 
     y = y - 6
-    add(aboutLabel("Commands", "GameFontNormalLarge"), 24)
+    add(aboutLabel(L["Commands"], "GameFontNormalLarge"), 24)
     about.commands = {}
     for _, line in ipairs(GS.HELP or {}) do
         if not line:find("(for measuring)", 1, true) then
@@ -471,8 +474,8 @@ end
 -- Resetting the best times: arm, then confirm
 ------------------------------------------------------------
 
-Options.RESET_LABEL = "Reset best times..."
-Options.RESET_ARMED = "Click again to reset"
+Options.RESET_LABEL = L["Reset best times..."]
+Options.RESET_ARMED = L["Click again to reset"]
 Options.RESET_WINDOW = 5     -- seconds the second click has
 
 local armed = 0              -- bumped to disarm a pending confirmation
@@ -484,7 +487,7 @@ function Options.ResetClick(button)
         button:SetText(Options.RESET_LABEL)
         GS.Scores.Reset(GnomesweeperDB)
         GS.Window.ScoresReset()
-        GS.Print("best times reset.")
+        GS.Print(L["best times reset."])
         return
     end
     button.armed = true
@@ -519,7 +522,7 @@ end
 -- The gear and /gsweep settings: open the page, or say where it is.
 function Options.Open()
     if Options.OpenPage() then return true end
-    GS.Print("the settings are in the game's Options > AddOns > Gnomesweeper.")
+    GS.Print(L["the settings are in the game's Options > AddOns > Gnomesweeper."])
     return false
 end
 

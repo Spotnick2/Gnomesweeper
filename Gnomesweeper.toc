@@ -1,6 +1,7 @@
 ## Interface: 16001
 ## Title: |cff7fd4ffGnome|rsweeper
 ## Notes: Minesweeper Forever. One wrong click. Full wipe. /gsweep
+## Notes-frFR: Le Démineur sur Forever. Un mauvais clic. Wipe total. /gsweep
 ## Author: Spotnick
 ## Version: @project-version@
 ## IconTexture: Interface\AddOns\Gnomesweeper\Media\face_mascot
@@ -14,6 +15,8 @@ Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 Compat.lua
+Locales\enUS.lua
+Locales\frFR.lua
 Glass.lua
 Board.lua
 Layout.lua

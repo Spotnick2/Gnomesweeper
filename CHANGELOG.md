@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **En français !** Gnomesweeper speaks French on a French client: every window, tooltip, setting and chat message, with French decimals (00:42,6) and dates. Spotted a word that sounds off? Report it on GitHub.
+
 ## v0.1.0-beta
 
 The first beta: Minesweeper in World of Warcraft: Forever, for queues and flight paths.

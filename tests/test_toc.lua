@@ -85,6 +85,29 @@ do
     check(n >= 4, "the skin's own tile textures were checked (" .. n .. ")")
 end
 
+-- No control characters in a text file (but tab, CR, LF): an edit script's "\f" in
+-- "Locales\frFR.lua" once wrote a form feed into CLAUDE.md, twice.
+do
+    local p = io.popen("git ls-files")
+    local listed = p and p:read("*a") or ""
+    if p then p:close() end
+    local n = 0
+    for path in listed:gmatch("[^\r\n]+") do
+        if path:match("%.lua$") or path:match("%.md$") or path:match("%.toc$") or path:match("%.xml$")
+            or path:match("%.yml$") or path:match("%.ps1$") or path:match("%.py$") or path == ".pkgmeta" then
+            local f = io.open(path, "rb")
+            if f then
+                n = n + 1
+                local text = f:read("*a")
+                f:close()
+                local bad = text:find("[%z\1-\8\11\12\14-\31\127]")
+                check(not bad, path .. " has no control character (one at byte " .. tostring(bad) .. ")")
+            end
+        end
+    end
+    check(n > 30 or listed == "", "(the text files were read: " .. n .. ")")
+end
+
 -- Glass.lua is a copy of GlassUnitFrames' material on its MAIN branch: only
 -- the header and the namespace lines may differ. Read through git, not the
 -- working tree, whose branch another session may have switched.

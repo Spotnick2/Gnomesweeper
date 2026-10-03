@@ -38,10 +38,12 @@ function loadAddon(opts)
     opts = opts or {}
     Gnomesweeper, GnomesweeperDB = nil, opts.db
     WoW.reset()
+    WoW.locale = opts.locale            -- the client's language (#36), "enUS" when nil
     local ns = {}
     for _, file in ipairs(tocFiles()) do
         local chunk = assert(loadfile(file))
         chunk("Gnomesweeper", ns)
+        if opts.afterFile then opts.afterFile(file) end   -- a test's hook (the locale guard's pseudo-language)
     end
     WoW.fire("ADDON_LOADED", "Gnomesweeper")
 end

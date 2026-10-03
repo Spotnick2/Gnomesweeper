@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Two looks for the board**: **Classic** (the one you know) and **Modern**, with ice-blue glass tiles. Pick one in the settings; it changes at once, even mid-game.
 - **The gnome moves**: she bounces when you win, shudders on a wipe, nods when you start a new game, and breathes quietly while you play.
 - **A mute button** for the sound effects, next to the music note in the title bar.
 - **The clock warns you**: it turns yellow as you near your best time, flashes in the last 3 seconds, and goes red once you're past it.

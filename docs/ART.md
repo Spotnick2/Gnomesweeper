@@ -158,9 +158,11 @@ Master 128×128. Game texture 32×32 (a tile icon is 18 units).
 >
 > **Exploded tile.** The covered tile cracked, glowing red-orange from within.
 
-Master 128×128. Game texture 32×32, replacing `Media/tile_covered|revealed|exploded.tga`
-(the hover ring stays generated). The numbers then need to be **darker**: pale ice wants the
-logo's deep blue and green, not the light hues that suit the dark tile.
+Master 128×128. Game texture 32×32. **Adopted as the Modern theme** (#14, owner, 2026-10-04):
+`Media/tile_modern_covered|revealed|exploded.tga`, beside Classic's `tile_*` from `make_tiles.py`
+(never over them). The numbers did **not** need darkening: they sit on the revealed tile, dark navy
+here too. What's drawn over the pale tiles (the hover ring, the burst, the "?") is drawn dark instead
+(`Skin.THEMES`).
 
 ### The title (optional)
 

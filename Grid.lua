@@ -65,6 +65,14 @@ local function setIcon(t, texture, opts)
     end
 end
 
+local theme = Skin.Theme("classic")   -- the tiles' art (#14): Grid.SetTheme
+
+-- The hover ring as the theme draws it (light on dark tiles, dark on pale ones).
+local function styleHover(t)
+    t.hl:SetBlendMode(theme.hover.blend)
+    t.hl:SetVertexColor(theme.hover.tint[1], theme.hover.tint[2], theme.hover.tint[3])
+end
+
 -- The starburst behind the bomb on the tile that ended the game: a SHAPE as well as
 -- a colour, so the detonated tile isn't told apart by red alone.
 local function setBurst(t, on)
@@ -74,8 +82,9 @@ local function setBurst(t, on)
             t.burst:SetSize(Skin.BURST, Skin.BURST)
             t.burst:SetPoint("CENTER", t, "CENTER", 0, 0)
             t.burst:SetTexture(Skin.TEXTURES.burst)
-            t.burst:SetBlendMode("ADD")
         end
+        t.burst:SetBlendMode(theme.burst.blend)          -- light on dark tiles, dark on pale ones (#14)
+        t.burst:SetVertexColor(theme.burst.tint[1], theme.burst.tint[2], theme.burst.tint[3])
         t.burst:Show()
     elseif t.burst then
         t.burst:Hide()
@@ -100,6 +109,7 @@ local function hoverAlpha(t)
     t.hl:SetAlpha((interactive and t.covered) and 1 or 0)
 end
 
+
 -- Draws cell i. Skips a tile that already looks right, so a repaint of the whole
 -- board only touches what differs.
 local function paint(i)
@@ -111,7 +121,7 @@ local function paint(i)
     paints = paints + 1
     if c.state == "revealed" then
         t.covered = false
-        t.bg:SetTexture(c.exploded and T.tileExploded or T.tileRevealed)
+        t.bg:SetTexture(c.exploded and theme.exploded or theme.revealed)
         setBurst(t, c.exploded)
         -- The bomb that ended it is drawn smaller, so the red tile and the burst show round it.
         setIcon(t, c.mine and T.mine or nil, { crop = true, size = c.exploded and 14 or nil })
@@ -119,7 +129,7 @@ local function paint(i)
         if n and n > 0 then setText(t, tostring(n), Skin.NUMBER_COLORS[n]) else setText(t, nil) end
     else
         t.covered = true
-        t.bg:SetTexture(T.tileCovered)
+        t.bg:SetTexture(theme.covered)
         setBurst(t, false)
         if c.state == "flag" then
             -- A wrong flag: the banner greyed and a red X over it. (A red X on the
@@ -128,7 +138,7 @@ local function paint(i)
             if c.wrongFlag then setText(t, "X", Skin.COLORS.wrongFlag) else setText(t, nil) end
         elseif c.state == "question" then
             setIcon(t, nil)
-            setText(t, "?", Skin.COLORS.question)
+            setText(t, "?", theme.question)
         else
             setIcon(t, nil)
             setText(t, nil)
@@ -238,7 +248,7 @@ local function create(i)
     t.hl = t:CreateTexture(nil, "HIGHLIGHT")
     t.hl:SetAllPoints(t)
     t.hl:SetTexture(T.tileHover)
-    t.hl:SetBlendMode("ADD")
+    styleHover(t)
     t:SetScript("OnMouseDown", onDown)
     t:SetScript("OnMouseUp", onUp)
     tiles[i] = t
@@ -320,6 +330,19 @@ function Grid.Shuffling() return shuffling ~= nil end
 
 -- Tile i's frame (the effects anchor to it: the smoke over the tile that went off).
 function Grid.Tile(i) return tiles[i] end
+
+-- The board's theme (#14): its tiles' art. A change repaints every tile shown, in
+-- place (only the look changes, never the game).
+function Grid.SetTheme(key)
+    local new = Skin.Theme(key)
+    if new == theme then return end
+    theme = new
+    for _, t in ipairs(tiles) do styleHover(t) end   -- every pooled tile, shown or not
+    if not game then return end
+    for i = 1, game.total do
+        if tiles[i] then tiles[i].key = nil; paint(i) end
+    end
+end
 
 function Grid.Attach(parent, action, pressed)
     host, act, onPress = parent, action, pressed

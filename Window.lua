@@ -1105,6 +1105,7 @@ local function ensure()
     if not game then newBoard() end
     if not win then
         build()
+        Grid.SetTheme(db().theme)        -- the saved look (#14); a change later comes through SettingsChanged
         syncGame()
     end
 end
@@ -1158,6 +1159,8 @@ function Window.ScoresReset()
 end
 
 function Window.SettingsChanged()
+    Grid.SetTheme(db().theme)              -- the board's look (#14); Grid keeps it until it has tiles
+    if not win then return end
     Window.Refresh()
     GS.Sounds.UpdateMusic()
 end

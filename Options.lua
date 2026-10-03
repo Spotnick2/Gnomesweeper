@@ -29,12 +29,25 @@ local Layout = GS.Layout
 
 local function db() return GnomesweeperDB end
 
+-- The board themes, from Skin's list (#14): a new theme needs no edit here.
+local function themeChoices()
+    local list = {}
+    for _, key in ipairs(GS.Skin.THEME_ORDER) do list[#list + 1] = { key, GS.Skin.THEMES[key].label } end
+    return list
+end
+
 Options.ITEMS = {
     { key = "questionMarks", kind = "toggle", label = "Question marks",
       note = "Right-click: flag, then ?, then clear.", nextGame = true },
     { key = "safeZone", kind = "choice", label = "First click",
       choices = { { "area", "Opens an area" }, { "cell", "One safe tile" } },
       note = "One safe tile is Windows XP's rule. Each rule keeps its own best times.", nextGame = true },
+    { key = "theme", kind = "choice", label = "Board", choices = themeChoices(),
+      note = "Modern: ice-blue glass tiles. Only the look changes; your game stays as it is.",
+      -- A saved theme this version doesn't know (damaged, or from a later one) shows
+      -- as Classic, the one drawn (review of #57).
+      get = function() return GS.Skin.THEMES[db().theme] and db().theme or "classic" end,
+      set = function(v) db().theme = v; GS.Window.SettingsChanged() end },
     { key = "chordOnLeft", kind = "toggle", label = "Clear with left-click",
       note = "Left-click a number whose flags match." },
     { key = "sounds", kind = "toggle", label = "Sounds",

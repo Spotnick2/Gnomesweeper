@@ -4,7 +4,8 @@
 
 Reads the full-resolution PNGs in Media/Source/Generated/ (ignored by git: the
 prompts that made them are in Media/ART-PROMPTS.md), sizes them, and writes:
-  - Media/<name>.tga for every piece the game uses (ADOPTED below);
+  - Media/<name>.tga for every piece the game uses (ADOPTED below), and the
+    Modern theme's tiles under their own names (THEMED: tile_modern_*, #14);
   - Media/Source/GameTextures/<name>.tga for candidates not wired yet (STAGED);
   - Media/Source/<name>.png, the sized masters.
 The originals are not in git (66 MB, Media/Source/ is ignored): this runs where
@@ -43,11 +44,14 @@ PIECES = {
     "title":         ((1024, 256), (512, 128), None),
     "laurels":       ((512, 128), (512, 128), None),
 }
-# In the game (Skin.TEXTURES). The tiles are a different look (bright ice-blue
-# covered tiles) from the calmer one the UI review chose: the owner decides.
-# The mine, the exploded mine and the flag too: on the board WoW's bomb and the
-# pennant read better (owner, #12).
+# In the game (Skin.TEXTURES). The tiles are the Modern theme (THEMED, #14).
+# Staged: the mine, the exploded mine and the flag: on the board WoW's bomb and the
+# pennant read better (owner, #12), in both themes.
 ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "title", "laurels"]
+# The Modern theme's tiles (#14, owner): in the game under their own names, so the
+# Classic tiles (Tools/make_tiles.py's tile_covered...) are never overwritten.
+THEMED = {"tile_covered": "tile_modern_covered", "tile_revealed": "tile_modern_revealed",
+          "tile_exploded": "tile_modern_exploded"}
 
 
 def master(name, size, wide):
@@ -66,17 +70,18 @@ def master(name, size, wide):
 def main():
     STAGED.mkdir(parents=True, exist_ok=True)
     for name, (msize, tsize, opts) in PIECES.items():
-        out = MEDIA if name in ADOPTED else STAGED
+        out = MEDIA if (name in ADOPTED or name in THEMED) else STAGED
+        outname = THEMED.get(name, name)
         im = master(name, msize, opts is None)
         if opts is None:
             # Not Pillow's TGA writer: it appends a 26-byte footer that tests/test_media.lua rejects.
             sized = im.resize(tsize, Image.Resampling.LANCZOS)
             make_textures.OUT = str(out)
-            make_textures.write_tga(name, np.asarray(sized).astype(float) / 255.0)
+            make_textures.write_tga(outname, np.asarray(sized).astype(float) / 255.0)
         else:
             subprocess.run([sys.executable, str(ROOT / "Tools" / "png_to_tga.py"), str(SOURCE / (name + ".png")),
-                            name, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)
-        print(f"{name:14} -> {out.relative_to(ROOT)}")
+                            outname, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)
+        print(f"{name:14} -> {out.relative_to(ROOT)}{'/' + outname if outname != name else ''}")
 
 
 if __name__ == "__main__":

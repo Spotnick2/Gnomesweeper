@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Hide in combat** (on by default): pulling a mob puts the board away, paused, and it comes back when the fight ends. Turn it off in the settings or with `/gsweep combat`.
 - **No more lost games by a stray click**: changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.
 - **A first-launch hint** points at the gnome: she starts a new game.
 - **New art**: the gnome now has a face for every moment: focused while you play, laughing when you clear the field, sooty after a wipe, surprised while you hold a tile. Gold Gnomesweeper lettering, and laurels around a new personal best.

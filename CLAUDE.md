@@ -162,6 +162,11 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     down, "Click the gnome for a new game..." and Got it; `GnomesweeperDB.seenFaceTip` is saved when
     it shows. It goes on Got it, the face, the difficulty button (it covers it), or the window closing,
     and it is one of the floating panels (the list or Best times put it away).
+  - **Hide in combat (#37, a setting, on by default; `/gsweep combat`):** `PLAYER_REGEN_DISABLED` hides
+    the window (the clock pauses, a press is cancelled, the list goes, the music stops, as any close)
+    and records `Window.combatHid = shownCount`; `PLAYER_REGEN_ENABLED` brings it back only if it
+    still matches (the player didn't show or close it meanwhile). Opened mid-fight, it stays until the
+    next fight. The window is never protected: with the setting off it works in combat.
   - **The footer:** "Choose a tile to begin." (ready only), `Left-click: Reveal     Right-click: Flag`,
     `Middle-click: Clear around number`. (The **?** that explains clearing moved to the title bar.)
   - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`
@@ -185,7 +190,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   to beat.
   **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
   more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
-  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
+  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN` (its controls on a
+  scroll frame's child, `UIPanelScrollFrameTemplate`, since the settings outgrew the canvas), built on
   its first show and **hidden at creation** (or its first show is blank: measured), Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"

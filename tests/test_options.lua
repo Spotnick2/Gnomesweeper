@@ -383,4 +383,20 @@ do  -- after a reset, the alert has nothing to beat
     eq(#WoW.sounds, 0, "a game going past the old best after a reset: no alert")
 end
 
+do  -- the page scrolls (owner: it outgrew the Settings canvas)
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local page = Gnomesweeper.Options._test.page
+    page:Show()
+    local scroll, canvas = page.scroll, page.canvas
+    eq(scroll._type, "ScrollFrame", "the page is a scroll frame")
+    eq(scroll._template, "UIPanelScrollFrameTemplate", "...Blizzard's, with its scroll bar")
+    eq(canvas._parent, scroll, "...its contents on a canvas inside it")
+    eq(page.controls.questionMarks.check._parent, canvas, "the controls are on the canvas, so they scroll")
+    eq(page.reset._parent, canvas, "...the reset button too")
+    check(canvas:GetHeight() > 500, "the canvas is as tall as what's on it (" .. canvas:GetHeight() .. ")")
+    local scaleNote = page.controls.scale.note._points[1]
+    eq(scaleNote[2], page.controls.scale.plus, "the size's note sits beside its buttons, not on a row of its own")
+end
+
 done("test_options")

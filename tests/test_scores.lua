@@ -345,7 +345,10 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     local W = fresh()
     local o = function() return W._test.ui.overlay end
     winWall(W, "beginner:area", 42.1)
-    eq(o().time:GetText(), "Time 00:42", "a first best: whole seconds")
+    eq(o().time:GetText(), "Time 00:42.1", "a first best: with tenths (owner: a new best shows the decimal)")
+    check(not o().beaten:IsShown(), "...and no 'faster than' line: there was no old best")
+    o().view._scripts.OnClick(o().view)
+    check(W._test.ui.result.sub:GetText():find("New best!", 1, true) ~= nil, "...the result bar: New best!")
     winWall(W, "beginner:area", 42.6)
     eq(o().time:GetText(), "Time 00:42.6", "slower in the same second: the time shows tenths")
     eq(o().best:GetText(), "Best 00:42.1", "...and so does the best that stands")
@@ -357,7 +360,24 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     eq(o().best:GetText(), "Best 00:42", "...for both")
     winWall(W, "beginner:area", 42.05)
     check(o().newBest:IsShown(), "a new best by a hundredth")
-    eq(o().time:GetText(), "Time 00:42", "...shows its time whole (the old best isn't on screen)")
+    eq(o().time:GetText(), "Time 00:42.0", "...its time with tenths")
+    eq(o().beaten:GetText(), "0.1 s faster than 00:42.1", "...by how much, as the times on screen say (42.1 - 42.0), and the old best")
+
+    winWall(W, "beginner:area", 41.2)
+    eq(o().time:GetText(), "Time 00:41.2", "another new best")
+    eq(o().beaten:GetText(), "0.8 s faster than 00:42.0", "...0.8 s faster than the one before: 42.0 - 41.2 as shown (not 0.85 rounded)")
+    check(o().beaten:IsShown() and o().newBest:IsShown(), "...both lines")
+    eq(o():GetHeight(), 152 + 6 + 16, "...the overlay grows for the second line")
+    o().view._scripts.OnClick(o().view)
+    eq(W._test.ui.result.sub:GetText(), "Time 00:41.2  " .. string.char(194, 183) .. "  New best (-0.8 s)", "the result bar keeps both, short")
+
+    winWall(W, "beginner:area", 50)
+    check(not o().beaten:IsShown(), "a slower win: no 'faster than' line")
+
+    -- Two bests in the same tenth: the real difference, in hundredths, never "0.0 s".
+    winWall(W, "intermediate:area", 30.28)
+    winWall(W, "intermediate:area", 30.21)
+    eq(o().beaten:GetText(), "0.07 s faster than 00:30.2", "in the same tenth: hundredths")
 end
 
 do  -- the panel follows every game, closes with the window, and survives a damaged file

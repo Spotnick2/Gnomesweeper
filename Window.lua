@@ -129,6 +129,20 @@ local function sameSecond()
     return prev and Board.DisplaySeconds(prev.time) == Board.DisplaySeconds(game:Elapsed(GetTime())) or false
 end
 
+-- How much a new best beat the old one, as the two times on screen say: both are
+-- shown truncated to tenths (00:42.0, 00:41.2), so the margin is their difference
+-- (0.8 s), never a rounding that disagrees with them. In the same tenth, the
+-- real difference in hundredths ("0.04 s"), never "0.0". nil when there was no
+-- old best (a first win) or this isn't a new best.
+local function margin()
+    local prev = lastWin and lastWin.new and lastWin.previous
+    if not prev then return nil end
+    local now = game:Elapsed(GetTime())
+    local tenths = math.floor(prev.time * 10 + 1e-9) - math.floor(now * 10 + 1e-9)
+    if tenths >= 1 then return string.format("%.1f s", tenths / 10) end
+    return string.format("%.2f s", prev.time - now)
+end
+
 local function shownTime(t, tenths)
     return tenths and Layout.FormatTenths(t, Board.DisplaySeconds(math.huge)) or Layout.FormatTime(Board.DisplaySeconds(t))
 end
@@ -401,7 +415,9 @@ local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
 
 local function endTexts()
     if game:State() == "won" then
-        return "Field cleared!", C.gold, "Time " .. shownTime(game:Elapsed(GetTime()), sameSecond()), "Play again", C.winRim
+        -- Tenths when they decide something: a new best, or a time in the same second as the best.
+        local tenths = sameSecond() or (lastWin and lastWin.new) or false
+        return "Field cleared!", C.gold, "Time " .. shownTime(game:Elapsed(GetTime()), tenths), "Play again", C.winRim
     end
     return "Boom. Full wipe.", C.boom, "Wrong flags are crossed out.", "Try again", C.lossRim
 end
@@ -430,6 +446,11 @@ local function buildOverlay()
     o.newBest:SetText("New personal best!")
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
+    -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
+    o.beaten = Glass.Font(o, 12, "CENTER")
+    o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
+    o.beaten:SetTextColor(unpack(C.hint))
+    o.beaten:Hide()
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
@@ -463,7 +484,10 @@ function Window.ShowEnd()
     if game:State() == "won" then
         local text, col = bestLine()
         local isNew = lastWin and lastWin.new
-        o:SetHeight(isNew and WIN_H + 6 or text and WIN_H or WIN_H - 18)
+        local by = margin()
+        o:SetHeight(isNew and (WIN_H + 6 + (by and 16 or 0)) or text and WIN_H or WIN_H - 18)
+        if by then o.beaten:SetText(by .. " faster than " .. shownTime(lastWin.previous.time, true)) end
+        o.beaten:SetShown(by ~= nil)
         o.time:SetText(sub)
         o.time:Show()
         if text and not isNew then
@@ -478,6 +502,7 @@ function Window.ShowEnd()
         o.time:Hide()
         o.best:Hide()
         o.newBest:Hide()
+        o.beaten:Hide()
         o.pulse.stop()
     end
     o:Show()
@@ -492,7 +517,9 @@ function Window.DismissEnd()
     ui.result.title:SetTextColor(color[1], color[2], color[3])
     ui.result.title:SetText(title)
     local best = game:State() == "won" and bestLine()
-    ui.result.sub:SetText(best and (sub .. "  " .. DOT .. "  " .. (lastWin.new and "New best!" or best)) or sub)
+    local by = margin()
+    local newText = by and ("New best (-" .. by .. ")") or "New best!"
+    ui.result.sub:SetText(best and (sub .. "  " .. DOT .. "  " .. (lastWin.new and newText or best)) or sub)
     ui.result.button.label:SetText(button)
     ui.result.button:setAccent(rim[1], rim[2], rim[3])
     showResultBar(true)

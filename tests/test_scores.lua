@@ -325,4 +325,24 @@ do  -- the best times panel: the trophy, /gsweep scores
     GnomesweeperDB.safeZone = "area"
 end
 
+do  -- /gsweep input also logs the View board button (to measure "View board did nothing")
+    local W = fresh()
+    WoW.slash("/gsweep input")
+    winWall(W, nil, 20)
+    local v = W._test.ui.overlay.view
+    v._scripts.OnMouseDown(v, "LeftButton")
+    v._scripts.OnMouseUp(v, "LeftButton", true)
+    v._scripts.OnClick(v, "LeftButton")
+    local log = table.concat(GnomesweeperDB.inputLog, "\n")
+    check(log:find("View board: down LeftButton", 1, true) ~= nil, "the press is logged")
+    check(log:find("View board: up LeftButton inside=true", 1, true) ~= nil, "...the release")
+    check(log:find("View board: click LeftButton", 1, true) ~= nil, "...the click")
+    check(log:find("DismissEnd: putting the overlay away", 1, true) ~= nil, "...and what it did")
+    check(not W._test.ui.overlay:IsShown(), "(and it still works)")
+    W.DismissEnd()
+    check(table.concat(GnomesweeperDB.inputLog, "\n"):find("DismissEnd ignored: overlay true, shown false, game won", 1, true) ~= nil,
+        "an ignored dismiss says why")
+    WoW.slash("/gsweep input")
+end
+
 done("test_scores")

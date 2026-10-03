@@ -299,6 +299,57 @@ do  -- the review of #39
     SettingsPanel:Hide()
     check(W.win:IsShown(), "...and opens after")
 
+    -- A difficulty asked for meanwhile is kept for that open (Codex, #58).
+    W.win:Hide()
+    W.NewGame("beginner")
+    SettingsPanel:Show()
+    WoW.slash("/gsweep expert")
+    check(not W.win:IsShown(), "/gsweep expert while Settings is open: waits")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...opens when Settings closes")
+    eq(GnomesweeperDB.difficulty, "expert", "...at the difficulty asked for")
+    eq(W.game.w, 30, "...an Expert board")
+
+    -- With progress: the same question as ever, after Settings closes.
+    local B = Gnomesweeper.Board
+    W._test.SetGame(B._test.FromLayout({ "*..", "...", "..." }))
+    local t = Gnomesweeper.Grid._test.tiles[2]
+    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseUp(t, "LeftButton", true)   -- a second reveal: progress
+    local g = W.game
+    W.win:Hide()
+    SettingsPanel:Show()
+    WoW.slash("/gsweep intermediate")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "a game with progress: the board opens when Settings closes")
+    eq(W.game, g, "...the game kept")
+    check(W._test.ui.menu.confirm:IsShown(), "...and it asks before switching, as ever")
+    W._test.ui.menu:Hide()
+
+    -- Overridden meanwhile (the player opens the board, then closes it): dropped.
+    W.win:Hide()
+    W.NewGame("beginner")
+    SettingsPanel:Show()
+    WoW.slash("/gsweep expert")
+    W.win:Show(); W.win:Hide()                           -- the player's own open and close
+    SettingsPanel:Hide()
+    check(not W.win:IsShown(), "overridden by the player: Settings closing doesn't open it")
+    W.Open()
+    eq(GnomesweeperDB.difficulty, "beginner", "...and a later open doesn't apply the old request")
+
+    -- Through a fight: Settings closed mid-fight hands the open to the fight's end, preset and all.
+    W.win:Hide()
+    SettingsPanel:Show()
+    WoW.slash("/gsweep expert")
+    WoW.inCombat = true
+    WoW.fire("PLAYER_REGEN_DISABLED")
+    SettingsPanel:Hide()
+    check(not W.win:IsShown(), "Settings closed mid-fight: still waiting")
+    WoW.inCombat = false
+    WoW.fire("PLAYER_REGEN_ENABLED")
+    check(W.win:IsShown(), "...the fight's end opens it")
+    eq(GnomesweeperDB.difficulty, "expert", "...at the difficulty asked for")
+    W.NewGame("beginner")
+
     -- Stepped aside, then the player closes it by the key (it's hidden: the key asks to open
     -- it, so it waits again) - and Settings closing brings it, once.
     SettingsPanel:Show()

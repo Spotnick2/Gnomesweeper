@@ -1123,12 +1123,23 @@ function Window.NewGame(preset)
     return game
 end
 
+-- A difficulty asked for while the open waits for Settings (`/gsweep expert`): kept
+-- for that open, with the show count it was asked at, so one the player overrode
+-- since (showing or closing the board) is dropped, not applied later (Codex, #58).
+local deferred
+
 function Window.Open(preset)
     ensure()
     -- Blizzard's Settings window is under ours (HIGH vs FULLSCREEN_DIALOG): a key, the
     -- compartment or /gsweep while it's open shows the board when it closes, not over
-    -- it (review of #58).
-    if not win:IsShown() and GS.Options.ReturnAfterSettings() then return end
+    -- it (review of #58). Whatever brings it then (Settings closing, or a fight's end
+    -- after it) comes back here without a preset: the one asked for is used.
+    if not win:IsShown() and GS.Options.ReturnAfterSettings() then
+        deferred = { preset = preset or (deferred and deferred.preset), at = Window.shownCount }
+        return
+    end
+    if not preset and deferred and deferred.at == Window.shownCount then preset = deferred.preset end
+    deferred = nil
     local switch = preset and Board.PRESETS[preset] and preset ~= difficultyKey()
     -- Nothing to lose: the new board before showing (one layout, not two).
     if switch and not hasProgress() then Window.NewGame(preset); switch = false end

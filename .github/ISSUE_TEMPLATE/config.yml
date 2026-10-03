@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: CurseForge page
+    url: https://www.curseforge.com/wow/addons/gnomesweeper
+    about: Downloads and comments. Bugs are easier to follow up here on GitHub, though.

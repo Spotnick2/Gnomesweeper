@@ -18,12 +18,12 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: M1 done; M2 next.** M1: the scaffold (#1), the game model `Board.lua` (#2), the glass
-window (#3), the tile grid (#4), the game states (#5) and the asset probe (#6): **the game is
-playable** at all three difficulties and ends with the storyboard's overlays. Since then: the art
-direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). M2 so
-far: personal bests and the best times panel (#7), the settings (#8). #32 (confirm before a difficulty change) waits on the owner, and the
-mascot's expressions and the mine wait on art (`docs/ART.md`).
+**Status: the first beta, v0.1.0-beta (#11).** M1 made it playable; M2 polished it: personal
+bests and the best times panel, the settings, sounds and music, the celebrations, the generated
+art and two board themes, the clock's warning, hiding in combat, the mascot's motion, a minimap
+button, a key binding. Left: localization (#36, French first), and the live 3D models (#20, #21,
+the rest of #48). **Bugs come from players** (one owner, one setup): GitHub issues, through the
+templates in `.github/ISSUE_TEMPLATE/` and the About page's "Report a bug" link.
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (public since the CurseForge setup), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -210,7 +210,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   its first show and **hidden at creation** (or its first show is blank: measured), Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
-  unpackaged; how to play; **links** to CurseForge and GitHub in read-only edit boxes to copy from,
+  unpackaged; how to play; **links** to CurseForge, GitHub and "Report a bug" (the issue templates) in
+  read-only edit boxes to copy from,
   `Options.LINKS`; the commands from `GS.HELP`, minus the "(for measuring)" ones). **The recipe is
   shared**, for every Forever addon: the porting guide's "An Options page with sub-pages and an About
   page" (update it there when something new is measured here). Neither
@@ -484,7 +485,11 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
   (`~/.codex/skills/wow-addon-review`); post each review on the PR.
 - A new client build: `/client-update` (`.claude/skills/client-update/`).
 - Releases: CurseForge's packager from the tag webhook, reading `.pkgmeta`. Every tag needs a
-  `CHANGELOG.md` entry, written for players.
+  `CHANGELOG.md` entry, written for players (what's in it, not how it got there). CI
+  (`.github/workflows/package-check.yml`, AltStable's) runs the Lua 5.1 tests and a packager dry run on
+  every PR and push to `main`, and asserts the zip's shape (the TOC's files, `Bindings.xml`, the media;
+  no dev files; the version substituted). Check the published zip by hand after a release: CurseForge's
+  packager isn't the one CI ran.
 
 ## Conventions
 

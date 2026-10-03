@@ -1,0 +1,117 @@
+name: Package check
+
+# Dry run only. Releases are built by CurseForge's own packager from the tag
+# webhook, against the same .pkgmeta: this job exists so a packaging mistake
+# surfaces on a pull request instead of in a published zip. (AltStable's recipe.)
+#
+# -d is the real no-upload switch: merely leaving CF_API_KEY out still lets the
+# packager cut a GitHub release.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq lua5.1
+
+      # WoW runs Lua 5.1, so the tests do too. tests/run.ps1 is the Windows entry
+      # point for the same files. find, not globs: Libs/ nests deeper than one level.
+      - name: Syntax-check every shipped Lua file
+        run: |
+          count=$(find . -name '*.lua' -not -path './.git/*' | wc -l)
+          test "$count" -gt 0 || { echo "no Lua files found - the check would prove nothing"; exit 1; }
+          echo "checking $count files"
+          find . -name '*.lua' -not -path './.git/*' -print0 | xargs -0 luac5.1 -p
+
+      # Without the sibling repos and the API dump (not on CI), test_toc skips the
+      # Glass copy check and test_methods skips itself, loudly; everything else runs.
+      - name: Unit tests
+        run: |
+          for f in tests/test_*.lua; do
+            echo "-- $f"
+            lua5.1 "$f" || exit 1
+          done
+
+      # Pinned to a SHA, not the moving v2 tag (AltStable's: v2 has moved once already).
+      - name: Package (dry run)
+        uses: BigWigsMods/packager@e50a250f8705041e40f2fa1ddcb280a686d65aa0
+        with:
+          args: -d
+
+      # The zip is what players install: assert its SHAPE rather than trusting
+      # .pkgmeta to have been read the way it was meant.
+      - name: The package has the addon, and nothing private
+        run: |
+          zip=$(ls .release/*.zip | head -1)
+          rm -rf unpacked && mkdir unpacked && unzip -q "$zip" -d unpacked
+          (cd unpacked && find . -type f | sed 's|^\./||' | sort) > files.txt
+          echo "$(wc -l < files.txt) files in $zip"
+
+          fail=0
+
+          # What the client needs. Bindings.xml isn't in the TOC (the client finds
+          # it by name), so nothing else would notice it missing.
+          for f in Gnomesweeper/Gnomesweeper.toc \
+                   Gnomesweeper/Bindings.xml \
+                   Gnomesweeper/LICENSE \
+                   Gnomesweeper/Window.lua \
+                   Gnomesweeper/Board.lua \
+                   Gnomesweeper/Libs/LibStub/LibStub.lua \
+                   Gnomesweeper/Libs/LibDBIcon-1.0/LibDBIcon-1.0.lua \
+                   Gnomesweeper/Media/face_mascot.tga \
+                   Gnomesweeper/Media/tile_covered.tga \
+                   Gnomesweeper/Media/tile_modern_covered.tga; do
+            grep -qx "$f" files.txt || { echo "MISSING from the package: $f"; fail=1; }
+          done
+
+          # Every file the TOC lists ships.
+          for f in $(grep -vE '^\s*(#|$)' Gnomesweeper.toc | tr -d '\r' | tr '\\' '/'); do
+            grep -qx "Gnomesweeper/$f" files.txt || { echo "MISSING (listed in the TOC): $f"; fail=1; }
+          done
+
+          # Development files must not ship.
+          for pat in '/tests/' '/Tools/' '/docs/' '/\.github/' '/\.claude/' '/Media/Source/' \
+                     'AGENTS\.md$' 'CLAUDE\.md$' 'CHANGELOG\.md$' 'README\.md$' 'ART-PROMPTS\.md$' \
+                     '\.png$' '\.py$' '\.ps1$'; do
+            if grep -qE "$pat" files.txt; then
+              echo "SHOULD NOT be in the package ($pat):"
+              grep -E "$pat" files.txt
+              fail=1
+            fi
+          done
+
+          # @project-version@ substituted, and no literal version committed over it.
+          tocs=$(grep -cE '\.toc$' files.txt || true)
+          test "$tocs" -eq 1 || { echo "expected 1 TOC in the package, found $tocs"; fail=1; }
+          v=$(grep -i '^## Version:' unpacked/Gnomesweeper/Gnomesweeper.toc | head -1)
+          echo "Gnomesweeper.toc  ->  $v"
+          case "$v" in
+            "")                    echo "  no Version line at all"; fail=1 ;;
+            *"@project-version@"*) echo "  keyword not substituted"; fail=1 ;;
+            *dev*)                 echo "  a dev version was committed over the keyword"; fail=1 ;;
+          esac
+
+          exit $fail
+
+      # .release is hidden, and upload-artifact@v4 skips hidden content unless
+      # told otherwise: without this the upload finds nothing and stays green.
+      - name: Keep the zip for inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: gnomesweeper-package
+          path: .release/*.zip
+          include-hidden-files: true
+          if-no-files-found: error

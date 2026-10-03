@@ -15,4 +15,5 @@ Widgets.lua
 Input.lua
 Grid.lua
 Window.lua
+Assets.lua
 Gnomesweeper.lua

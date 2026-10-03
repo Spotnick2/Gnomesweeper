@@ -1,5 +1,10 @@
 # Art plan
 
+**To check every texture on the live client: `/gsweep assets`** (#6). It shows a contact sheet of
+everything the skin names, says which client paths the client doesn't have, and saves the results
+(`GnomesweeperDB.assetProbe`) for a `/reload` to write to disk. A green square or an empty cell on
+the sheet is a texture the client can't draw.
+
 Live 3D models (the gnome face, the bomb on a wipe) are in [`MODELS.md`](MODELS.md); this file is
 the 2D art, which is also every model's fallback.
 

@@ -205,6 +205,7 @@ function WoW.reset()
     WoW.frames, WoW.chat = {}, {}
     WoW.now = 0
     WoW.mouseDown = false
+    WoW.fileIDs = {}
     WoW.screen = { w = 1366, h = 768 }
     SlashCmdList = {}
     UISpecialFrames = {}
@@ -227,6 +228,9 @@ function print(...)
 end
 
 function GetTime() return WoW.now end
+-- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
+function GetFileIDFromPath(path) return WoW.fileIDs[path] end
+function GetBuildInfo() return "1.60.1", "70170", "Sep 29 2026", 16001 end
 function IsMouseButtonDown(button) return WoW.mouseDown == true end
 function debugprofilestop() return os.clock() * 1000 end
 function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a } end

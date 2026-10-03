@@ -162,12 +162,13 @@ local function label(parent, text, template, width)
     fs:SetText(text)
     return fs
 end
-local function pageLabel(text, template) return label(page, text, template) end
+local canvas               -- the page's scroll child: every control lives here (buildPage)
+local function pageLabel(text, template) return label(canvas, text, template) end
 
 -- A check or radio button from the client's template, or our own from its art
 -- when the template is missing (a missing template returns a bare frame).
 local function checkButton(radio)
-    local cb, templated = GS.API.SafeFrame("CheckButton", page, radio and "UIRadioButtonTemplate" or "UICheckButtonTemplate", "text")
+    local cb, templated = GS.API.SafeFrame("CheckButton", canvas, radio and "UIRadioButtonTemplate" or "UICheckButtonTemplate", "text")
     if not templated then
         if radio then
             cb:SetSize(16, 16)
@@ -189,7 +190,7 @@ local function checkButton(radio)
 end
 
 local function pageButton(text, width, onClick)
-    local b, templated = GS.API.SafeFrame("Button", page, "UIPanelButtonTemplate", "Text")
+    local b, templated = GS.API.SafeFrame("Button", canvas, "UIPanelButtonTemplate", "Text")
     b:SetSize(width, 22)
     if not templated then
         local bg = b:CreateTexture(nil, "BACKGROUND")
@@ -203,8 +204,33 @@ local function pageButton(text, width, onClick)
 end
 
 local function buildPage()
+    -- Scrolls (owner: the settings outgrew the Settings canvas), as GlassUnitFrames'
+    -- page does: UIPanelScrollFrameTemplate exists here (porting guide); without it a
+    -- plain ScrollFrame still clips and scrolls by wheel. The bar shows only when needed.
+    local scroll = CreateFrame("ScrollFrame", nil, page, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", page, "TOPLEFT", 0, -4)
+    scroll:SetPoint("BOTTOMRIGHT", page, "BOTTOMRIGHT", -26, 4)
+    canvas = CreateFrame("Frame", nil, scroll)
+    canvas:SetSize(600, 600)
+    scroll:SetScrollChild(canvas)
+    if scroll.ScrollBar then
+        scroll:HookScript("OnScrollRangeChanged", function(self, _, yrange)
+            self.ScrollBar:SetShown((yrange or self:GetVerticalScrollRange()) > 0)
+        end)
+    else
+        scroll:EnableMouseWheel(true)
+        scroll:SetScript("OnMouseWheel", function(self, delta)
+            local v = math.max(0, math.min(self:GetVerticalScrollRange(), self:GetVerticalScroll() - delta * 40))
+            self:SetVerticalScroll(v)
+        end)
+    end
+    scroll:SetScript("OnSizeChanged", function(_, w)
+        if type(w) == "number" and w > 0 then canvas:SetWidth(w) end
+    end)
+    page.scroll, page.canvas = scroll, canvas
+
     local title = pageLabel("Gnomesweeper", "GameFontNormalHuge")
-    title:SetPoint("TOPLEFT", page, "TOPLEFT", 16, -16)
+    title:SetPoint("TOPLEFT", canvas, "TOPLEFT", 16, -16)
     local sub = pageLabel(GS.TAGLINE .. "  /gsweep opens the board; the gear in its title bar opens this page.",
         "GameFontHighlightSmall")
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 2, -6)
@@ -216,7 +242,7 @@ local function buildPage()
         local c = {}
         if item.kind == "toggle" then
             c.check = checkButton(false)
-            c.check:SetPoint("TOPLEFT", page, "TOPLEFT", 16, y)
+            c.check:SetPoint("TOPLEFT", canvas, "TOPLEFT", 16, y)
             c.check:SetScript("OnClick", function(self) Options.Set(item.key, self:GetChecked() and true or false) end)
             c.label = pageLabel(item.label)
             c.label:SetPoint("LEFT", c.check, "RIGHT", 4, 0)
@@ -224,12 +250,12 @@ local function buildPage()
             y = y - 26
         elseif item.kind == "choice" then
             c.label = pageLabel(item.label)
-            c.label:SetPoint("TOPLEFT", page, "TOPLEFT", 20, y)
+            c.label:SetPoint("TOPLEFT", canvas, "TOPLEFT", 20, y)
             y = y - 22
             c.radios = {}
             for i, choice in ipairs(item.choices) do
                 local rb = checkButton(true)
-                rb:SetPoint("TOPLEFT", page, "TOPLEFT", 28, y)
+                rb:SetPoint("TOPLEFT", canvas, "TOPLEFT", 28, y)
                 rb.value = choice[1]
                 rb:SetScript("OnClick", function() Options.Set(item.key, choice[1]) end)
                 local fs = pageLabel(choice[2])
@@ -243,7 +269,7 @@ local function buildPage()
             end
         elseif item.kind == "scale" then
             c.label = pageLabel(item.label)
-            c.label:SetPoint("TOPLEFT", page, "TOPLEFT", 20, y)
+            c.label:SetPoint("TOPLEFT", canvas, "TOPLEFT", 20, y)
             c.minus = pageButton("-", 26, function() Options.StepScale(-1) end)
             c.minus:SetPoint("LEFT", c.label, "LEFT", 110, 0)
             c.value = pageLabel("")
@@ -256,14 +282,18 @@ local function buildPage()
             y = y - 28
         end
         c.note = pageLabel("", "GameFontHighlightSmall")
-        c.note:SetPoint("TOPLEFT", page, "TOPLEFT", 48, y + 4)
-        c.note:SetWidth(520)
+        if item.kind == "scale" then
+            c.note:SetPoint("LEFT", c.plus, "RIGHT", 12, 0)   -- "shown at 90%...": beside, no row of its own
+        else
+            c.note:SetPoint("TOPLEFT", canvas, "TOPLEFT", 48, y + 4)
+            c.note:SetWidth(520)
+        end
         refreshers[#refreshers + 1] = function()
             local note = item.note
             if item.key == "scale" then note = fitNote() end
             c.note:SetText(note or "")
         end
-        y = y - 26
+        if item.kind ~= "scale" then y = y - 26 else y = y - 8 end
         page.controls[item.key] = c
     end
 
@@ -272,10 +302,11 @@ local function buildPage()
     -- as well).
     y = y - 6
     local reset = pageButton(Options.RESET_LABEL, 190, function(self) Options.ResetClick(self) end)
-    reset:SetPoint("TOPLEFT", page, "TOPLEFT", 16, y)
+    reset:SetPoint("TOPLEFT", canvas, "TOPLEFT", 16, y)
     page.reset = reset
     local note = pageLabel("Every difficulty's best time and games won, for both first-click rules.", "GameFontHighlightSmall")
     note:SetPoint("LEFT", reset, "RIGHT", 10, 0)
+    canvas:SetHeight(-y + 40)                  -- what's on it: the scroll range follows
     views[#views + 1] = function()
         if not page:IsShown() then return end
         for _, fn in ipairs(refreshers) do fn() end

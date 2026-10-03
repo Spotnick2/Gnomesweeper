@@ -62,7 +62,7 @@ local function newWidget(wtype, parent, name)
 end
 
 function CreateFrame(ftype, name, parent, template)
-    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene" or ftype == "CheckButton" or ftype == "EditBox",
+    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene" or ftype == "CheckButton" or ftype == "EditBox" or ftype == "ScrollFrame",
         "CreateFrame: unexpected frame type " .. tostring(ftype))
     local w = newWidget(ftype, parent or UIParent, name)
     w._template = template
@@ -73,6 +73,8 @@ function CreateFrame(ftype, name, parent, template)
             w.text = newWidget("FontString", w)
         elseif template == "UIPanelButtonTemplate" then
             w.Text = newWidget("FontString", w)
+        elseif template == "UIPanelScrollFrameTemplate" then
+            w.ScrollBar = newWidget("Slider", w)
         end
     end
     table.insert(WoW.frames, w)

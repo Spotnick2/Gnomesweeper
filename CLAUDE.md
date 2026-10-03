@@ -190,7 +190,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   to beat.
   **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
   more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
-  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
+  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN` (its controls on a
+  scroll frame's child, `UIPanelScrollFrameTemplate`, since the settings outgrew the canvas), built on
   its first show and **hidden at creation** (or its first show is blank: measured), Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"

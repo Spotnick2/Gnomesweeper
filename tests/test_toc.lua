@@ -12,7 +12,13 @@ for _, f in ipairs(files) do
     check(not seen[f], "TOC lists each file once: " .. f)
     seen[f] = true
 end
-eq(files[1], "Compat.lua", "Compat loads first")
+eq(files[1], "Compat.lua", "Compat loads first (after the libraries)")
+local all = tocFiles(true)
+for i, lib in ipairs({ "LibStub/LibStub", "CallbackHandler-1.0/CallbackHandler-1.0",
+                       "LibDataBroker-1.1/LibDataBroker-1.1", "LibDBIcon-1.0/LibDBIcon-1.0" }) do
+    eq(all[i], "Libs/" .. lib .. ".lua", "the libraries load first, in order: " .. lib)
+    check(io.open(all[i], "r") ~= nil, "...and the file is there")
+end
 eq(files[#files], "Gnomesweeper.lua", "the entry point loads last")
 
 -- Boot: defaults filled in, existing values kept, all three commands answer.

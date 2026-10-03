@@ -19,6 +19,7 @@ local DEFAULTS = {
 
 local function EnsureDefaults()
     if type(GnomesweeperDB) ~= "table" then GnomesweeperDB = {} end
+    if type(GnomesweeperDB.minimap) ~= "table" then GnomesweeperDB.minimap = {} end   -- LibDBIcon's own table
     for k, v in pairs(DEFAULTS) do
         if GnomesweeperDB[k] == nil then GnomesweeperDB[k] = v end
     end
@@ -35,6 +36,7 @@ local HELP = {
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep scores - your best times (also the trophy in the title bar)",
     "/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)",
+    "/gsweep minimap - show or hide the minimap button",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
     "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
@@ -52,6 +54,9 @@ local function Slash(msg)
         GS.Window.ShowBests(true)
     elseif msg == "settings" or msg == "options" or msg == "config" then
         GS.Options.Open()
+    elseif msg == "minimap" then
+        GS.Options.Set("minimapButton", not GS.Minimap.Shown())
+        Print("minimap button " .. (GS.Minimap.Shown() and "shown." or "hidden: /gsweep minimap brings it back."))
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")

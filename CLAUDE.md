@@ -25,7 +25,7 @@ direction from the logo (#28), the Liquid Glass polish with the rarity colours (
 far: personal bests and the best times panel (#7), the settings (#8). #32 (confirm before a difficulty change) waits on the owner, and the
 mascot's expressions and the mine wait on art (`docs/ART.md`).
 
-**The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
+**The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (public since the CurseForge setup), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
 (needs the live client), `social`, `postponed`. `gh issue list -R Spotnick2/Gnomesweeper
 --milestone "M1 — Playable"` is the work queue. New work gets an issue first; an issue's body
@@ -33,9 +33,10 @@ holds the decided design, so update it when the design changes.
 
 ## Layout
 
-TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
-`Scores.lua` → `Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` →
-`Options.lua` → `Assets.lua` → `Gnomesweeper.lua`.
+TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
+LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
+`Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → `Options.lua` → `Minimap.lua` →
+`Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -176,6 +177,16 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   a rule changed mid-game shows with the next game, the one it applies to. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
   time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
   says when the window is shown smaller to fit).
+- **`Libs\`** (#40): LibStub, CallbackHandler-1.0, LibDataBroker-1.1 and LibDBIcon-1.0 (MINOR 56),
+  **copied from `..\GlassMiniMapBar\Libs`** (owner's decision: the standard minimap button, which every
+  collector picks up). Never edited here. **Not loaded in tests**: `tocFiles()` skips `Libs\` (pass
+  `true` for all), and the stub's `LibStub` hands out recording fakes (`WoW.ldb`, `WoW.ldbi`).
+- **`Minimap.lua`** (#40): the minimap button, a LibDataBroker launcher (the mascot's face) shown by
+  LibDBIcon, registered at `PLAYER_LOGIN`. **Left-click opens or closes the board, right-click opens
+  the settings.** Its position and shown state are LibDBIcon's own table, `GnomesweeperDB.minimap`
+  (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
+  `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
+  `GnomesweeperDB[key]`). Without the libraries there is simply no button.
 - **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
   and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
@@ -325,6 +336,8 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_minimap.lua`** is the minimap button on the library fakes: registration, both clicks, the
+  tooltip, the setting and `/gsweep minimap`, a button saved hidden, a damaged table, no libraries.
 - **`test_options.lua`** is the settings: `Options.Set` (refused values, next game vs. now, marks
   kept, the same value), the steps of the scale, the gear opening the page and the window stepping
   aside (and back, and its clock paused), the page (registration, templates and the fallback art), and

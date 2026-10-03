@@ -19,11 +19,15 @@ function done(name)
 end
 
 -- Lua files listed in the TOC, in load order, as paths from the repo root.
-function tocFiles()
+-- `all` includes Libs\, which the tests never load: the stub's LibStub hands out
+-- fakes instead (GlassMiniMapBar's way).
+function tocFiles(all)
     local files = {}
     for line in io.lines("Gnomesweeper.toc") do
         line = line:gsub("\r", "")
-        if line:match("%.lua$") and not line:match("^#") then files[#files + 1] = (line:gsub("\\", "/")) end
+        if line:match("%.lua$") and not line:match("^#") and (all or not line:match("^Libs\\")) then
+            files[#files + 1] = (line:gsub("\\", "/"))
+        end
     end
     return files
 end

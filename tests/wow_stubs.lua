@@ -228,6 +228,7 @@ function WoW.reset()
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
+    WoW.ldb, WoW.ldbi = nil, nil                -- made on first use (LibStub, below)
     WoW.missingTemplates = {}
     WoW.settings = { canvas = {}, addons = {}, subs = {} }
     WoW.metadata = { Version = "@project-version@" }
@@ -266,6 +267,35 @@ function date(fmt, t) return os.date(fmt, t) end
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end
 C_AddOns = { GetAddOnMetadata = function(name, key) return WoW.metadata[key] end }
+
+-- LibStub with fake LibDataBroker-1.1 and LibDBIcon-1.0 (the real Libs\ are not
+-- loaded in tests; GlassMiniMapBar's way). The fakes record what they are given:
+-- WoW.ldb.objects, WoW.ldbi.registered / .buttons, and Show/Hide on the button.
+LibStub = setmetatable({}, { __call = function(_, major)
+    if major == "LibDataBroker-1.1" then WoW.ldb = WoW.ldb or WoW.newLDB(); return WoW.ldb end
+    if major == "LibDBIcon-1.0" then WoW.ldbi = WoW.ldbi or WoW.newLDBI(); return WoW.ldbi end
+    error("LibStub: no stub for " .. tostring(major))
+end })
+function WoW.newLDB()
+    local lib = { objects = {} }
+    function lib:NewDataObject(name, obj) self.objects[name] = obj; return obj end
+    return lib
+end
+function WoW.newLDBI()
+    local lib = { registered = {}, buttons = {}, registrations = 0 }
+    function lib:Register(name, obj, db)
+        self.registrations = self.registrations + 1
+        local b = newWidget("Button", UIParent, "LibDBIcon10_" .. name)
+        b._scripts.OnClick = function(self, mouse) obj.OnClick(self, mouse) end
+        b.dataObject, b.db = obj, db
+        if db.hide then b._shown = false end
+        self.registered[name], self.buttons[name] = db, b
+    end
+    function lib:Show(name) self.buttons[name]:Show(); self.registered[name].hide = false end
+    function lib:Hide(name) self.buttons[name]:Hide(); self.registered[name].hide = true end
+    function lib:GetMinimapButton(name) return self.buttons[name] end
+    return lib
+end
 -- Retail's Settings framework: Options > AddOns. Recorded in WoW.settings.
 Settings = {
     RegisterCanvasLayoutCategory = function(frame, name)

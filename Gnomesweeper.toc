@@ -6,6 +6,10 @@
 ## IconTexture: 133712
 ## SavedVariables: GnomesweeperDB
 
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 Compat.lua
 Glass.lua
 Board.lua
@@ -17,5 +21,6 @@ Input.lua
 Grid.lua
 Window.lua
 Options.lua
+Minimap.lua
 Assets.lua
 Gnomesweeper.lua

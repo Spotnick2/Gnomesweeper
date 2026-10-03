@@ -39,6 +39,16 @@ Get-ChildItem -LiteralPath $dest -File | Where-Object { $files -notcontains $_.N
     Remove-Item -LiteralPath $_.FullName -Force
 }
 
+# Libs: the embedded libraries (#40), mirrored exactly, so a library dropped from
+# the repo doesn't linger where the client would still load it.
+$libsSrc = Join-Path $RepoRoot "Libs"
+$libsDest = Join-Path $dest "Libs"
+if (Test-Path -LiteralPath $libsDest) { Remove-Item -LiteralPath $libsDest -Recurse -Force }
+if (Test-Path -LiteralPath $libsSrc) {
+    Copy-Item -LiteralPath $libsSrc -Destination $libsDest -Recurse -Force
+    Write-Host "  Libs\  ($((Get-ChildItem -LiteralPath $libsDest -Recurse -File).Count) files)"
+}
+
 # Media: only what the client loads (TGA/BLP textures, OGG sounds), never PNG masters.
 $media = Join-Path $dest "Media"
 New-Item -ItemType Directory -Force -Path $media | Out-Null

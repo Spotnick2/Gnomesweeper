@@ -54,6 +54,7 @@ local function newWidget(wtype, parent, name)
         _level = parent and parent._level and (parent._level + 1) or 1,
         _strata = "MEDIUM", _text = "",
     }, widgetMT)
+    if WoW.widgets then WoW.widgets[#WoW.widgets + 1] = w end   -- every widget made (the locale guard walks them)
     if parent then
         parent._children = parent._children or {}
         table.insert(parent._children, w)
@@ -251,6 +252,7 @@ end
 
 function WoW.reset()
     WoW.frames, WoW.chat = {}, {}
+    WoW.widgets = {}
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
@@ -292,6 +294,8 @@ function GetTime() return WoW.now end
 -- The calendar clock (a global in the client; the dump's _G walk lists it).
 function time() return WoW.epoch end
 function date(fmt, t) return os.date(fmt, t) end
+-- The client's language (#36): WoW.locale, "enUS" unless a test sets it (loadAddon's opts.locale).
+function GetLocale() return WoW.locale or "enUS" end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end

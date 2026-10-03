@@ -55,6 +55,19 @@ if (Test-Path -LiteralPath $libsSrc) {
     Write-Host "  Libs\  ($((Get-ChildItem -LiteralPath $libsDest -Recurse -File).Count) files)"
 }
 
+# Locales (#36): the language files, mirrored exactly like Libs (a new one is a new
+# file: the client needs a restart to see it).
+$locSrc = Join-Path $RepoRoot "Locales"
+$locDest = Join-Path $dest "Locales"
+if (Test-Path -LiteralPath $locSrc) {
+    foreach ($f in Get-ChildItem -LiteralPath $locSrc -File -Filter *.lua) {
+        if (-not (Test-Path -LiteralPath (Join-Path $locDest $f.Name))) { $restart += "Locales\$($f.Name)" }
+    }
+    if (Test-Path -LiteralPath $locDest) { Remove-Item -LiteralPath $locDest -Recurse -Force }
+    Copy-Item -LiteralPath $locSrc -Destination $locDest -Recurse -Force
+    Write-Host "  Locales\  ($((Get-ChildItem -LiteralPath $locDest -File).Count) files)"
+}
+
 # Media: only what the client loads (TGA/BLP textures, OGG sounds), never PNG masters.
 $media = Join-Path $dest "Media"
 New-Item -ItemType Directory -Force -Path $media | Out-Null

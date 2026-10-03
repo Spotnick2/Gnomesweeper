@@ -20,6 +20,7 @@ local Minimap_ = {}          -- not "Minimap": that is the client's minimap fram
 GS.Minimap = Minimap_
 
 local NAME = "Gnomesweeper"
+local L = GS.L             -- the player's language (#36)
 local registered = false
 
 -- LibDBIcon's table. Made (or repaired) once, at ADDON_LOADED (Gnomesweeper.lua),
@@ -53,9 +54,9 @@ end
 -- What a click does, for both tooltips (the minimap button's adds dragging).
 local function tooltip(tip, drag)
     tip:AddLine("Gnomesweeper")
-    tip:AddLine("Left-click: open or close the board", 0.75, 0.78, 0.85)
-    tip:AddLine("Right-click: settings", 0.75, 0.78, 0.85)
-    if drag then tip:AddLine("Drag: move around the minimap", 0.75, 0.78, 0.85) end
+    tip:AddLine(L["Left-click: open or close the board"], 0.75, 0.78, 0.85)
+    tip:AddLine(L["Right-click: settings"], 0.75, 0.78, 0.85)
+    if drag then tip:AddLine(L["Drag: move around the minimap"], 0.75, 0.78, 0.85) end
 end
 
 -- The TOC's AddonCompartmentFunc*: globals, as the compartment looks them up by name.

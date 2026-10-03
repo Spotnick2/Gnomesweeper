@@ -99,7 +99,12 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   **shared baked textures** from `Tools/make_tiles.py`: covered, revealed, exploded) and a hover
   glow up front; its flag/bomb icon and its number are created the first time it needs them. **No
   `Glass.Apply` per tile**: it makes 6 textures, a mask and a frame per host, and its sliced mask
-  is measured to fail on small squares. Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**
+  is measured to fail on small squares. **The new-game wave (#43)**: `Grid.Shuffle()` re-covers the tiles
+  in a diagonal wave from the top-left (each fades in and drops `SHUFFLE_DROP` units), `SHUFFLE_SPREAD`
+  + `SHUFFLE_FALL` = one second, from one `OnUpdate` that exists only while it runs; a press during it
+  finishes it and isn't a click, and a rebuild or the window closing finishes it too. Only the player's
+  new game plays it (`playerNewGame` in Window: the face, Play again, Try again, with the arm's sound).
+  Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**
   (one dispatch path); `upInside` from the client, `IsMouseOver()` when it isn't passed.
 - **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
   `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never

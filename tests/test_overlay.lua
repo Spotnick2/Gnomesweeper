@@ -162,7 +162,8 @@ do   -- the button starts a new game
     eq(W.game:State(), "ready", "...which is ready")
     check(not o:IsShown(), "...and the overlay goes")
     eq(tile(1).bg._texture, Skin.TEXTURES.tileCovered, "...with the board covered again")
-    eq(tile(1).hl:GetAlpha(), 1, "...and tiles live again")
+    for _ = 1, 80 do WoW.tick(0.016) end                 -- the new-game wave (#43) lands in about a second
+    eq(tile(1).hl:GetAlpha(), 1, "...and tiles live again once the wave lands")
 end
 
 do   -- a click on the overlay puts it away, to look at the board

@@ -85,7 +85,8 @@ Layout.CLOCK_NEAR_MAX = 10
 Layout.CLOCK_LAST = 3
 
 function Layout.ClockState(elapsed, best)
-    if type(best) ~= "number" or best <= 0 then return "normal" end
+    -- 0 is a real best (a first click that clears the board: Codex, #52); below it, damaged.
+    if type(best) ~= "number" or best < 0 then return "normal" end
     local left = best - elapsed
     if left < 0 then return "over" end
     if left <= Layout.CLOCK_LAST then return "last" end

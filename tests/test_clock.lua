@@ -151,4 +151,21 @@ do  -- the review of #52
     ui.timer.SetTextColor = set
 end
 
+do  -- a 0 s best (a first click that cleared the board) still warns the next game (Codex, #52)
+    local W = fresh({ scores = { version = 1, ["beginner:area"] = { played = 1, won = 1, best = { time = 0 } } } })
+    eq(W._test.clockState(), "normal", "a 0 s best: a fresh board's clock doesn't warn")
+    WoW.sounds = {}
+    WoW.now = 100
+    click(41)
+    if W.game:State() == "playing" then
+        at(101)
+        eq(W._test.clockState(), "over", "...the next game is past it at once: red")
+        local n = 0
+        for _, s in ipairs(WoW.sounds) do if s.kit == Gnomesweeper.Sounds.KITS.alert then n = n + 1 end end
+        eq(n, 1, "...and the alert plays, once")
+    else
+        check(false, "(the game should still be in play after the first reveal)")
+    end
+end
+
 done("test_clock")

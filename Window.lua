@@ -205,6 +205,18 @@ function Window.Refresh()
     for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
     ui.face:setState(game:State())
     setTicking(game:State() == "playing")
+    -- The burst while the win shows, the smoke while the wipe does (#10).
+    local state = game:State()
+    if state == "won" then ui.burst.play() else ui.burst.stop() end
+    if state == "lost" then
+        if not ui.smoke.isPlaying() then
+            for i = 1, game.total do
+                if game:Cell(i).exploded then ui.smoke.play(Grid.Tile(i)); break end
+            end
+        end
+    else
+        ui.smoke.stop()
+    end
     local on = db().music == true
     ui.music.icon:SetVertexColor(unpack(on and C.musicOn or C.musicOff))
     ui.music.slash:SetShown(not on)
@@ -409,8 +421,15 @@ local function buildOverlay()
     o.title:SetPoint("TOP", o, "TOP", 0, -14)
     o.time = Glass.Font(o, 14, "CENTER")
     o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
-    o.best = Glass.Font(o, 12, "CENTER")              -- "New personal best!", or the best that stands
+    o.best = Glass.Font(o, 12, "CENTER")              -- the best that stands ("Best 00:42")
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
+    -- A new personal best is an event (#10): bigger, gold, and a beat.
+    o.newBest = Glass.Font(o, 17, "CENTER")
+    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
+    o.newBest:SetTextColor(unpack(C.gold))
+    o.newBest:SetText("New personal best!")
+    o.newBest:Hide()
+    o.pulse = GS.Effects.Pulse(o.newBest)
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
@@ -443,18 +462,23 @@ function Window.ShowEnd()
     o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
     if game:State() == "won" then
         local text, col = bestLine()
-        o:SetHeight(text and WIN_H or WIN_H - 18)
+        local isNew = lastWin and lastWin.new
+        o:SetHeight(isNew and WIN_H + 6 or text and WIN_H or WIN_H - 18)
         o.time:SetText(sub)
         o.time:Show()
-        if text then
+        if text and not isNew then
             o.best:SetText(text)
             o.best:SetTextColor(col[1], col[2], col[3])
         end
-        o.best:SetShown(text ~= nil)
+        o.best:SetShown(text ~= nil and not isNew)
+        o.newBest:SetShown(isNew and true or false)
+        if isNew then o.pulse.play() else o.pulse.stop() end
     else
         o:SetHeight(LOSS_H)
         o.time:Hide()
         o.best:Hide()
+        o.newBest:Hide()
+        o.pulse.stop()
     end
     o:Show()
 end
@@ -686,6 +710,7 @@ local function build()
     ui.face = Widgets.FaceButton(hud, 44)
     ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
     ui.face:SetScript("OnClick", function() playerNewGame() end)
+    ui.burst = GS.Effects.Burst(hud, ui.face)          -- the win: a gold burst behind her (#10)
     Widgets.Tip(ui.face, "New game", "Same difficulty.")
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
@@ -704,7 +729,19 @@ local function build()
     grid.bg:SetColorTexture(unpack(C.gridBg))
     ui.grid = grid
     Window.grid = grid
-    Grid.Attach(grid, function(kind, i) Window.Dispatch(kind, i) end)
+    -- The surprised face while a tile is held (#10), only while the game can be played.
+    Grid.Attach(grid, function(kind, i) Window.Dispatch(kind, i) end, function(on)
+        local s = game and game:State()
+        ui.face:setPressed(on and (s == "ready" or s == "playing"))
+    end)
+
+    -- The effects over the board (#10): above the tiles, under the end overlay (+15).
+    local fx = CreateFrame("Frame", nil, win)
+    fx:SetAllPoints(grid)
+    fx:SetFrameLevel(win:GetFrameLevel() + 12)
+    ui.fx = fx
+    ui.smoke = GS.Effects.Smoke(fx)
+    ui.fireworks = GS.Effects.Fireworks(fx)
 
     buildFooter()
 
@@ -783,7 +820,13 @@ function Window.Dispatch(kind, i)
     if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
     local state = game:State()
     recordScores(was, state)             -- first, so the refresh below shows a new best
-    GS.Sounds.Action(kind, was, state, game:Cell(i), #list)
+    local newBest = state == "won" and was ~= "won" and lastWin and lastWin.new
+    GS.Sounds.Action(kind, was, state, game:Cell(i), #list, newBest)
+    if newBest and db().fireworks ~= false then
+        local col = Skin.DifficultyColor(difficultyKey())
+        ui.fireworks.play(ui.grid, { C.gold, col, { 1, 1, 1 } }, math.random)   -- the board has a size; fx only its anchors
+        GS.Sounds.Fireworks()
+    end
     Grid.Refresh(list)
     Window.Refresh()
     -- Only the action that ENDS the game brings the overlay up: a click on a
@@ -827,6 +870,7 @@ end
 -- A fresh game, at `preset` (remembered) or the current difficulty.
 function Window.NewGame(preset)
     GS.Sounds.Cancel()                   -- the last game's gnome mustn't speak over the new one
+    if ui.fireworks then ui.fireworks.stop() end
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
     if ui.overlay then ui.overlay:Hide() end

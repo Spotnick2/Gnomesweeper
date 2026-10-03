@@ -19,6 +19,7 @@ Skin.lua
 Widgets.lua
 Input.lua
 Grid.lua
+Effects.lua
 Window.lua
 Options.lua
 Minimap.lua

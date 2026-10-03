@@ -17,6 +17,7 @@ local DEFAULTS = {
     chordOnLeft = false,       -- left-click a satisfied number to chord it (a setting, #8)
     sounds = true,             -- the effects (#9)
     music = false,             -- Gnomeregan's music while the board is open (#22)
+    fireworks = true,          -- fireworks on a new personal best (#10)
 }
 
 local function EnsureDefaults()

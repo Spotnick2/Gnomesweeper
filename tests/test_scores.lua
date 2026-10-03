@@ -197,10 +197,11 @@ do  -- the first win, then slower, then faster
     eq(best.name, "Fizzle Sprocketwhistle", "...the full name, surname included")
     eq(best.realm, "Forever", "...the realm")
     local o = ui.overlay
-    check(o.best:IsShown(), "the overlay says so")
-    eq(o.best:GetText(), "New personal best!", "...New personal best!")
-    eq(o.best._textColor[1], Skin.COLORS.gold[1], "...in gold")
-    eq(o:GetHeight(), 152, "...with room for the line")
+    check(o.newBest:IsShown() and not o.best:IsShown(), "the overlay says so, on its own bigger line")
+    eq(o.newBest:GetText(), "New personal best!", "...New personal best!")
+    eq(o.newBest._textColor[1], Skin.COLORS.gold[1], "...in gold")
+    check(o.pulse.isPlaying(), "...with a beat (#10)")
+    eq(o:GetHeight(), 158, "...with room for the bigger line")
     eq(menuBest(ui, "beginner"), "00:42", "the difficulty list shows the best, whole seconds")
     eq(menuBest(ui, "expert"), "-", "...and a dash where there is none")
     o.view._scripts.OnClick(o.view)
@@ -209,6 +210,7 @@ do  -- the first win, then slower, then faster
     winWall(W, "beginner:area", 50)
     check(math.abs(GnomesweeperDB.scores["beginner:area"].best.time - 42.7) < 1e-9, "a slower win leaves the best")
     eq(o.best:GetText(), "Best 00:42", "the overlay shows the best that stands")
+    check(not o.newBest:IsShown() and not o.pulse.isPlaying(), "...not the new-best line, no beat")
     eq(o.best._textColor[1], Skin.COLORS.hint[1], "...quietly")
     o.view._scripts.OnClick(o.view)
     check(ui.result.sub:GetText():find("Best 00:42", 1, true) ~= nil, "...and so does the result bar")
@@ -220,7 +222,7 @@ do  -- the first win, then slower, then faster
     eq(GnomesweeperDB.scores["beginner:area"].won, 3, "every win counts")
 
     winWall(W, "beginner:area", 12)
-    eq(o.best:GetText(), "New personal best!", "a faster win is")
+    check(o.newBest:IsShown(), "a faster win is")
     eq(menuBest(ui, "beginner"), "00:12", "...and the list follows")
 
     local lines = tipLines(ui.diff)
@@ -238,7 +240,7 @@ do  -- the first win, then slower, then faster
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout(WALL, { now = WoW.now }), "beginner:area")
     click(at(3, 1))
     eq(W.game:State(), "lost", "(boom)")
-    check(not o.best:IsShown(), "a loss shows no best line")
+    check(not o.best:IsShown() and not o.newBest:IsShown(), "a loss shows no best line")
 end
 
 do  -- kept across a reload
@@ -354,7 +356,7 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     eq(o().time:GetText(), "Time 00:50", "a different second: whole seconds")
     eq(o().best:GetText(), "Best 00:42", "...for both")
     winWall(W, "beginner:area", 42.05)
-    eq(o().best:GetText(), "New personal best!", "a new best by a hundredth")
+    check(o().newBest:IsShown(), "a new best by a hundredth")
     eq(o().time:GetText(), "Time 00:42", "...shows its time whole (the old best isn't on screen)")
 end
 

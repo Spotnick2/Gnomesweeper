@@ -81,6 +81,27 @@ function CreateFrame(ftype, name, parent, template)
 end
 
 function Methods.CreateTexture(w, name) return newWidget("Texture", w, name) end
+-- Animations (#10): a group records its animations and whether it plays; an
+-- animation records its type, so test_methods can check each call against the
+-- dump's SimpleAnim<Type>API.
+function Methods.CreateAnimationGroup(w)
+    local ag = newWidget("AnimationGroup", w)
+    ag._anims, ag._playing = {}, false
+    return ag
+end
+function Methods.CreateAnimation(ag, atype)
+    local a = newWidget(atype or "Animation", ag)
+    a._animType = atype
+    table.insert(ag._anims, a)
+    return a
+end
+function Methods.Play(ag) ag._playing = true; ag._plays = (ag._plays or 0) + 1 end
+function Methods.Stop(ag) ag._playing = false end
+function Methods.IsPlaying(ag) return ag._playing == true end
+function Methods.SetLooping(ag, l) ag._looping = l end
+function Methods.SetDegrees(a, d) a._degrees = d end
+function Methods.SetStartDelay(a, d) a._delay = d end
+function Methods.SetDuration(a, d) a._duration = d end
 function Methods.CreateMaskTexture(w, name) return newWidget("MaskTexture", w, name) end
 function Methods.CreateFontString(w, name) return newWidget("FontString", w, name) end
 

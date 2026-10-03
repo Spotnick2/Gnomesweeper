@@ -77,9 +77,10 @@ I'll convert and wire it (`Tools/png_to_tga.py`); nothing else changes.
 | 1 | **The mascot, worried / focused** (playing) | `face_playing.png` | 256×256 | the ring and nothing, while a game is on |
 | 2 | **The mascot, victorious** (cleared) | `face_won.png` | 256×256 | the grin with gold sparkles drawn over it |
 | 3 | **The mascot, soot-covered defeat** (wiped) | `face_lost.png` | 256×256 | the grin with soot drawn over it |
-| 4 | The mascot, surprised "o" (a tile held down, #10) | `face_pressed.png` | 256×256 | (new) |
+| 4 | The mascot, surprised "o" (a tile held down, #10) | `face_pressed.png` | 256×256 | the flinch (the face shrinks 12% while a tile is held); wired: `Skin.TEXTURES.facePressed` is all it needs |
 | 5 | **The mine**: brass-studded sphere, orange core | `mine.png` | 128×128 | the client's black bomb icon |
 | 6 | Title lettering (after the GnomeSweeper / Gnomesweeper spelling is decided) | `title.png` | 1024×256 | the window's text title |
+| 7 | **Laurels** for "New personal best!" (the storyboard's, #10): two gold laurel branches curving up around a line of text, open at the top, transparent background | `laurels.png` | 512×128 | the line's pulse alone |
 
 For 1-4 keep **the logo's framing exactly** (the face centred, goggles at the top, the same crop
 as `face_mascot`: `docs/logo.png`, box `370,60,910,600`) so the five swap without the head

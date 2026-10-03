@@ -41,6 +41,8 @@ Options.ITEMS = {
       note = "Clicks, flags, the bomb and the cheers. The game's own sound settings apply too." },
     { key = "music", kind = "toggle", label = "Gnomeregan music",
       note = "While the board is open; never in combat. Also the note in the title bar." },
+    { key = "fireworks", kind = "toggle", label = "Fireworks",
+      note = "Over the board when you beat your best time." },
     { key = "scale", kind = "scale", label = "Window size",
       get = function() return db().scale or 1 end,
       set = function(v)

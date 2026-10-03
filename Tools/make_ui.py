@@ -17,6 +17,7 @@ textures are tinted with SetVertexColor):
   icon_trophy    a brass cup on a plinth: the best times button
   icon_music     a pair of eighth notes, white (tinted): the music button
   icon_mute      a red slash, over the note when the music is off
+  fx_smoke       a soft grey puff, rising from the tile that went off (#10)
   icon_close     the X on the close button            (light, tinted)
   icon_arrow     the dropdown's arrow                 (white, tinted by difficulty)
   ui_fill        a dark glass button body, 9-sliced (margin 8)
@@ -219,6 +220,30 @@ def mute_slash():
 
 
 # ---------------------------------------------------------------------------
+# A puff of smoke, rising from the tile that went off (#10)
+# ---------------------------------------------------------------------------
+
+def smoke_puff():
+    """A soft, lumpy grey puff: a few overlapping blobs, faded at the edge. White-ish
+    grey, tinted at runtime; the alpha does the work."""
+    size = 64
+    ys, xs = np.mgrid[0:size, 0:size].astype(float) + 0.5
+    rng = np.random.default_rng(10)                                   # the same puff every run
+    alpha = np.zeros((size, size))
+    blobs = [(32, 34, 21)] + [(32 + rng.uniform(-11, 11), 32 + rng.uniform(-10, 8), rng.uniform(12, 16)) for _ in range(6)]
+    for cx, cy, r in blobs:
+        d = np.hypot(xs - cx, ys - cy) / r
+        alpha = np.maximum(alpha, np.clip(1 - d, 0, 1) ** 1.1)
+    edge = np.clip(1 - np.hypot(xs - 32, ys - 32) / 31, 0, 1)        # nothing reaches the square's edge
+    alpha = np.clip(alpha * 1.25, 0, 1) * edge
+    shade = 0.78 + 0.18 * np.clip((40 - ys) / 30, 0, 1)                # a lighter top, like lit smoke
+    out = np.zeros((size, size, 4))
+    out[..., 0] = out[..., 1] = out[..., 2] = shade
+    out[..., 3] = alpha
+    return out
+
+
+# ---------------------------------------------------------------------------
 # The burst behind the bomb
 # ---------------------------------------------------------------------------
 
@@ -369,7 +394,7 @@ def soot():
 
 
 TEXTURES = {
-    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring, "face_sparkle": sparkle, "face_soot": soot,
 }
@@ -395,6 +420,7 @@ def preview(path):
     covered = np.zeros((64, 64, 3)) + np.array([0.15, 0.27, 0.52])
     cells.append(cell(64, lambda c: over(c, tex["icon_flag"]), ) * 0 + over(covered, tex["icon_flag"]))
     cells.append(cell(64, lambda c: over(c, tex["icon_burst"], add=True)))
+    cells.append(cell(64, lambda c: over(c, tex["fx_smoke"], tint=(0.55, 0.55, 0.58))))
     cells.append(cell(64, lambda c: over(c, tex["icon_trophy"])))
     cells.append(cell(64, lambda c: over(c, tex["icon_music"], tint=(0.82, 0.92, 1.0))))
     cells.append(cell(64, lambda c: over(over(c, tex["icon_music"], tint=(0.5, 0.55, 0.62)), tex["icon_mute"])))

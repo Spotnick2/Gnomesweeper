@@ -14,6 +14,9 @@ if not f then
     os.exit(0)
 end
 local widget, globals = {}, {}
+-- Animation methods are documented functions tagged with their type's API
+-- (SetDegrees(...) [SimpleAnimRotationAPI]), not listed as widget methods.
+local animAPI = {}
 local inWidgets, inGlobals = false, false
 for line in f:lines() do
     if line:match("^## ") then
@@ -23,6 +26,8 @@ for line in f:lines() do
         local m = line:match("^(%a+:[%w_]+)%s*$")
         if m then widget[m] = true end
     elseif inGlobals then
+        local am, api = line:match("^([%a_][%w_]*)%(.-%[(SimpleAnim%w*API)%]")
+        if am then animAPI[api] = animAPI[api] or {}; animAPI[api][am] = true end
         -- Documented functions carry a signature; the walk of _G is bare names.
         local g = line:match("^([%a_][%w_]*)%(") or line:match("^([%a_][%w_]*)%s*$")
         if g then globals[g] = true end
@@ -161,7 +166,15 @@ end
 local n = 0
 for name in pairs(WoW.methodsCalled) do
     n = n + 1
-    check(widget[name], "method exists on Forever: " .. name)
+    -- An animation's method: in its own type's API (Rotation -> SimpleAnimRotationAPI) or
+    -- the generic SimpleAnimAPI; an animation group's, in SimpleAnimGroupAPI too.
+    local wtype, m = name:match("^(%a+):(.+)$")
+    local own = animAPI["SimpleAnim" .. wtype .. "API"]
+    local found = widget[name] or (own and own[m])
+        or ((wtype == "Rotation" or wtype == "Scale" or wtype == "Alpha" or wtype == "Translation")
+            and (animAPI.SimpleAnimAPI or {})[m])
+        or (wtype == "AnimationGroup" and (animAPI.SimpleAnimGroupAPI or {})[m])
+    check(found, "method exists on Forever: " .. name)
 end
 check(n >= 25, "recorded the addon's method calls (" .. n .. ")")
 done("test_methods")

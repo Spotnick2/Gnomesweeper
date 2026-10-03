@@ -193,6 +193,16 @@ local function timerText()
     return Layout.FormatTime(Board.DisplaySeconds(game:Elapsed(GetTime())))
 end
 
+-- The clock's colour and flash against the best to beat (#46, Layout.ClockState). It
+-- keeps its colour after the end (a near miss reads as one); it only flashes in play.
+local function paintClock()
+    local state = Layout.ClockState(game:Elapsed(GetTime()), beat)
+    local col = (state == "over" and C.clockOver) or ((state == "near" or state == "last") and C.clockNear) or C.clockNormal
+    ui.timer:SetTextColor(col[1], col[2], col[3])
+    if state == "last" and game:State() == "playing" then ui.timerFlash.play() else ui.timerFlash.stop() end
+    ui.timer.clockState = state
+end
+
 local acc = 0
 local function onUpdate(_, dt)
     acc = acc + dt
@@ -200,6 +210,7 @@ local function onUpdate(_, dt)
     acc = 0
     local text = timerText()
     if text ~= ui.timer:GetText() then ui.timer:SetText(text) end
+    paintClock()
     -- The clock just went past the best to beat: an alert, once a game.
     if beat and not passed and game:Elapsed(GetTime()) > beat then
         passed = true
@@ -220,6 +231,7 @@ function Window.Refresh()
     local col = Skin.DifficultyColor(key)
     ui.counter:SetText(tostring(game:FlagsLeft()))
     ui.timer:SetText(timerText())
+    paintClock()
     ui.hintStart:SetShown(game:State() == "ready")
     ui.diff.label:SetText(LABELS[key])
     ui.diff.label:SetTextColor(col[1], col[2], col[3])
@@ -874,6 +886,7 @@ local function build()
     ui.timer = Glass.Font(hud, 22, "RIGHT")
     ui.timer:SetWidth(54)             -- "00:00" is about 47 wide; any more leaves a gap before the clock
     ui.timer:SetPoint("RIGHT", hud, "RIGHT", -10, 0)
+    ui.timerFlash = GS.Effects.Flash(ui.timer)     -- the last 3 seconds before your best (#46)
     local clock = hud:CreateTexture(nil, "ARTWORK")
     clock:SetSize(22, 22)
     clock:SetPoint("RIGHT", ui.timer, "LEFT", -5, 0)

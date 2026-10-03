@@ -162,6 +162,11 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     down, "Click the gnome for a new game..." and Got it; `GnomesweeperDB.seenFaceTip` is saved when
     it shows. It goes on Got it, the face, the difficulty button (it covers it), or the window closing,
     and it is one of the floating panels (the list or Best times put it away).
+  - **The clock against your best (#46, owner: colours and a flash):** `Layout.ClockState(elapsed, best)`
+    (pure): `normal`, `near` (the last 25% of the best, at most the last 10 s: yellow), `last` (the last
+    3 s: yellow and **flashing**, `Effects.Flash`, only in play), `over` (past it: red, when the 8456
+    alert plays). WoW's countdown colours (`C.clockNear`, `C.clockOver`). `paintClock` runs on each
+    clock tick and refresh; the colour stays after the end, a new game resets it.
   - **Hide in combat (#37, a setting, on by default; `/gsweep combat`):** `PLAYER_REGEN_DISABLED` hides
     the window (the clock pauses, a press is cancelled, the list goes, the music stops, as any close)
     and records `Window.combatHid = shownCount`; `PLAYER_REGEN_ENABLED` brings it back only if it

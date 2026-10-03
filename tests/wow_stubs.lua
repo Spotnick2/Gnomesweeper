@@ -206,6 +206,8 @@ function WoW.reset()
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
+    WoW.epoch = 1790000000
+    WoW.playerName, WoW.playerSurname, WoW.realm = "Fizzle", "Sprocketwhistle", "Forever"
     WoW.screen = { w = 1366, h = 768 }
     SlashCmdList = {}
     UISpecialFrames = {}
@@ -228,6 +230,11 @@ function print(...)
 end
 
 function GetTime() return WoW.now end
+-- The calendar clock (a global in the client; the dump's _G walk lists it).
+function time() return WoW.epoch end
+-- The player, on 70009+: the surname comes back in the second return.
+function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
+function GetRealmName() return WoW.realm end
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end
 function GetBuildInfo() return "1.60.1", "70205", "Oct  2 2026", 16001 end

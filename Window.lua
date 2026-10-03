@@ -17,6 +17,7 @@ local Window = {}
 GS.Window = Window
 
 local Board, Layout, Glass, Skin, Grid, Widgets = GS.Board, GS.Layout, GS.Glass, GS.Skin, GS.Grid, GS.Widgets
+local Scores, API = GS.Scores, GS.API
 local PAD = Layout.PAD
 local T, C = Skin.TEXTURES, Skin.COLORS
 
@@ -25,6 +26,11 @@ local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 
 local win, game
+-- The current game's scores category (Scores.Category), nil for a board that
+-- isn't a preset (the tests' hand-built ones): those never touch the scores.
+local category
+-- How the last win compared: { new = bool, previous = record or nil }.
+local lastWin
 local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
 local function db() return GnomesweeperDB end
@@ -45,12 +51,69 @@ end
 ------------------------------------------------------------
 
 local function newBoard()
-    local p = Board.PRESETS[difficultyKey()]
+    local key = difficultyKey()
+    local p = Board.PRESETS[key]
     game = assert(Board.New(p.w, p.h, p.mines, {
         safeZone = db().safeZone,
         questionMarks = db().questionMarks,
     }))
     Window.game = game
+    category = Scores.Category(key, db().safeZone)
+    lastWin = nil
+end
+
+------------------------------------------------------------
+-- Personal bests (#7): Scores.lua keeps them; this says when and shows them
+------------------------------------------------------------
+
+-- Writing opens (creates) the saved scores; reading never does, so merely opening
+-- the window leaves the SavedVariables as they were.
+local function scores() return Scores.Open(db()) end
+local function peek() return type(db().scores) == "table" and db().scores or {} end
+
+local function bestTime(record)
+    return Layout.FormatTime(Board.DisplaySeconds(record.time))
+end
+
+-- The best for a difficulty under the current first-click rule.
+local function bestFor(key)
+    return Scores.Best(peek(), Scores.Category(key, db().safeZone))
+end
+
+-- The difficulty button's tooltip: the best and the record, asked on each hover.
+local function difficultyTip()
+    local cat = Scores.Category(difficultyKey(), db().safeZone)
+    local best = Scores.Best(peek(), cat)
+    local played, won = Scores.Stats(peek(), cat)
+    local lines = { "Starts a new game." }
+    if best then
+        lines[#lines + 1] = "Best: " .. bestTime(best) .. (best.name and (" by " .. best.name) or "")
+    end
+    lines[#lines + 1] = played > 0 and string.format("Won %d of %d", won, played) or "Not played yet."
+    return lines
+end
+
+-- What the end of a won game says about the best: the text and its colour.
+local function bestLine()
+    if not lastWin then return nil end
+    if lastWin.new then return "New personal best!", C.gold end
+    if lastWin.previous then return "Best " .. bestTime(lastWin.previous), C.hint end
+    return nil
+end
+
+-- Called by Dispatch with the state before and after an action.
+local function recordScores(was, state)
+    if not category then return end
+    if was == "ready" and state ~= "ready" then Scores.Started(scores(), category) end
+    if state == "won" and was ~= "won" then
+        local isNew, previous = Scores.Won(scores(), category, {
+            time = game:Elapsed(GetTime()),
+            at = time(),
+            name = API.PlayerFullName(),
+            realm = GetRealmName(),
+        })
+        lastWin = { new = isNew, previous = previous }
+    end
 end
 
 local function over()
@@ -93,7 +156,11 @@ function Window.Refresh()
     ui.diff.label:SetTextColor(col[1], col[2], col[3])
     ui.diff:setAccent(col[1], col[2], col[3])
     ui.diffArrow:SetVertexColor(col[1], col[2], col[3])
-    for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
+    for k, row in pairs(ui.rows) do
+        row.selected:SetShown(k == key); row.bar:SetShown(k == key)
+        local best = bestFor(k)
+        row.best:SetText(best and bestTime(best) or "-")
+    end
     ui.face:setState(game:State())
     setTicking(game:State() == "playing")
 end
@@ -130,7 +197,10 @@ function Window.Layout()
     ui.grid:SetSize(size.gridW, size.gridH)
     ui.grid:ClearAllPoints()
     ui.grid:SetPoint("TOPLEFT", win, "TOPLEFT", size.gridX, -size.gridY)
-    ui.result:SetWidth(size.gridW)
+    -- As wide as the board, but never narrower than the window's inside: on Beginner
+    -- the board is 216 wide, which leaves the text 104 beside the button, and
+    -- "Wrong flags are crossed out." alone needs about 121 (Arial Narrow, measured).
+    ui.result:SetWidth(math.max(size.gridW, size.width - 2 * PAD))
     applyPosition()
 end
 
@@ -152,7 +222,7 @@ end
 -- The difficulty list
 ------------------------------------------------------------
 
-local MENU_W, ROW_H = 214, 24
+local MENU_W, ROW_H, BEST_W = 262, 24, 44
 
 local function pickDifficulty(key)
     ui.menu:Hide()
@@ -189,7 +259,12 @@ local function buildMenu()
         row.label:SetTextColor(col[1], col[2], col[3])
         row.label:SetText(LABELS[key])
         row.details = Glass.Font(row, 11, "RIGHT")
-        row.details:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+        row.details:SetPoint("RIGHT", row, "RIGHT", -8 - BEST_W, 0)
+        -- The best time at this difficulty (Refresh fills it in), "-" before a win.
+        row.best = Glass.Font(row, 11, "RIGHT")
+        row.best:SetWidth(BEST_W)
+        row.best:SetPoint("RIGHT", row, "RIGHT", -8, 0)
+        row.best:SetTextColor(unpack(C.gold))
         row.details:SetTextColor(unpack(C.menuText))
         row.details:SetText(details(key))
         row:SetScript("OnClick", function() pickDifficulty(key) end)
@@ -257,10 +332,16 @@ local function buildFooter()
     r.title = Glass.Font(r, 14, "LEFT")
     r.title:SetPoint("TOPLEFT", r, "TOPLEFT", 4, -6)
     r.sub = Glass.Font(r, 11, "LEFT")
-    r.sub:SetPoint("TOPLEFT", r.title, "BOTTOMLEFT", 0, -3)
     r.sub:SetTextColor(unpack(C.hint))
     r.button = Widgets.GlassButton(r, 104, 26)
     r.button:SetPoint("RIGHT", r, "RIGHT", -4, 0)
+    -- The texts stop short of the button: a longer one is cut, never drawn under it.
+    -- (TOPRIGHT, not RIGHT: a RIGHT point would also pull the text's middle down to the button's.)
+    r.title:SetPoint("TOPRIGHT", r, "TOPRIGHT", -(4 + 104 + 6), -6)
+    r.sub:SetPoint("TOPLEFT", r.title, "BOTTOMLEFT", 0, -3)
+    r.sub:SetPoint("TOPRIGHT", r.title, "BOTTOMRIGHT", 0, -3)
+    r.title:SetWordWrap(false)
+    r.sub:SetWordWrap(false)
     r.button:SetScript("OnClick", function() Window.NewGame() end)
     r:Hide()
     ui.result = r
@@ -271,10 +352,6 @@ end
 ------------------------------------------------------------
 
 local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
-
--- #7 (personal bests) will say whether this win beat the player's best. Until it
--- exists nothing is true, and the line stays hidden.
-local function isPersonalBest() return false end
 
 local function endTexts()
     if game:State() == "won" then
@@ -298,10 +375,8 @@ local function buildOverlay()
     o.title:SetPoint("TOP", o, "TOP", 0, -14)
     o.time = Glass.Font(o, 14, "CENTER")
     o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
-    o.best = Glass.Font(o, 12, "CENTER")
+    o.best = Glass.Font(o, 12, "CENTER")              -- "New personal best!", or the best that stands
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
-    o.best:SetTextColor(unpack(C.gold))
-    o.best:SetText("New personal best!")
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
@@ -332,11 +407,15 @@ function Window.ShowEnd()
     o.button:setAccent(rim[1], rim[2], rim[3])
     o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
     if game:State() == "won" then
-        local best = isPersonalBest()
-        o:SetHeight(best and WIN_H or WIN_H - 18)
+        local text, col = bestLine()
+        o:SetHeight(text and WIN_H or WIN_H - 18)
         o.time:SetText(sub)
         o.time:Show()
-        o.best:SetShown(best)
+        if text then
+            o.best:SetText(text)
+            o.best:SetTextColor(col[1], col[2], col[3])
+        end
+        o.best:SetShown(text ~= nil)
     else
         o:SetHeight(LOSS_H)
         o.time:Hide()
@@ -353,7 +432,8 @@ function Window.DismissEnd()
     local title, color, sub, button, rim = endTexts()
     ui.result.title:SetTextColor(color[1], color[2], color[3])
     ui.result.title:SetText(title)
-    ui.result.sub:SetText(sub)
+    local best = game:State() == "won" and bestLine()
+    ui.result.sub:SetText(best and (sub .. "  " .. DOT .. "  " .. (lastWin.new and "New best!" or best)) or sub)
     ui.result.button.label:SetText(button)
     ui.result.button:setAccent(rim[1], rim[2], rim[3])
     showResultBar(true)
@@ -421,7 +501,7 @@ local function build()
     ui.diffArrow:SetTexture(T.arrow)
     ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
     ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
-    Widgets.Tip(ui.diff, "Difficulty", "Starts a new game.")
+    Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
     buildMenu()
 
     -- The HUD strip: mines left, the mascot (a new game), the clock. Its width is capped
@@ -531,9 +611,10 @@ function Window.Dispatch(kind, i)
         list = game:ToggleMark(x, y)
     end
     if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
+    local state = game:State()
+    recordScores(was, state)             -- first, so the refresh below shows a new best
     Grid.Refresh(list)
     Window.Refresh()
-    local state = game:State()
     -- Only the action that ENDS the game brings the overlay up: a click on a
     -- finished board does nothing, and must not bring back one put away.
     if (state == "won" or state == "lost") and state ~= was then
@@ -614,9 +695,11 @@ Window._test = {
     menu = function() return ui.menu end,
     details = details,
     -- Swap in a hand-built board (Board._test.FromLayout), to test exact shapes.
-    SetGame = function(b)
+    -- It keeps no scores unless given a category (Scores.Category) to keep them in.
+    SetGame = function(b, cat)
         game = b
         Window.game = b
+        category, lastWin = cat, nil
         if ui.overlay then ui.overlay:Hide() end
         if ui.result then showResultBar(false) end
         if win then syncGame() end

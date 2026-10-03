@@ -21,9 +21,9 @@ doesn't cover something, check how those handle it before you invent a new idiom
 **Status: M1 done; M2 next.** M1: the scaffold (#1), the game model `Board.lua` (#2), the glass
 window (#3), the tile grid (#4), the game states (#5) and the asset probe (#6): **the game is
 playable** at all three difficulties and ends with the storyboard's overlays. Since then: the art
-direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). Next is M2,
-starting with personal bests (#7); #32 (confirm before a difficulty change) waits on the owner, and
-the mascot's expressions and the mine wait on art (`docs/ART.md`).
+direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). M2 has
+started: personal bests (#7). #32 (confirm before a difficulty change) waits on the owner, and the
+mascot's expressions and the mine wait on art (`docs/ART.md`).
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -34,8 +34,8 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
-`Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → `Assets.lua` →
-[`Scores.lua`] → `Gnomesweeper.lua`.
+`Scores.lua` → `Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` →
+`Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -130,8 +130,8 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     state) calls `Window.ShowEnd()`: one overlay frame, built on first use and re-dressed each time,
     centred on the board, above the tiles (so the board under it takes no clicks; the Board no-ops
     after the end anyway) and under the difficulty list. Cleared: gold title and rim, "Time mm:ss",
-    "Play again". Wipe: red title and rim, "Try again". **"New personal best!" stays hidden**
-    (`isPersonalBest()` is false) until #7 can say it's true. **"View board"** (and a click on the
+    "Play again". Wipe: red title and rim, "Try again". Under a win's time: **"New personal best!"**
+    in gold, or the best that stands ("Best 00:42"), from `Scores` (#7). **"View board"** (and a click on the
     panel) puts the overlay away, `Window.DismissEnd()`, and the result stays in the footer as a
     **result bar** with its Play again / Try again button, in place of the controls; the finished
     board is untouched. It does not come back on later clicks, and a new game (the button, the face,
@@ -153,8 +153,20 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
   by eye (getters echo nonsense IDs). What `GetFileIDFromPath` answers for our own files is recorded
   too. Results go to `GnomesweeperDB.assetProbe` for a `/reload` to write to disk.
-- **`Scores.lua`** (milestone 2): personal bests per difficulty in `GnomesweeperDB`. Social
-  leaderboards (guild/friends/Battle.net) are milestone 4 — not day 1.
+- **`Scores.lua`** (#7): personal bests, **pure** (every global forbidden in its test); the window
+  hands it the saved table and the record. **`GnomesweeperDB.scores` is a contract once released**
+  (the leaderboards, #15, build on it): `{ version = 1, [category] = { best = record, played = n,
+  won = n } }`, `category = difficulty .. ":" .. ruleset` (`area` or `cell`, the first-click safe zone:
+  the two starts aren't comparable), `record = { time = precise active seconds, at = time(), name =
+  full name with surname, realm }`. Shown seconds are derived, never stored; a tie keeps the
+  **earlier** record. **played** counts on a game's first successful reveal (abandoned games count),
+  **won** on the win. The window (`recordScores` in `Dispatch`, before the refresh) takes the category
+  when the board is made, so a setting changed mid-game can't misfile it. Reading never creates the
+  table (opening the window leaves the SavedVariables alone). Shown: the end overlay and result bar,
+  a best-time column in the difficulty list, and the difficulty button's tooltip (best, who, won of
+  played). `Window._test.SetGame(board, category)` keeps no scores unless given a category.
+  `API.PlayerFullName()` (Compat, lifted from AltStable) adds the surname. Social leaderboards
+  (guild/friends/Battle.net) are milestone 4.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash
   commands. Loads last.
 
@@ -278,6 +290,9 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_scores.lua`** is personal bests: the model with every global forbidden (categories, ties,
+  damaged data), the full name, and in the window: counting, the overlay, the result bar, the list,
+  the tooltip, a reload, and the result bar's room for its text on every difficulty.
 - **`test_assets.lua`** is the contact sheet: kinds, the survey, a missing path, a throwing check, the
   sheet's cells, the saved results.
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,

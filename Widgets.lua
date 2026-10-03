@@ -26,12 +26,15 @@ local function slice(tex)
 end
 
 -- A tooltip on `widget`: a title and any number of grey, wrapping lines.
+-- `lines` is a string, a list, or a function returning a list (asked on every
+-- hover, for lines that change: a best time).
 function Widgets.Tip(widget, title, lines)
     if type(lines) == "string" then lines = { lines } end
     widget:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:SetText(title)
-        for _, line in ipairs(lines or {}) do GameTooltip:AddLine(line, 0.75, 0.78, 0.85, true) end
+        local list = type(lines) == "function" and lines() or lines
+        for _, line in ipairs(list or {}) do GameTooltip:AddLine(line, 0.75, 0.78, 0.85, true) end
         GameTooltip:Show()
     end)
     widget:SetScript("OnLeave", function() GameTooltip:Hide() end)

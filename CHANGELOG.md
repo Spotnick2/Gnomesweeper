@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Personal bests.** Each difficulty keeps your best time (shared by all your characters, with the one who set it). A win says "New personal best!" or shows the best to beat, the difficulty list shows your best times, and its tooltip says how many games you've won.
+- The result line at the bottom no longer runs under the Play again / Try again button on Beginner.
 - A new look: one glass style for the window, the buttons and the board. The tiles are a calmer, darker glass, the flag is a red pennant, and the gnome from the logo is your reset button, with a ring that changes with the game (sparkles when you clear the field, soot when you blow it).
 - The difficulties wear WoW's item colours: Beginner is green, Intermediate blue, Expert purple. The list now says how big each board is and how many mines it has.
 - The detonated tile gets a starburst behind the bomb, so you can find it without relying on red.

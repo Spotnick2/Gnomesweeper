@@ -378,6 +378,14 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     winWall(W, "intermediate:area", 30.28)
     winWall(W, "intermediate:area", 30.21)
     eq(o().beaten:GetText(), "0.07 s faster than 00:30.2", "in the same tenth: hundredths")
+
+    -- Under a hundredth (bests compare precisely): never "0.00 s" (Codex review of #47).
+    winWall(W, "expert:area", 30.212)
+    winWall(W, "expert:area", 30.211)
+    check(o().newBest:IsShown(), "(a new best by a thousandth)")
+    eq(o().beaten:GetText(), "<0.01 s faster than 00:30.2", "a thousandth: '<0.01 s', not '0.00 s'")
+    o().view._scripts.OnClick(o().view)
+    check(W._test.ui.result.sub:GetText():find("New best (-<0.01 s)", 1, true) ~= nil, "...in the result bar too")
 end
 
 do  -- the panel follows every game, closes with the window, and survives a damaged file

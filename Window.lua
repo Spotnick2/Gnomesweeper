@@ -132,7 +132,8 @@ end
 -- How much a new best beat the old one, as the two times on screen say: both are
 -- shown truncated to tenths (00:42.0, 00:41.2), so the margin is their difference
 -- (0.8 s), never a rounding that disagrees with them. In the same tenth, the
--- real difference in hundredths ("0.04 s"), never "0.0". nil when there was no
+-- real difference in hundredths ("0.04 s"), or "<0.01 s" below that, never a
+-- zero. nil when there was no
 -- old best (a first win) or this isn't a new best.
 local function margin()
     local prev = lastWin and lastWin.new and lastWin.previous
@@ -140,7 +141,9 @@ local function margin()
     local now = game:Elapsed(GetTime())
     local tenths = math.floor(prev.time * 10 + 1e-9) - math.floor(now * 10 + 1e-9)
     if tenths >= 1 then return string.format("%.1f s", tenths / 10) end
-    return string.format("%.2f s", prev.time - now)
+    local d = prev.time - now
+    if d < 0.01 then return "<0.01 s" end                -- never "0.00 s" (Codex, #47): bests compare precisely
+    return string.format("%.2f s", d)
 end
 
 local function shownTime(t, tenths)

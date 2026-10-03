@@ -130,4 +130,21 @@ do  -- hiding during a nod: still; nothing plays on a hidden window
     check(not m.groups.nod:IsPlaying(), "...the nod stopped")
 end
 
+do  -- the UI hidden (Alt+Z) with the window still "shown": she doesn't move (review of #53)
+    local W = fresh()
+    local m = W._test.ui.mascot
+    UIParent:Hide()
+    check(W.win:IsShown() and not W.win:IsVisible(), "(the window shown, the UI hidden)")
+    WoW.now = 100
+    click(41)
+    eq(m.playing(), nil, "a game in play with the UI hidden: no breath")
+    UIParent:Show()
+    W.Refresh()
+    eq(m.playing(), "breathe", "...the UI back: she breathes")
+    UIParent:Hide()
+    m.play("nod")
+    eq(m.playing(), "breathe", "...a one-shot asked for while hidden doesn't start")
+    UIParent:Show()
+end
+
 done("test_mascot")

@@ -252,9 +252,9 @@ function Window.Refresh()
     ui.diffArrow:SetVertexColor(col[1], col[2], col[3])
     for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
     ui.face:setState(game:State())
-    -- She breathes while a game is played, only where she can be seen (a setting
-    -- changed with the window hidden refreshes it too).
-    ui.mascot.idle(game:State() == "playing" and win:IsShown())
+    -- She breathes while a game is played (the mascot checks she can be seen: a
+    -- setting changed with the window hidden refreshes it too).
+    ui.mascot.idle(game:State() == "playing")
     setTicking(game:State() == "playing")
     -- The burst while the win shows, the smoke while the wipe does (#10).
     local state = game:State()
@@ -1056,7 +1056,7 @@ function Window.Dispatch(kind, i)
     if (state == "won" or state == "lost") and state ~= was then
         Grid.SetInteractive(false)
         Window.ShowEnd()
-        if win:IsShown() then ui.mascot.play(state == "won" and "win" or "wipe") end   -- #48
+        ui.mascot.play(state == "won" and "win" or "wipe")   -- #48
     end
     return list
 end
@@ -1073,7 +1073,7 @@ function playerNewGame()
     GS.Sounds.NewGame()
     Window.NewGame()
     Grid.Shuffle()
-    if win and win:IsShown() then ui.mascot.play("nod") end   -- with the arm (#48)
+    if ui.mascot then ui.mascot.play("nod") end   -- with the arm (#48)
 end
 
 -- Fit the window and (re)build the tiles for the current game.

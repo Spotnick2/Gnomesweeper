@@ -378,8 +378,10 @@ function Effects.Mascot(face)
         for _, g in pairs(groups) do g:Stop() end
         breathe:Stop()
     end
+    -- Only where she can be seen (IsVisible: the window shown AND the UI not hidden
+    -- with Alt+Z), checked here so no caller has to remember it (review of #53).
     local function resume()
-        if wantIdle and not current and not breathe:IsPlaying() then breathe:Play() end
+        if wantIdle and not current and not breathe:IsPlaying() and face:IsVisible() then breathe:Play() end
     end
     for kind, g in pairs(groups) do
         g:SetScript("OnFinished", function()
@@ -390,6 +392,7 @@ function Effects.Mascot(face)
 
     -- play("win" | "wipe" | "nod"): once, over anything else.
     function h.play(kind)
+        if not face:IsVisible() then return end
         stopAll()
         current = kind
         groups[kind]:Play()

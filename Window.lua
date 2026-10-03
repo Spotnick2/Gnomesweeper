@@ -419,10 +419,15 @@ end
 ------------------------------------------------------------
 
 local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
--- A new best's laurels are their own band: LAUREL_PAD above the line, the branches
--- (LAUREL_W x LAUREL_H) round it, and the panel tall enough that nothing overlaps them.
-local LAUREL_W, LAUREL_H, LAUREL_PAD = 170, 42, 12
-local NEW_BEST_H = WIN_H + 2 * LAUREL_PAD + 10
+-- A new best crowns its TIME with the laurels (#12). Measured on the texture: the
+-- branches leave about 71% of their drawn width open, in their upper half only;
+-- "New personal best!" (~146 units, 160 at the pulse) would need laurels wider than
+-- the panel, the time (~98 units) fits. So the time sits a quarter of the way down
+-- the wreath (LAUREL_TEXT), and the line and the margin hang under it.
+local LAUREL_W = 150
+local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 53
+local LAUREL_TEXT = 0.25
+local NEW_BEST_H = WIN_H + 44           -- the wreath and the line under it, clear of Play again
 
 local function endTexts()
     if game:State() == "won" then
@@ -452,7 +457,7 @@ local function buildOverlay()
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     -- A new personal best is an event (#10): bigger, gold, and a beat.
     o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
-    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -LAUREL_PAD)
+
     o.newBest:SetTextColor(unpack(C.gold))
     o.newBest:SetText("New personal best!")
     o.newBest:Hide()
@@ -460,12 +465,15 @@ local function buildOverlay()
     -- The storyboard's laurels around it (#12): behind the text, open at the top.
     o.laurels = o:CreateTexture(nil, "ARTWORK")
     o.laurels:SetSize(LAUREL_W, LAUREL_H)
-    o.laurels:SetPoint("CENTER", o.newBest, "CENTER", 0, 0)
     o.laurels:SetTexture(T.laurels)
+    o.laurels:SetTexCoord(unpack(Skin.LAUREL_CROP))
+    -- the time a quarter of the way down: the wreath's centre is that much lower
+    o.laurels:SetPoint("CENTER", o.time, "CENTER", 0, -(0.5 - LAUREL_TEXT) * LAUREL_H)
     o.laurels:Hide()
+    o.newBest:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)     -- under the wreath (it always shows with it)
     -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
     o.beaten = Glass.Font(o, 12, "CENTER")
-    o.beaten:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)          -- under the laurels, not over them
+    o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
     o.beaten:SetTextColor(unpack(C.hint))
     o.beaten:Hide()
 
@@ -502,7 +510,7 @@ function Window.ShowEnd()
         local text, col = bestLine()
         local isNew = lastWin and lastWin.new
         local by = margin()
-        o:SetHeight(isNew and (by and NEW_BEST_H + 16 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
+        o:SetHeight(isNew and (by and NEW_BEST_H + 17 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
         if by then o.beaten:SetText(by .. " faster than " .. shownTime(lastWin.previous.time, true)) end
         o.beaten:SetShown(by ~= nil)
         o.time:SetText(sub)

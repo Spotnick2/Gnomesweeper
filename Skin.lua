@@ -103,7 +103,11 @@ Skin.TITLE_CROP = { 53 / 512, 459 / 512, 4 / 128, 124 / 128 }
 
 -- Width over height of the textures that aren't square (the asset sheet keeps their
 -- shape; the title's is its drawn part's).
-Skin.ASPECT = { title = (459 - 53) / (124 - 4), laurels = 4 }
+-- The laurels' drawn part in their 512x128 texture (pixels 99..415 x 7..118): the
+-- rest is transparent, and sizing the whole canvas would leave the branches far
+-- smaller than they look on paper (Codex, #49).
+Skin.LAUREL_CROP = { 99 / 512, 415 / 512, 7 / 128, 118 / 128 }
+Skin.ASPECT = { title = (459 - 53) / (124 - 4), laurels = (415 - 99) / (118 - 7) }
 
 Skin.COLORS = {
     smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board

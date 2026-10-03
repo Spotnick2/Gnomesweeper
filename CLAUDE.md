@@ -82,7 +82,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   level some day (#18). The mascot shows the game state by her expression (`Skin.FACE`, #12) and a
   ring coloured by state (`Skin.FACE_RING`); nothing is drawn over her (the sparkle and soot that
   stood in for the expressions are gone). `Skin.ASPECT` gives the wide textures' shape (the title, the
-  laurels). `Skin.NUMBER_COLORS` has the 1-8 colours.
+  laurels; `Skin.LAUREL_CROP` crops the laurels to their drawn branches). `Skin.NUMBER_COLORS` has the 1-8 colours.
 - **`Widgets.lua`**: the Liquid Glass controls: `GlassButton` (a dark glass body, a rim that takes an
   accent colour, a hover glow, a pressed state), `IconButton`, `FaceButton` (the mascot in her ring),
   `GlassPanel`, `Tip`. Baked textures, 9-sliced for the wide buttons; **a small square is never

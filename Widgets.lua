@@ -117,6 +117,9 @@ function Widgets.FaceButton(parent, size)
 
     function b.setState(self, state)
         self.stateFace = T[Skin.FACE[state] or "face"] or T.face
+        -- A game that ends while a button is still down (a left+right chord fires on
+        -- the first release) shows how it ended, not the surprised face (Codex, #49).
+        if state == "won" or state == "lost" then self.pressed = false end
         if not self.pressed then self.face:SetTexture(self.stateFace) end
         local ring = Skin.FACE_RING[state] or Skin.FACE_RING.ready
         self.ring:SetVertexColor(ring[1], ring[2], ring[3])

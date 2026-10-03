@@ -171,4 +171,20 @@ do  -- the setting
     eq(GnomesweeperDB.fireworks, true, "...and turns them back on")
 end
 
+do  -- a game ended by a left+right chord: her ending face, not the surprised one (Codex, #49)
+    for _, case in ipairs({ { flag = 1, state = "won", face = "faceWon" }, { flag = 3, state = "lost", face = "faceLost" } }) do
+        local W = fresh()
+        W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..." }))
+        click(2)                                         -- reveal the 1 next to the mine
+        click(case.flag, R)                              -- the right flag (a win) or a wrong one (a loss)
+        down(2, L); down(2, R)
+        up(2, L)                                         -- the chord fires on the first release
+        eq(W.game:State(), case.state, "(the chord ends the game: " .. case.state .. ")")
+        eq(W._test.ui.face.face._texture, Gnomesweeper.Skin.TEXTURES[case.face],
+            "a chord that ends the game (" .. case.state .. "): her ending face at once, with the right button still down")
+        up(2, R)
+        eq(W._test.ui.face.face._texture, Gnomesweeper.Skin.TEXTURES[case.face], "...and still after it's up")
+    end
+end
+
 done("test_effects")

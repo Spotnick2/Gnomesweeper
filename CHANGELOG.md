@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The gnome moves**: she bounces when you win, shudders on a wipe, nods when you start a new game, and breathes quietly while you play.
 - **The clock warns you**: it turns yellow as you near your best time, flashes in the last 3 seconds, and goes red once you're past it.
 - **Hide in combat** (on by default): pulling a mob puts the board away, paused, and it comes back when the fight ends. Turn it off in the settings or with `/gsweep combat`.
 - **No more lost games by a stray click**: changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.

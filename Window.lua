@@ -252,6 +252,9 @@ function Window.Refresh()
     ui.diffArrow:SetVertexColor(col[1], col[2], col[3])
     for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
     ui.face:setState(game:State())
+    -- She breathes while a game is played (the mascot checks she can be seen: a
+    -- setting changed with the window hidden refreshes it too).
+    ui.mascot.idle(game:State() == "playing")
     setTicking(game:State() == "playing")
     -- The burst while the win shows, the smoke while the wipe does (#10).
     local state = game:State()
@@ -868,6 +871,7 @@ local function build()
     ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
     ui.face:SetScript("OnClick", function() playerNewGame() end)
     ui.burst = GS.Effects.Burst(hud, ui.face)          -- the win: a gold burst behind her (#10)
+    ui.mascot = GS.Effects.Mascot(ui.face.face)        -- she moves: bounce, shudder, nod, breath (#48)
 
     -- The first launch's pointer at the face (#45, owner: a glass callout). Above her with an
     -- arrow down, never over the tiles; it passes clicks through except its own button.
@@ -958,6 +962,8 @@ local function build()
         if ui.faceTip then ui.faceTip:Hide() end       -- nor the first launch's pointer (#45)
         Grid.Cancel()                  -- a button held when the window closes is not a click
         Grid.FinishShuffle()           -- a reopened board is never half-drawn
+        ui.mascot.stop()               -- she's still while nobody sees her (#48)
+        ui.face:setPressed(false, true) -- and not left surprised (no lingering on a closed window)
         GS.Sounds.Cancel()
         GS.Sounds.UpdateMusic()        -- the music is for the board: it stops with it
         self:StopMovingOrSizing()
@@ -1050,6 +1056,7 @@ function Window.Dispatch(kind, i)
     if (state == "won" or state == "lost") and state ~= was then
         Grid.SetInteractive(false)
         Window.ShowEnd()
+        ui.mascot.play(state == "won" and "win" or "wipe")   -- #48
     end
     return list
 end
@@ -1066,6 +1073,7 @@ function playerNewGame()
     GS.Sounds.NewGame()
     Window.NewGame()
     Grid.Shuffle()
+    if ui.mascot then ui.mascot.play("nod") end   -- with the arm (#48)
 end
 
 -- Fit the window and (re)build the tiles for the current game.
@@ -1088,6 +1096,7 @@ end
 function Window.NewGame(preset)
     GS.Sounds.Cancel()                   -- the last game's gnome mustn't speak over the new one
     if ui.fireworks then ui.fireworks.stop() end
+    if ui.mascot then ui.mascot.stop() end   -- the last game's bounce or shudder doesn't run on (#48)
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
     if ui.overlay then ui.overlay:Hide() end
@@ -1171,6 +1180,7 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        if ui.mascot then ui.mascot.stop() end
         reveals = b:State() == "playing" and 1 or 0        -- a hand-built board is past its first reveal
         local best = cat and type(db().scores) == "table" and Scores.Best(db().scores, cat)
         beat, passed = best and best.time or nil, false

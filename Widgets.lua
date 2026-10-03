@@ -98,6 +98,8 @@ end
 -- The mascot as a button: her face in a ring, the face and the ring's colour
 -- following the game state (Skin.FACE, Skin.FACE_RING), a brighter ring on hover.
 -- b:setState("ready" | "playing" | "won" | "lost").
+Widgets.FACE_PRESS_MIN = 0.35    -- seconds she stays surprised after a quick click
+
 function Widgets.FaceButton(parent, size)
     local b = CreateFrame("Button", nil, parent)
     b:SetSize(size, size)
@@ -125,12 +127,31 @@ function Widgets.FaceButton(parent, size)
         self.ring:SetVertexColor(ring[1], ring[2], ring[3])
         self.state = state
     end
-    -- While a tile is held down (#10): her surprised face (#12).
-    function b.setPressed(self, on)
-        on = on and true or false
-        if self.pressed == on then return end
-        self.pressed = on
-        self.face:SetTexture(on and T.facePressed or self.stateFace or T.face)
+    -- While a tile is held down (#10): her surprised face (#12). A click is held
+    -- about a tenth of a second, too quick to see her (owner), so she stays
+    -- surprised at least FACE_PRESS_MIN; `now` lets go at once (the window closing).
+    -- A new press cancels a pending let-go; the game ending lets go itself (setState).
+    local hold = 0
+    function b.setPressed(self, on, now)
+        hold = hold + 1
+        if on then
+            self.pressedAt = GetTime()
+            if self.pressed then return end
+            self.pressed = true
+            self.face:SetTexture(T.facePressed)
+            return
+        end
+        if not self.pressed then return end
+        local function release()
+            self.pressed = false
+            self.face:SetTexture(self.stateFace or T.face)
+        end
+        local wait = Widgets.FACE_PRESS_MIN - (GetTime() - (self.pressedAt or 0))
+        if now or wait <= 0 then release(); return end
+        local mine = hold
+        C_Timer.After(wait, function()
+            if hold == mine and self.pressed then release() end
+        end)
     end
 
     b:setState("ready")

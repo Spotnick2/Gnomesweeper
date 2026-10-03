@@ -82,14 +82,35 @@ do
     check(face.pressed, "a tile held down: the gnome reacts")
     eq(face.face._texture, T.facePressed, "...surprised (the art, #12)")
     up(41)
-    check(not face.pressed, "let go: she's back")
+    check(face.pressed, "a quick click: she stays surprised a moment, so it's seen (owner)")
+    WoW.advance(0.2)
+    check(face.pressed, "...still at 0.2 s")
+    WoW.advance(0.2)
+    check(not face.pressed, "let go: she's back after FACE_PRESS_MIN")
     eq(face.face._texture, T.facePlaying, "...with the face of the game in progress")
+
+    -- Held longer than the minimum: back at once on the release.
+    down(41)
+    WoW.now = WoW.now + 1
+    up(41)
+    check(not face.pressed, "a long press: back as soon as it's let go")
+
+    -- A new press while she lingers: the old let-go doesn't cut it short.
+    down(41); up(41)
+    WoW.advance(0.2)
+    down(42)
+    WoW.advance(0.3)
+    check(face.pressed, "pressed again while lingering: the first let-go doesn't end the new press")
+    up(42)
+    WoW.advance(0.5)
+    check(not face.pressed, "...and the second let-go does")
 
     -- Two buttons: she reacts until the last one is up.
     down(41, L); down(41, R)
     up(41, L)
     check(face.pressed, "left+right: still held while one button is down")
     up(41, R)
+    WoW.advance(0.5)
     check(not face.pressed, "...back once both are up")
 
     -- A held button when the window closes: she isn't left surprised.

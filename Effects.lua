@@ -8,6 +8,9 @@
 --                                  that went off, looping gently
 --   Effects.Pulse(region)          a beat: the "New personal best!" line
 --   Effects.Fireworks(parent)      a new personal best: bursts over the board
+--   Effects.Flash(region)          a blink: the clock's last 3 seconds (#46)
+--   Effects.Mascot(face)           the gnome moves: a bounce, a shudder, a nod,
+--                                  a breath while you play (#48)
 --
 -- Each returns a handle with :play(...) / :stop() / :isPlaying(). The
 -- animation methods (Rotation:SetDegrees, Scale:SetScaleFrom...) are the dump's
@@ -291,6 +294,123 @@ function Effects.Flash(region)
     function h.play() if not ag:IsPlaying() then ag:Play() end end
     function h.stop() ag:Stop() end
     function h.isPlaying() return ag:IsPlaying() end
+    return h
+end
+
+------------------------------------------------------------
+-- The mascot moves (#48, level 1: motion on the face we have, no new art). Four
+-- groups built once on the face TEXTURE, so the button's hit area and its ring
+-- stay still: a bounce on a win, a shudder on a wipe, a nod on the player's new
+-- game (once each), and a breath, every few seconds, while a game is played. A
+-- one-shot stops everything else; the breath comes back after it if wanted.
+-- (Codex's consult on the design: the groups rebuilt never, the breath's pause an
+-- end delay on its last animation, the origins explicit.)
+------------------------------------------------------------
+
+Effects.BREATH = 1.02        -- the breath's swell: 2%, under a unit on a 38-unit face
+Effects.BREATH_IN = 0.6      -- seconds to swell (and as long back)
+Effects.BREATH_REST = 4      -- seconds between breaths
+Effects.SHUDDER = 3          -- units a shudder jolts left and right
+
+local function scale(ag, from, to, duration, order, smoothing)
+    local a = ag:CreateAnimation("Scale")
+    a:SetOrigin("CENTER", 0, 0)
+    a:SetScaleFrom(from, from)
+    a:SetScaleTo(to, to)
+    a:SetDuration(duration)
+    a:SetOrder(order)
+    if smoothing then a:SetSmoothing(smoothing) end
+    return a
+end
+
+local function move(ag, dx, dy, duration, order)
+    local a = ag:CreateAnimation("Translation")
+    a:SetOffset(dx, dy)
+    a:SetDuration(duration)
+    a:SetOrder(order)
+    return a
+end
+
+function Effects.Mascot(face)
+    local groups = {}
+
+    -- The win: she swells and hops, squashes as she lands, and settles.
+    local win = face:CreateAnimationGroup()
+    scale(win, 1, 1.15, 0.18, 1, "OUT")
+    move(win, 0, 4, 0.18, 1)
+    scale(win, 1.15, 0.95, 0.16, 2, "IN")
+    move(win, 0, -4, 0.16, 2)
+    scale(win, 0.95, 1, 0.22, 3, "OUT")
+    groups.win = win
+
+    -- The wipe: quick jolts left and right with a small tilt, dying down.
+    local wipe = face:CreateAnimationGroup()
+    local s = Effects.SHUDDER
+    local steps = { { -s, 6 }, { 2 * s, -12 }, { -2 * s, 10 }, { 1.5 * s, -6 }, { -0.5 * s, 2 } }
+    for i, st in ipairs(steps) do
+        move(wipe, st[1], 0, 0.06, i)
+        local r = wipe:CreateAnimation("Rotation")
+        r:SetOrigin("CENTER", 0, 0)
+        r:SetDegrees(st[2])
+        r:SetDuration(0.06)
+        r:SetOrder(i)
+    end
+    groups.wipe = wipe
+
+    -- The player's new game: a nod (down and back up) while the arm whirs.
+    local nod = face:CreateAnimationGroup()
+    move(nod, 0, -3, 0.15, 1)
+    scale(nod, 1, 0.96, 0.15, 1)
+    move(nod, 0, 3, 0.2, 2)
+    scale(nod, 0.96, 1, 0.2, 2)
+    groups.nod = nod
+
+    -- While a game is played: a slow breath, then a rest (the end delay is per loop).
+    local breathe = face:CreateAnimationGroup()
+    breathe:SetLooping("REPEAT")
+    scale(breathe, 1, Effects.BREATH, Effects.BREATH_IN, 1, "IN_OUT")
+    local out = scale(breathe, Effects.BREATH, 1, Effects.BREATH_IN, 2, "IN_OUT")
+    out:SetEndDelay(Effects.BREATH_REST)
+
+    local h = { groups = groups, breathe = breathe }
+    local wantIdle, current = false, nil
+    local function stopAll()
+        for _, g in pairs(groups) do g:Stop() end
+        breathe:Stop()
+    end
+    -- Only where she can be seen (IsVisible: the window shown AND the UI not hidden
+    -- with Alt+Z), checked here so no caller has to remember it (review of #53).
+    local function resume()
+        if wantIdle and not current and not breathe:IsPlaying() and face:IsVisible() then breathe:Play() end
+    end
+    for kind, g in pairs(groups) do
+        g:SetScript("OnFinished", function()
+            if current == kind then current = nil end
+            resume()
+        end)
+    end
+
+    -- play("win" | "wipe" | "nod"): once, over anything else.
+    function h.play(kind)
+        if not face:IsVisible() then return end
+        stopAll()
+        current = kind
+        groups[kind]:Play()
+    end
+    -- idle(on): breathe while a game is played (after a one-shot, if one runs).
+    function h.idle(on)
+        wantIdle = on and true or false
+        if wantIdle then resume() else breathe:Stop() end
+    end
+    -- Everything still, nothing wanted (the window closing, a board replaced).
+    function h.stop()
+        wantIdle, current = false, nil
+        stopAll()
+    end
+    function h.playing()
+        if current then return current end
+        return breathe:IsPlaying() and "breathe" or nil
+    end
     return h
 end
 

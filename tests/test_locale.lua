@@ -39,7 +39,7 @@ do
     eq(GS.Decimal("%.1f", 0.8), "0,8", "French decimals: a comma")
     eq(GS.FormatDate(os.time({ year = 2026, month = 10, day = 3, hour = 12 })), "3 oct. 2026", "a French date")
     eq(GS.Layout.FormatTenths(42.6, 999, GS.LOCALE.decimal), "00:42,6", "a time to the tenth: 00:42,6")
-    eq(GS.TAGLINE, "Un mauvais clic. Wipe total.", "the tagline (the owner may find a better pun)")
+    eq(GS.TAGLINE, "Un mauvais clic, c'est le wipe" .. NBSP .. "!", "the tagline (the owner's)")
     eq(BINDING_NAME_GNOMESWEEPER_TOGGLE, "Ouvrir ou fermer le plateau", "the key binding's line")
     -- The difficulty keys saved stay English: the saved-data contract.
     WoW.slash("/gsweep expert")

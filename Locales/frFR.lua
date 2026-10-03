@@ -17,7 +17,7 @@ GS.LOCALE.months = { "janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", 
 
 local T = {
     -- The name of the game's moments
-    ["One wrong click. Full wipe."] = "Un mauvais clic. Wipe total.",
+    ["One wrong click. Full wipe."] = "Un mauvais clic, c'est le wipe !",      -- the owner's, as said in Quebec
     ["Beginner"] = "Débutant",
     ["Intermediate"] = "Intermédiaire",
     ["Expert"] = "Expert",

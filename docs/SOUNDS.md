@@ -22,8 +22,16 @@ then the gnome's death (1038), and the win (6131: a "hurray" and "Congratulation
 `PlayMusic` honours the game's Music toggle: with music off in the game's sound settings it is
 silent. **`/gsweep sounds`** (same day, all 16 candidates): **13 play**; the three Cataclysm-era
 Operation: Gnomeregan kits are **refused** (`willPlay` false): 17484, 17487, 17569. `PlayMusic(53189)`
-returns true. Not yet measured: whether the zone's music comes back after `StopMusic`, and whether
-the track loops.
+returns true. **Closing the board stops ours and the zone's music comes back** (owner). Not yet
+measured: whether the track loops.
+
+**The owner's picks after listening** (2026-10-03): the clicks are fine ("a normal mouse click");
+the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 3272 after the bomb,
+5925 / 5931 on the first open of a session); an **alert when the clock passes your best** (once a
+game), provisionally 18871, to be picked from Blizzard's warning sounds (`/gsweep sounds` now
+auditions those); the new-game button 4779 "doesn't sound like much": a better one (something about
+mines) is still to find. The API can't list the client's sound kits (they are game data,
+`SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 
 ## Effects (#9)

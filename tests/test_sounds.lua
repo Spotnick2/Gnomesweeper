@@ -70,7 +70,16 @@ do
     WoW.advance(S.WIPE_DELAY - 0.05)
     eq(kits(), tostring(K.boom), "...the gnome not yet")
     WoW.advance(0.1)
-    eq(kits(), K.boom .. "," .. K.wipe, "...then the gnome's last words")
+    eq(kits(), K.boom .. "," .. K.wipeMale, "...then the gnome's last words: a male gnome for a male character")
+    onWall(W)
+    WoW.playerSex = 3
+    click(at(3, 1))
+    WoW.advance(1)
+    eq(kits(), K.boom .. "," .. K.wipeFemale, "...a female gnome for a female character")
+    WoW.playerSex = 1
+    onWall(W); click(at(3, 1)); WoW.advance(1)
+    eq(kits(), K.boom .. "," .. K.wipeMale, "...and the male voice when the sex is unknown")
+    WoW.playerSex = 2
 
     -- A new game before the gnome speaks: silence.
     onWall(W)
@@ -168,6 +177,50 @@ do
     eq(WoW.music, S.MUSIC, "...and on")
 end
 
+do  -- the greeting: the first open of a session, by the character's sex
+    loadAddon()
+    WoW.playerSex = 3
+    WoW.sounds = {}
+    WoW.slash("/gsweep")
+    local K = Gnomesweeper.Sounds.KITS
+    eq(kits(), tostring(K.greetFemale), "the first open: a female gnome says hello")
+    WoW.slash("/gsweep"); WoW.slash("/gsweep")
+    eq(kits(), tostring(K.greetFemale), "...once a session, not every open")
+    loadAddon()
+    WoW.sounds = {}
+    WoW.slash("/gsweep")
+    eq(kits(), tostring(K.greetMale), "a male character: a male gnome")
+    loadAddon({ db = { sounds = false } })
+    WoW.sounds = {}
+    WoW.slash("/gsweep")
+    eq(kits(), "", "sounds off: no greeting")
+end
+
+do  -- the alert: the clock passes the best to beat, once a game
+    local W, S = fresh({ scores = { version = 1, ["beginner:area"] = { played = 3, won = 1, best = { time = 20 } } } })
+    WoW.now = 100
+    click(41)
+    eq(W.game:State(), "playing", "(a game against a best of 20 s)")
+    WoW.sounds = {}
+    WoW.now = 119; WoW.tick(0.2)
+    eq(kits(), "", "under the best: nothing")
+    WoW.now = 121; WoW.tick(0.2)
+    eq(kits(), tostring(S.KITS.alert), "past it: the alert")
+    WoW.now = 140; WoW.tick(0.2)
+    eq(kits(), tostring(S.KITS.alert), "...once a game")
+    W.NewGame()
+    WoW.sounds = {}
+    WoW.now = 200; click(41)
+    WoW.sounds = {}
+    WoW.now = 230; WoW.tick(0.2)
+    eq(kits(), tostring(S.KITS.alert), "a new game can alert again")
+    W.NewGame("expert")
+    WoW.sounds = {}
+    WoW.now = 300; click(200); WoW.sounds = {}
+    WoW.now = 999; WoW.tick(0.2)
+    eq(kits(), "", "no best at this difficulty: no alert")
+end
+
 do  -- a zone event while ours plays: play it again (the owner heard both at once)
     local W, S = fresh({ music = true })
     eq(WoW.music, S.MUSIC, "(playing)")
@@ -221,7 +274,7 @@ do
     for i, c in ipairs(S.CANDIDATES) do eq(WoW.sounds[i].kit, c[1], "...in order: " .. c[1]) end
     local probe = GnomesweeperDB.soundProbe
     eq(probe.build, "1.60.1.70205", "the results are saved with the build")
-    eq(probe.kits[7517].willPlay, true, "...each kit's willPlay")
+    eq(probe.kits[8959].willPlay, true, "...each kit's willPlay")
     eq(probe.kits[18871].willPlay, false, "...including a kit the client refuses")
     check(chatHas("18871") and chatHas("won't play"), "chat says which one won't play")
     WoW.advance(1)

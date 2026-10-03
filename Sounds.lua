@@ -30,20 +30,31 @@ local GS = Gnomesweeper
 local Sounds = {}
 GS.Sounds = Sounds
 
--- The picks (docs/SOUNDS.md). Unmeasured on Forever until /gsweep sounds.
+-- The picks (docs/SOUNDS.md). All measured to play on 70205 (/gsweep sounds).
+-- Voices follow the character's sex (owner): a male or a female gnome.
 Sounds.KITS = {
     reveal = 1115,       -- SOUNDKIT.U_CHAT_SCROLL_BUTTON: a soft click
     flag = 856,          -- SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON
     unflag = 857,        -- SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_OFF
     boom = 7517,         -- GnomeBomBotDeath: the Walking Bomb's own death
-    wipe = 1038,         -- GnomeDeath: the owner's pick, after the bomb
-    win = 6131,          -- a gnome saying "Congratulations"
-    newGame = 4779,      -- G_ButtonBigRed: Mimiron's big red button
+    wipeMale = 3278,     -- GnomeMaleFinalDeath, after the bomb
+    wipeFemale = 3272,   -- GnomeFemaleMainDeath1
+    win = 6131,          -- a gnome: "hurray", "Congratulations"
+    greetMale = 5925,    -- GnomeMaleZanyNPCGreetings: the first open of a session
+    greetFemale = 5931,  -- GnomeFemaleNerdyNPCGreetings
+    alert = 18871,       -- the clock just passed your best (provisional: owner to pick)
+    newGame = 4779,      -- G_ButtonBigRed: provisional (owner: "doesn't sound like much")
 }
 Sounds.WIPE_DELAY = 0.7  -- seconds from the bomb to the gnome; tune by ear
 Sounds.MUSIC = 53189     -- gnomeragon01-zone
 
 local function db() return GnomesweeperDB end
+
+-- "female" or "male" voice for the character: UnitSex is 3 for female, 2 for
+-- male, 1 or nil when unknown (male, then).
+local function voice(male, female)
+    return UnitSex("player") == 3 and female or male
+end
 
 ------------------------------------------------------------
 -- Effects
@@ -75,7 +86,7 @@ function Sounds.Action(kind, was, now, cell, changed)
     if changed == 0 then return end
     if now == "lost" and was ~= "lost" then
         Sounds.Play("boom")
-        later(Sounds.WIPE_DELAY, "wipe")
+        later(Sounds.WIPE_DELAY, voice("wipeMale", "wipeFemale"))
     elseif now == "won" and was ~= "won" then
         Sounds.Play("win")
     elseif kind == "mark" then
@@ -84,6 +95,17 @@ function Sounds.Action(kind, was, now, cell, changed)
         Sounds.Play("reveal")
     end
 end
+
+-- The first time the board opens in a session, a gnome says hello.
+local greeted = false
+function Sounds.Greet()
+    if greeted then return end
+    greeted = true
+    Sounds.Play(voice("greetMale", "greetFemale"))
+end
+
+-- The clock just passed the best to beat (Window's clock tick, once per game).
+function Sounds.BestPassed() Sounds.Play("alert") end
 
 -- A new game the player asked for (the face, Play again / Try again).
 function Sounds.NewGame()
@@ -168,22 +190,20 @@ end)
 -- /gsweep sounds: every candidate, one after another (for measuring)
 ------------------------------------------------------------
 
--- (17484, 17487 and 17569, the Cataclysm-era Operation: Gnomeregan kits, were
--- refused on 70205: willPlay false. Dropped.)
+-- The choices still open (the rest are picked and measured: docs/SOUNDS.md).
+-- The first round (70205) refused 17484, 17487 and 17569, the Cataclysm-era
+-- Operation: Gnomeregan kits. These alert candidates are Blizzard's own SOUNDKIT.
 Sounds.CANDIDATES = {
-    { 1115, "reveal: U_CHAT_SCROLL_BUTTON (soft click)" },
-    { 856, "flag: IG_MAINMENU_OPTION_CHECKBOX_ON" },
-    { 857, "unflag: IG_MAINMENU_OPTION_CHECKBOX_OFF" },
-    { 7517, "boom: GnomeBomBotDeath (the Walking Bomb)" },
-    { 1038, "wipe voice: GnomeDeath (owner's pick)" },
-    { 3278, "wipe voice: GnomeMaleFinalDeath" },
-    { 3272, "wipe voice: GnomeFemaleMainDeath1" },
-    { 6131, "win: a gnome says Congratulations" },
-    { 4779, "new game: G_ButtonBigRed (Mimiron's button)" },
+    { 18871, "alert (the clock passed your best): ALARM_CLOCK_WARNING_1" },
+    { 12867, "alert: ALARM_CLOCK_WARNING_2" },
+    { 12889, "alert: ALARM_CLOCK_WARNING_3" },
+    { 8959, "alert: RAID_WARNING" },
+    { 8960, "alert: READY_CHECK" },
+    { 4574, "alert: IG_PVP_UPDATE" },
+    { 8459, "alert: PVP_THROUGH_QUEUE (the battleground is ready)" },
+    { 25477, "alert: UI_BATTLEGROUND_COUNTDOWN_TIMER" },
+    { 4779, "new game: G_ButtonBigRed (Mimiron's button, the current pick)" },
     { 15252, "new game: UL_Gnomewing_ButtonBigRed_Close" },
-    { 5925, "window opens: GnomeMaleZanyNPCGreetings" },
-    { 5931, "window opens: GnomeFemaleNerdyNPCGreetings" },
-    { 18871, "alarm: AlarmClockWarning1" },
 }
 Sounds.PROBE_GAP = 3       -- seconds between candidates
 Sounds.MUSIC_PROBE = 12    -- seconds of music at the end

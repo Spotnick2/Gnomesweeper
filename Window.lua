@@ -59,6 +59,9 @@ end
 -- The game
 ------------------------------------------------------------
 
+local beat            -- the best to beat this game (its time at the start), or nil
+local passed          -- the clock went past it this game (the alert played)
+
 local function newBoard()
     local key = difficultyKey()
     local p = Board.PRESETS[key]
@@ -70,6 +73,8 @@ local function newBoard()
     rule = db().safeZone == "cell" and "cell" or "area"
     category = Scores.Category(key, rule)
     lastWin = nil
+    local best = type(db().scores) == "table" and Scores.Best(db().scores, category)
+    beat, passed = best and best.time or nil, false
 end
 
 ------------------------------------------------------------
@@ -171,6 +176,11 @@ local function onUpdate(_, dt)
     acc = 0
     local text = timerText()
     if text ~= ui.timer:GetText() then ui.timer:SetText(text) end
+    -- The clock just went past the best to beat: an alert, once a game.
+    if beat and not passed and game:Elapsed(GetTime()) > beat then
+        passed = true
+        GS.Sounds.BestPassed()
+    end
 end
 
 -- The clock text only needs driving while a game is in progress and the window
@@ -715,6 +725,7 @@ local function build()
         Window.Layout()
         Window.Refresh()
         GS.Sounds.UpdateMusic()
+        GS.Sounds.Greet()
     end)
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
@@ -878,6 +889,8 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        local best = cat and type(db().scores) == "table" and Scores.Best(db().scores, cat)
+        beat, passed = best and best.time or nil, false
         rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")
         if ui.overlay then ui.overlay:Hide() end
         if ui.result then showResultBar(false) end

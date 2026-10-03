@@ -190,10 +190,12 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
 - **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound
   kits played with the global `PlaySound(kit, "SFX")` (the game's sound toggle and volume apply;
   `PlaySoundFile` refuses game paths here, and `C_Sound.PlaySound`'s second argument is an enum, not
-  a channel). `Sounds.KITS` holds the picks (`docs/SOUNDS.md`): a reveal or chord clicks, a flag on
-  and off each click, a win congratulates (no click on top), a wipe is the bomb and then, after
-  `WIPE_DELAY`, a gnome's last words (two `PlaySound`s at once overlap), the face / Play again / Try
-  again press the big red button. An action that changes nothing is silent. A new game or the window
+  a channel). `Sounds.KITS` holds the picks (`docs/SOUNDS.md`, all measured to play): a reveal or
+  chord clicks, a flag on and off each click, a win congratulates (no click on top), a wipe is the
+  bomb and then, after `WIPE_DELAY`, a gnome's last words (two `PlaySound`s at once overlap), the
+  face / Play again / Try again press the big red button. **Voices follow the character's sex**
+  (`UnitSex`: the wipe cry, and a greeting on the first open of a session). The clock passing the
+  best to beat (its time when the game started) plays an alert, once a game. An action that changes nothing is silent. A new game or the window
   closing cancels a sound still waiting (`Sounds.Cancel`). `Window.Dispatch` calls `Sounds.Action`.
   **Music**: `PlayMusic(53189)` replaces the zone's music; **one check** (the setting on, the window
   shown, not in combat) runs whenever any of them changes (`Sounds.UpdateMusic`: the window's

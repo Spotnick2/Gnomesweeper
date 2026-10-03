@@ -230,6 +230,7 @@ function WoW.reset()
     WoW.fileIDs = {}
     WoW.sounds, WoW.willPlay, WoW.timers = {}, {}, {}
     WoW.music, WoW.musicStops, WoW.inCombat = nil, 0, false
+    WoW.playerSex = 2
     WoW.ldb, WoW.ldbi = nil, nil                -- made on first use (LibStub, below)
     WoW.missingTemplates = {}
     WoW.settings = { canvas = {}, addons = {}, subs = {} }
@@ -280,6 +281,8 @@ end
 function PlayMusic(file) WoW.music = file end
 function StopMusic() WoW.music = nil; WoW.musicStops = WoW.musicStops + 1 end
 function UnitAffectingCombat(unit) return unit == "player" and WoW.inCombat or false end
+-- 1 unknown, 2 male, 3 female (WoW.playerSex, default male).
+function UnitSex(unit) return unit == "player" and WoW.playerSex or nil end
 -- Timers run when WoW.advance moves the clock past them, in order.
 C_Timer = {
     After = function(seconds, fn)

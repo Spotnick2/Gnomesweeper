@@ -39,6 +39,16 @@ Get-ChildItem -LiteralPath $dest -File | Where-Object { $files -notcontains $_.N
     Remove-Item -LiteralPath $_.FullName -Force
 }
 
+# Libs: the embedded libraries (#40), mirrored exactly, so a library dropped from
+# the repo doesn't linger where the client would still load it.
+$libsSrc = Join-Path $RepoRoot "Libs"
+$libsDest = Join-Path $dest "Libs"
+if (Test-Path -LiteralPath $libsDest) { Remove-Item -LiteralPath $libsDest -Recurse -Force }
+if (Test-Path -LiteralPath $libsSrc) {
+    Copy-Item -LiteralPath $libsSrc -Destination $libsDest -Recurse -Force
+    Write-Host "  Libs\  ($((Get-ChildItem -LiteralPath $libsDest -Recurse -File).Count) files)"
+}
+
 # Media: only what the client loads (TGA/BLP textures, OGG sounds), never PNG masters.
 $media = Join-Path $dest "Media"
 New-Item -ItemType Directory -Force -Path $media | Out-Null
@@ -53,6 +63,18 @@ Get-ChildItem -LiteralPath $media -File | Where-Object { $_.Extension -in ".tga"
     Write-Host "  removing stale Media\$($_.Name)" -ForegroundColor DarkYellow
     Remove-Item -LiteralPath $_.FullName -Force
 }
+
+# Every file the TOC lists must be in the deployed copy: a TOC entry in a folder
+# this script doesn't copy would otherwise only show as a load error in game.
+$missing = Get-Content -LiteralPath (Join-Path $RepoRoot "Gnomesweeper.toc") |
+    ForEach-Object { $_.Trim() } | Where-Object { $_ -match '\.(lua|xml)$' -and $_ -notmatch '^#' } |
+    Where-Object { -not (Test-Path -LiteralPath (Join-Path $dest $_)) }
+if ($missing) {
+    $missing | ForEach-Object { Write-Host "  MISSING in the deployed copy: $_" -ForegroundColor Red }
+    Write-Error "Deploy is incomplete: the TOC lists files that weren't copied."
+    exit 1
+}
+Write-Host "  every TOC file is in place" -ForegroundColor DarkGray
 
 Write-Host ""
 Write-Host "Changed files: /reload is enough. A brand-new addon folder needs a client restart." -ForegroundColor Yellow

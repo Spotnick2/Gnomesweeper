@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A minimap button**: left-click opens the board, right-click opens the settings. Drag it around the minimap; hide it in the settings or with `/gsweep minimap`.
 - **Settings**, in the game's Options > AddOns > Gnomesweeper (the gear in the title bar and `/gsweep settings` open it), with an **About** page: question marks, the first click (opens an area, or one safe tile as in Windows XP), clearing around a number with a left-click, and the window size. Changes to a game you haven't started apply at once; otherwise from your next game.
 - **Personal bests.** Each difficulty keeps your best time (shared by all your characters, with the one who set it). A win says "New personal best!" or shows the best to beat, the difficulty list shows your best times, and its tooltip says how many games you've won.
 - **Best times** (the trophy in the title bar, or `/gsweep scores`): every difficulty's best, who set it and when, and how many games you've won, at any time.

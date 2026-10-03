@@ -15,6 +15,32 @@ before copying anything.
 | Minesweeper v3.0.0 by Phoslead (Retail, Interface 120000, Ace3 + LibDBIcon) — local copy at `C:\Projects\References\Minesweeper_v3.0.0` | **No licence file: ideas only.** **Secondary reference — don't consult it first**: the author may port it to Forever themselves, so Gnomesweeper should stand on its own. Notable ideas: shipped `.ogg` sfx (cell, flag, explosion, clock, lose, victory), game-mode picker, game log and replay, minimap button. |
 | [MineSweeper (WoW, CurseForge)](https://www.curseforge.com/wow/addons/minesweeper) | All Rights Reserved | **Ideas only.** Abandoned 2012. Had: first click never loses, pause when minimised, character/guild/friends leaderboards, "show on death / in group" triggers. |
 
+## Embedded libraries (`Libs\`, #40)
+
+Copied as they are from `..\GlassMiniMapBar\Libs` (which embeds the same versions); never edited
+here. They are the standard WoW addon libraries that hundreds of addons embed, and are shipped
+inside the addon, as embedding them is meant to be done. Also noticed in `LICENSE`, which says they
+are under their own licences, not ours.
+
+**Licences, read 2026-10-03** (Codex's review of #41 found the pages; each notice ships in its
+folder and is summarised in `LICENSE`):
+- LibStub: public domain (its header).
+- CallbackHandler-1.0: "BSD License", https://www.curseforge.com/wow/addons/callbackhandler/license
+  (the page leaves the holder blank; the Ace3 Development Team is named, CallbackHandler being Ace3's).
+- LibDBIcon-1.0: "Ace3 Style BSD", https://www.curseforge.com/wow/addons/libdbicon-1-0/license.
+  It forbids redistributing it **stand-alone**; embedded is fine.
+- LibDataBroker-1.1: **no licence text anywhere**. Its repository (tekkub/libdatabroker-1-1) has
+  none; https://www.curseforge.com/wow/addons/libdatabroker-1-1/license says "All Rights Reserved
+  unless otherwise explicitly stated". It exists to be embedded and nearly every addon does
+  (GlassMiniMapBar too), and LibDBIcon requires it: **the owner chose to embed it anyway** (#41).
+
+| Library | Version | Authors / notes |
+|---|---|---|
+| LibStub | MINOR 2 | Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke. Public domain (its header). |
+| CallbackHandler-1.0 | MINOR 8 | Nevcairiel and the Ace3 team. BSD. |
+| LibDataBroker-1.1 | MINOR 4 | tekkub. No published licence ("All Rights Reserved" on CurseForge). |
+| LibDBIcon-1.0 | MINOR 56 | funkydude. Ace3-style BSD (no stand-alone redistribution). |
+
 ## Sibling addons (same owner, same stack)
 
 | Repo | Take from it |

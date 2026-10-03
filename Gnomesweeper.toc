@@ -3,8 +3,10 @@
 ## Notes: Minesweeper Forever. One wrong click. Full wipe. /gsweep
 ## Author: Spotnick
 ## Version: @project-version@
-## IconTexture: 133712
+## IconTexture: Interface\AddOns\Gnomesweeper\Media\face_mascot
 ## AddonCompartmentFunc: Gnomesweeper_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: Gnomesweeper_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: Gnomesweeper_OnAddonCompartmentLeave
 ## SavedVariables: GnomesweeperDB
 
 Libs\LibStub\LibStub.lua

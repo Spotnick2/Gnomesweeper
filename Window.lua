@@ -1125,6 +1125,10 @@ end
 
 function Window.Open(preset)
     ensure()
+    -- Blizzard's Settings window is under ours (HIGH vs FULLSCREEN_DIALOG): a key, the
+    -- compartment or /gsweep while it's open shows the board when it closes, not over
+    -- it (review of #58).
+    if not win:IsShown() and GS.Options.ReturnAfterSettings() then return end
     local switch = preset and Board.PRESETS[preset] and preset ~= difficultyKey()
     -- Nothing to lose: the new board before showing (one layout, not two).
     if switch and not hasProgress() then Window.NewGame(preset); switch = false end
@@ -1134,7 +1138,7 @@ end
 
 function Window.Toggle()
     ensure()
-    win:SetShown(not win:IsShown())
+    if win:IsShown() then win:Hide() else Window.Open() end
 end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end

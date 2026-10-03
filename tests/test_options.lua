@@ -283,18 +283,28 @@ do  -- the review of #39
     eq(GnomesweeperDB.scale, 1.3, "on the grid, up a whole step")
     O.Set("scale", 1)
 
-    -- Settings open, then the player shows and closes the window themselves: it stays closed.
+    -- Settings open: asking for the board (/gsweep, the key, the compartment) doesn't draw
+    -- it over Settings; it comes when Settings closes (review of #58).
     WoW.fire("PLAYER_LOGIN")
+    W.win:Hide()
+    SettingsPanel:Show()
+    WoW.slash("/gsweep")
+    check(not W.win:IsShown(), "asked for while Settings is open: not drawn over it")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...it opens when Settings closes")
+    W.win:Hide()
+    SettingsPanel:Show()
+    W.Toggle()                                           -- the key binding's call
+    check(not W.win:IsShown(), "the key while Settings is open: waits too")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...and opens after")
+
+    -- Stepped aside, then the player closes it by the key (it's hidden: the key asks to open
+    -- it, so it waits again) - and Settings closing brings it, once.
     SettingsPanel:Show()
     check(not W.win:IsShown(), "(stepped aside)")
-    WoW.slash("/gsweep")
-    check(W.win:IsShown(), "(the player opens it over Settings)")
-    W.win:Hide()
     SettingsPanel:Hide()
-    check(not W.win:IsShown(), "a window the player closed meanwhile is not brought back")
-    W.Open()
-    SettingsPanel:Show(); WoW.slash("/gsweep"); SettingsPanel:Hide()
-    check(W.win:IsShown(), "...one they opened stays open")
+    check(W.win:IsShown(), "(back)")
 end
 
 do  -- the Options page never builds the window

@@ -39,9 +39,10 @@ function Minimap_.SetShown(v)
     Minimap_.Apply()
 end
 
--- One click, from the minimap button or the addon compartment: left opens or
--- closes the board, right opens the settings.
-function Minimap_.Click(button)
+-- One click, from the minimap button or the addon compartment (both call it with
+-- something first, the button or the addon's name, then the mouse button): left
+-- opens or closes the board, right opens the settings.
+function Minimap_.Click(_, button)
     if button == "RightButton" then
         GS.Options.Open()
     else
@@ -49,20 +50,29 @@ function Minimap_.Click(button)
     end
 end
 
--- The TOC's AddonCompartmentFunc: a global, as the compartment requires.
-function Gnomesweeper_OnAddonCompartmentClick(_, button) Minimap_.Click(button) end
+-- What a click does, for both tooltips (the minimap button's adds dragging).
+local function tooltip(tip, drag)
+    tip:AddLine("Gnomesweeper")
+    tip:AddLine("Left-click: open or close the board", 0.75, 0.78, 0.85)
+    tip:AddLine("Right-click: settings", 0.75, 0.78, 0.85)
+    if drag then tip:AddLine("Drag: move around the minimap", 0.75, 0.78, 0.85) end
+end
+
+-- The TOC's AddonCompartmentFunc*: globals, as the compartment looks them up by name.
+Gnomesweeper_OnAddonCompartmentClick = Minimap_.Click
+function Gnomesweeper_OnAddonCompartmentEnter(_, row)
+    GameTooltip:SetOwner(row, "ANCHOR_LEFT")
+    tooltip(GameTooltip, false)
+    GameTooltip:Show()
+end
+function Gnomesweeper_OnAddonCompartmentLeave() GameTooltip:Hide() end
 
 local launcher = {
     type = "launcher",
     label = "Gnomesweeper",
     icon = GS.Skin.TEXTURES.face,
-    OnClick = function(_, button) Minimap_.Click(button) end,
-    OnTooltipShow = function(tip)
-        tip:AddLine("Gnomesweeper")
-        tip:AddLine("Left-click: open or close the board", 0.75, 0.78, 0.85)
-        tip:AddLine("Right-click: settings", 0.75, 0.78, 0.85)
-        tip:AddLine("Drag: move around the minimap", 0.75, 0.78, 0.85)
-    end,
+    OnClick = Minimap_.Click,
+    OnTooltipShow = function(tip) tooltip(tip, true) end,
 }
 
 -- Show or hide it to match the setting (called by Options.Set).

@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **A key to open the board**: bind one in Key Bindings > Gnomesweeper. Gnomesweeper is also in the minimap's addon list (left-click plays, right-click opens the settings).
+- **A key to open the board**: bind one in Key Bindings > Gnomesweeper. Gnomesweeper is also in the minimap's addon list (left-click plays, right-click opens the settings), and the gnome's face is now its icon there and in the AddOns list.
 - **Two looks for the board**: **Classic** (the one you know) and **Modern**, with ice-blue glass tiles. Pick one in the settings; it changes at once, even mid-game.
 - **The gnome moves**: she bounces when you win, shudders on a wipe, nods when you start a new game, and breathes quietly while you play.
 - **A mute button** for the sound effects, next to the music note in the title bar.

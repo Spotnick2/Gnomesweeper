@@ -21,8 +21,8 @@ doesn't cover something, check how those handle it before you invent a new idiom
 **Status: M1 done; M2 next.** M1: the scaffold (#1), the game model `Board.lua` (#2), the glass
 window (#3), the tile grid (#4), the game states (#5) and the asset probe (#6): **the game is
 playable** at all three difficulties and ends with the storyboard's overlays. Since then: the art
-direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). M2 has
-started: personal bests (#7). #32 (confirm before a difficulty change) waits on the owner, and the
+direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). M2 so
+far: personal bests and the best times panel (#7), the settings (#8). #32 (confirm before a difficulty change) waits on the owner, and the
 mascot's expressions and the mine wait on art (`docs/ART.md`).
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
@@ -35,7 +35,7 @@ holds the decided design, so update it when the design changes.
 
 TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
 `Scores.lua` → `Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` →
-`Assets.lua` → `Gnomesweeper.lua`.
+`Options.lua` → `Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -106,8 +106,8 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (the mascot, name, tagline, the trophy for the best times, an inert settings gear until
-    #8, close), a difficulty
+  - Title bar (the mascot, name, tagline, the trophy for the best times, the settings gear (#8),
+    close), a difficulty
     button in the difficulty's **rarity colour** with a small **hand-rolled** list (not Blizzard's
     dropdown API, which no sibling has measured on Forever; each row gives the name and
     `9x9 · 10 mines`, built from `Board.PRESETS`, and the current row has a bar down its edge; the list
@@ -149,6 +149,33 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     are also kept in `GnomesweeperDB.inputLog` (last 300, debug only), so a `/reload` writes them to
     `WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua` and they can be **read from disk**
     instead of pasted. The same trick works for any future probe.
+- **`Options.lua`** (#8): the settings. `Options.ITEMS` lists them (question marks, the first-click
+  rule, left-click clearing, the window scale; sounds #9, music #22, models #21 and hiding in combat
+  #37 join it with their issues). **`Options.Set(key, value)` is the one place a setting changes**: it
+  checks the value (refused: nothing changes), saves it, applies it, and refreshes the page. The slash
+  commands go through it too. Question marks and the first-click rule are part of a board: they apply
+  from the next game, and a board nobody has touched (every tile covered: no reveal, no mark) is
+  replaced at once. The same value again does nothing.
+  **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
+  more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
+  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
+  its first show and **hidden at creation** (or its first show is blank: measured), Blizzard's check/radio/button templates with the client's own
+  art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
+  order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
+  unpackaged; how to play; **links** to CurseForge and GitHub in read-only edit boxes to copy from,
+  `Options.LINKS`; the commands from `GS.HELP`, minus the "(for measuring)" ones). **The recipe is
+  shared**, for every Forever addon: the porting guide's "An Options page with sub-pages and an About
+  page" (update it there when something new is measured here). Neither
+  page is a named frame (no globals). Showing the page never builds the game window: a size set there
+  is saved and used when the window is built (`Window.SetScale` doesn't build it).
+  **Blizzard's `SettingsPanel` is in the HIGH strata and our window in FULLSCREEN_DIALOG, above it**:
+  while it is open our window steps aside (hidden, so its clock pauses) and comes back when it closes,
+  if it was open and the player didn't show or close it meanwhile (`Window.shownCount`); that is
+  hooked on `SettingsPanel` itself, so it also holds when Settings is opened from the game menu.
+  The best times, the list's column and the tooltip show the **current game's** first-click rule, so
+  a rule changed mid-game shows with the next game, the one it applies to. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
+  time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
+  says when the window is shown smaller to fit).
 - **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
   and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
@@ -298,6 +325,10 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_options.lua`** is the settings: `Options.Set` (refused values, next game vs. now, marks
+  kept, the same value), the steps of the scale, the gear opening the page and the window stepping
+  aside (and back, and its clock paused), the page (registration, templates and the fallback art), and
+  the About sub-page.
 - **`test_scores.lua`** is personal bests: the model with every global forbidden (categories, ties,
   damaged data), the full name, and in the window: counting, the overlay, the result bar, the list,
   the tooltip, a reload, and the result bar's room for its text on every difficulty.

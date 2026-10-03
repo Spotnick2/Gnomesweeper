@@ -26,12 +26,20 @@ local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 
 local win, game
+Window.shownCount = 0
 -- The current game's scores category (Scores.Category), nil for a board that
 -- isn't a preset (the tests' hand-built ones): those never touch the scores.
 local category
+-- The current game's first-click rule ("area" or "cell"): what the best times,
+-- the list and the tooltip show, so a rule changed mid-game shows with the next
+-- game, the one it applies to (#39 review).
+local rule = "area"
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
 local fillBests             -- the best times panel's refresh (defined with the panel)
+-- The panels that float over the board (the difficulty list, the best times):
+-- one at a time, and all closed with the window.
+local floating = {}
 local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
 local function db() return GnomesweeperDB end
@@ -59,7 +67,8 @@ local function newBoard()
         questionMarks = db().questionMarks,
     }))
     Window.game = game
-    category = Scores.Category(key, db().safeZone)
+    rule = db().safeZone == "cell" and "cell" or "area"
+    category = Scores.Category(key, rule)
     lastWin = nil
 end
 
@@ -76,9 +85,9 @@ local function bestTime(record)
     return Layout.FormatTime(Board.DisplaySeconds(record.time))
 end
 
--- A difficulty's best, played and won, under the current first-click rule.
+-- A difficulty's best, played and won, under the current game's first-click rule.
 local function statsFor(key)
-    local cat = Scores.Category(key, db().safeZone)
+    local cat = Scores.Category(key, rule)
     local played, won = Scores.Stats(peek(), cat)
     return Scores.Best(peek(), cat), played, won
 end
@@ -303,6 +312,7 @@ local function buildMenu()
         end)
     end)
     menu:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
+    Window.Floating(menu)
     menu:Hide()
     ui.menu = menu
 end
@@ -471,7 +481,7 @@ end
 local BESTS_W, BESTS_ROW = 264, 44
 
 local function bestsRuleText()
-    return db().safeZone == "cell" and "First click: one safe tile (Windows XP's rule)."
+    return rule == "cell" and "First click: one safe tile (Windows XP's rule)."
         or "First click: always opens an area."
 end
 
@@ -545,7 +555,8 @@ local function buildBests()
     p.rule:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
     p.rule:SetTextColor(unpack(C.hint))
 
-    p:SetScript("OnShow", function() ui.menu:Hide(); fillBests() end)
+    p:SetScript("OnShow", function() fillBests() end)
+    Window.Floating(p)
     p:Hide()
     ui.bests = p
 end
@@ -606,10 +617,8 @@ local function build()
     ui.gear = Widgets.IconButton(win, 22, T.gear, { 0.82, 0.92, 1 })
     ui.gear:SetFrameLevel(content)
     ui.gear:SetPoint("RIGHT", ui.close, "LEFT", -5, 0)
-    Widgets.Tip(ui.gear, "Settings", {            -- inert until #8
-        "A settings panel is coming.",
-        "For now: /gsweep scale 0.5 to 1.5 resizes the window.",
-    })
+    ui.gear:SetScript("OnClick", function() GS.Options.Open() end)
+    Widgets.Tip(ui.gear, "Settings", "Opens Options > AddOns > Gnomesweeper: question marks, the first click, left-click clearing, the window size.")
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
@@ -626,10 +635,7 @@ local function build()
     ui.diffArrow:SetSize(14, 14)
     ui.diffArrow:SetTexture(T.arrow)
     ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
-    ui.diff:SetScript("OnClick", function()
-        if ui.bests then ui.bests:Hide() end
-        ui.menu:SetShown(not ui.menu:IsShown())
-    end)
+    ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
     Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
     buildMenu()
 
@@ -687,14 +693,14 @@ local function build()
     -- opening it resumes. It also refits, so a reopen after a resolution or UI
     -- scale change is never the wrong size.
     win:SetScript("OnShow", function()
+        Window.shownCount = Window.shownCount + 1    -- Options: was it shown again since it stepped aside?
         game:Resume(GetTime())
         Window.Layout()
         Window.Refresh()
     end)
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
-        ui.menu:Hide()
-        if ui.bests then ui.bests:Hide() end   -- it must not come back over the board on the next open
+        for _, f in ipairs(floating) do f:Hide() end   -- none comes back over the board on the next open
         Grid.Cancel()                  -- a button held when the window closes is not a click
         self:StopMovingOrSizing()
     end)
@@ -702,7 +708,10 @@ local function build()
     local watcher = CreateFrame("Frame")
     watcher:RegisterEvent("DISPLAY_SIZE_CHANGED")
     watcher:RegisterEvent("UI_SCALE_CHANGED")
-    watcher:SetScript("OnEvent", function() Window.Layout() end)
+    watcher:SetScript("OnEvent", function()
+        Window.Layout()
+        GS.Options.Refresh()          -- the settings say what size the window is shown at
+    end)
 end
 
 ------------------------------------------------------------
@@ -797,12 +806,28 @@ end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end
 
+-- A panel that floats over the board: showing it puts the others away, and
+-- closing the window closes it.
+function Window.Floating(f)
+    floating[#floating + 1] = f
+    f:HookScript("OnShow", function(self)
+        for _, o in ipairs(floating) do if o ~= self then o:Hide() end end
+    end)
+end
+
+-- After a setting changed (Options.Set): what the window shows that depends on one.
+-- (The best times refill whenever they show, and can't be open while Settings is.)
+function Window.SettingsChanged()
+    Window.Refresh()
+end
+
 -- The player's own scale (/gsweep scale), nil to go back to 1. The window still
 -- never exceeds the screen: the number wanted and the number shown can differ.
+-- Saved even before the window exists (the Options page can set it first); it
+-- is applied when the window is built.
 function Window.SetScale(n)
-    ensure()
     db().scale = n
-    Window.Layout()
+    if win then Window.Layout() end
 end
 
 -- The scale wanted, and the one actually in use.
@@ -830,6 +855,7 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")
         if ui.overlay then ui.overlay:Hide() end
         if ui.result then showResultBar(false) end
         if win then syncGame() end

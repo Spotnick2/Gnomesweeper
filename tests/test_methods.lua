@@ -111,6 +111,19 @@ do
     ui.result.button._scripts.OnClick(ui.result.button)
     WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
     WoW.slash("/gsweep scores")                         -- the best times panel (#7)
+    do                                                  -- the settings (#8): every control, About
+        local O = Gnomesweeper.Options
+        WoW.fire("PLAYER_LOGIN")
+        WoW.slash("/gsweep settings")
+        SettingsPanel:Hide()
+        local page = O._test.page
+        page:Hide(); page:Show()
+        page.controls.questionMarks.check._scripts.OnClick(page.controls.questionMarks.check)
+        page.controls.safeZone.radios[1]._scripts.OnClick(page.controls.safeZone.radios[1])
+        page.controls.scale.plus._scripts.OnClick(page.controls.scale.plus)
+        O._test.about:Hide(); O._test.about:Show()
+        O.Set("safeZone", "area"); O.Set("questionMarks", false); O.Set("scale", 1)
+    end
     local bests = Gnomesweeper.Window._test.ui.bests
     bests.close._scripts.OnClick(bests.close)
     WoW.slash("/gsweep assets")                         -- the contact sheet (#6)
@@ -131,9 +144,16 @@ WoW.slash("/gsweep reset")
 WoW.slash("/gsweep help")
 WoW.slash("/gsweep")
 
+-- The Options page's fallback art, as on a client missing the templates.
+loadAddon()
+WoW.missingTemplates = { UICheckButtonTemplate = true, UIRadioButtonTemplate = true, UIPanelButtonTemplate = true }
+Gnomesweeper.Options._test.page:Hide()
+Gnomesweeper.Options._test.page:Show()
+
 -- Global functions the addon calls through the strict _G are, by construction,
 -- defined in the stub; confirm each is a real one.
-for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor" }) do
+for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor",
+        "GetFileIDFromPath", "GetBuildInfo", "UnitName", "GetRealmName", "time", "date" }) do
     check(globals[name], "global function exists on Forever: " .. name)
 end
 

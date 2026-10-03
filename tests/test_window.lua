@@ -101,7 +101,7 @@ do
     end
     check(not secure, "no secure frame anywhere (the window works in combat)")
 
-    -- A tooltip on the gear, which is inert for now.
+    -- A tooltip on the gear.
     ui.gear._scripts.OnEnter(ui.gear)
     check(WoW.methodsCalled["GameTooltip:SetOwner"], "the gear shows a tooltip")
     ui.gear._scripts.OnLeave(ui.gear)

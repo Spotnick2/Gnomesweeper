@@ -62,10 +62,19 @@ local function newWidget(wtype, parent, name)
 end
 
 function CreateFrame(ftype, name, parent, template)
-    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene",
+    assert(ftype == "Frame" or ftype == "Button" or ftype == "StatusBar" or ftype == "ModelScene" or ftype == "CheckButton" or ftype == "EditBox",
         "CreateFrame: unexpected frame type " .. tostring(ftype))
     local w = newWidget(ftype, parent or UIParent, name)
     w._template = template
+    -- What the client's templates make (the field each is proved by, as API.SafeFrame checks),
+    -- unless the test says the template is missing (it then returns a bare frame, as the client does).
+    if template and not WoW.missingTemplates[template] then
+        if template == "UICheckButtonTemplate" or template == "UIRadioButtonTemplate" then
+            w.text = newWidget("FontString", w)
+        elseif template == "UIPanelButtonTemplate" then
+            w.Text = newWidget("FontString", w)
+        end
+    end
     table.insert(WoW.frames, w)
     if name then rawset(_G, name, w) end
     return w
@@ -150,6 +159,19 @@ end
 function Methods.AddLine(w, text) w._lines = w._lines or {}; w._lines[#w._lines + 1] = text end
 function Methods.GetText(w) return w._text end
 function Methods.SetTexture(w, t) w._texture = t end
+function Methods.SetChecked(w, v) w._checked = v and true or false end
+-- An edit box's selection: HighlightText() selects all, (0, 0) none.
+function Methods.HighlightText(w, a, b) w._selected = not (a == 0 and b == 0) end
+function Methods.GetChecked(w) return w._checked or false end
+-- A button's state textures: Set* makes one, Get* returns it (so its tex coords can be set).
+for _, part in ipairs({ "Normal", "Pushed", "Highlight", "Checked" }) do
+    Methods["Set" .. part .. "Texture"] = function(w, t)
+        local tex = newWidget("Texture", w)
+        tex._texture = t
+        w["_" .. part] = tex
+    end
+    Methods["Get" .. part .. "Texture"] = function(w) return w["_" .. part] end
+end
 function Methods.SetColorTexture(w, ...) w._texture = nil; w._color = { ... } end
 function Methods.SetAlpha(w, a) w._alpha = a end
 function Methods.SetTextureSliceMargins(w, ...) w._slice = { ... } end
@@ -206,6 +228,13 @@ function WoW.reset()
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
+    WoW.missingTemplates = {}
+    WoW.settings = { canvas = {}, addons = {}, subs = {} }
+    WoW.metadata = { Version = "@project-version@" }
+    -- Blizzard's Settings window (HIGH strata), hidden until opened.
+    SettingsPanel = newWidget("Frame", UIParent, "SettingsPanel")
+    SettingsPanel._strata = "HIGH"
+    SettingsPanel._shown = false
     WoW.epoch = 1790000000
     WoW.playerName, WoW.playerSurname, WoW.realm = "Fizzle", "Sprocketwhistle", "Forever"
     WoW.screen = { w = 1366, h = 768 }
@@ -236,6 +265,22 @@ function date(fmt, t) return os.date(fmt, t) end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end
+C_AddOns = { GetAddOnMetadata = function(name, key) return WoW.metadata[key] end }
+-- Retail's Settings framework: Options > AddOns. Recorded in WoW.settings.
+Settings = {
+    RegisterCanvasLayoutCategory = function(frame, name)
+        local cat = { frame = frame, name = name, GetID = function() return "cat:" .. name end }
+        WoW.settings.canvas[#WoW.settings.canvas + 1] = cat
+        return cat
+    end,
+    RegisterAddOnCategory = function(cat) WoW.settings.addons[#WoW.settings.addons + 1] = cat end,
+    OpenToCategory = function(id) WoW.settings.opened = id; SettingsPanel:Show() end,
+    RegisterCanvasLayoutSubcategory = function(parent, frame, name)
+        local cat = { parent = parent, frame = frame, name = name }
+        WoW.settings.subs[#WoW.settings.subs + 1] = cat
+        return cat
+    end,
+}
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end
 function GetBuildInfo() return "1.60.1", "70205", "Oct  2 2026", 16001 end

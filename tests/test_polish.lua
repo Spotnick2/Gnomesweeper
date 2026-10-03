@@ -147,7 +147,7 @@ do
     GameTooltip._text = nil
     ui.gear._scripts.OnEnter(ui.gear)
     eq(GameTooltip._text, "Settings", "the gear has a tooltip")
-    check(GameTooltip._lines[2] and GameTooltip._lines[2]:find("/gsweep scale", 1, true), "...that says how to resize the window")
+    check(GameTooltip._lines[1] and GameTooltip._lines[1]:find("window size", 1, true), "...that says what the settings hold")
 
     -- The window is darker than bare glass, and the scenery stays behind it.
     check(W.win.backing ~= nil and W.win.backing._color[4] > 0.3 and W.win.backing._color[4] < 0.6, "the window has a translucent dark backing")

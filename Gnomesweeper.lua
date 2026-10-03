@@ -14,7 +14,7 @@ local DEFAULTS = {
     difficulty = "beginner",
     safeZone = "area",         -- "area": the first click opens an area; "cell": XP's single safe cell
     questionMarks = false,
-    chordOnLeft = false,       -- left-click a satisfied number to chord it (the settings panel, #8, will offer it)
+    chordOnLeft = false,       -- left-click a satisfied number to chord it (a setting, #8)
 }
 
 local function EnsureDefaults()
@@ -27,14 +27,17 @@ end
 local function Print(msg)
     print("|cff7fd4ffGnome|rsweeper: " .. msg)
 end
+GS.Print = Print
 
+-- Also listed on Options > AddOns > Gnomesweeper > About (all but the "(for measuring)" ones).
 local HELP = {
     "/gsweep - open or close the board (also /gnomesweeper, /minewipe)",
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep scores - your best times (also the trophy in the title bar)",
+    "/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
-    "/gsweep assets - a sheet of every texture, to check by eye that each one draws",
+    "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
 }
@@ -47,6 +50,8 @@ local function Slash(msg)
         GS.Window.Open(msg)
     elseif msg == "scores" or msg == "bests" then
         GS.Window.ShowBests(true)
+    elseif msg == "settings" or msg == "options" or msg == "config" then
+        GS.Options.Open()
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")
@@ -59,10 +64,10 @@ local function Slash(msg)
                 math.abs(want - shown) > 0.005 and string.format(" (shown at %.2f: that is what fits the screen)", shown) or "",
                 L.USER_SCALE_MIN, L.USER_SCALE_MAX))
         elseif arg == "reset" then
-            W.SetScale(nil)
+            GS.Options.Set("scale", 1)
             Print("window scale back to 1.")
         elseif L.ValidUserScale(tonumber(arg)) then
-            W.SetScale(tonumber(arg))
+            GS.Options.Set("scale", tonumber(arg))       -- the one place a setting changes
             local want, shown = W.ScaleInfo()
             Print(string.format("window scale %.2f%s.", want,
                 math.abs(want - shown) > 0.005 and string.format(" (shown at %.2f: that is what fits the screen)", shown) or ""))
@@ -82,6 +87,8 @@ local function Slash(msg)
         for _, line in ipairs(HELP) do Print(line) end
     end
 end
+
+GS.HELP = HELP
 
 SLASH_GNOMESWEEPER1 = "/gnomesweeper"
 SLASH_GNOMESWEEPER2 = "/gsweep"

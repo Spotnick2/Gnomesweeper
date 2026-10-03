@@ -29,9 +29,9 @@ measured: whether the track loops.
 the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 3272 after the bomb,
 5925 / 5931 on the first open of a session); an **alert when the clock passes your best** (once a
 game): **4574 `IG_PVP_UPDATE`**, the owner's pick after the audition (25477, the battleground
-countdown, was the other contender); the new game: **file 566083 `GnomeRoboArmFidget01Fidget02`**, a
-gnomish arm, played with `PlaySoundFile` (a file ID, not a kit), in place of the big red button 4779
-that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
+countdown, was the other contender); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
+file is 566083; the owner found the kit ID in Classic's data), a gnomish arm, in place of the big red
+button 4779 that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
 `SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 

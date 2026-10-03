@@ -277,11 +277,6 @@ function PlaySound(kit, channel)
     if will == nil then will = true end
     return will, will and #WoW.sounds or nil
 end
--- PlaySoundFile with a file ID: recorded in WoW.sounds as { file, channel }.
-function PlaySoundFile(file, channel)
-    WoW.sounds[#WoW.sounds + 1] = { file = file, channel = channel }
-    return true, #WoW.sounds
-end
 -- Music: WoW.music is the file playing (nil when none), WoW.musicStops counts StopMusic.
 function PlayMusic(file) WoW.music = file end
 function StopMusic() WoW.music = nil; WoW.musicStops = WoW.musicStops + 1 end

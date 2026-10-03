@@ -154,7 +154,7 @@ Gnomesweeper.Options._test.page:Show()
 -- defined in the stub; confirm each is a real one.
 for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor",
         "GetFileIDFromPath", "GetBuildInfo", "UnitName", "GetRealmName", "time", "date",
-        "PlaySound", "PlaySoundFile", "PlayMusic", "StopMusic", "UnitAffectingCombat", "UnitSex" }) do
+        "PlaySound", "PlayMusic", "StopMusic", "UnitAffectingCombat", "UnitSex" }) do
     check(globals[name], "global function exists on Forever: " .. name)
 end
 

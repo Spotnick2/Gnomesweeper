@@ -78,6 +78,12 @@ do
     local cells, entries = A._test.cells, A.Survey()
     eq(#cells, #entries, "one cell per texture")
     for i, e in ipairs(entries) do
+        if e.key == "title" then
+            check(cells[i].picture._width > cells[i].picture._height * 3, "the title keeps its wide shape on the sheet")
+            eq(cells[i].picture._texCoord[1], Skin.TITLE_CROP[1], "...cropped as the window draws it, so that shape is its own")
+        elseif e.key == "laurels" then
+            eq(cells[i].picture._texCoord[1], Skin.LAUREL_CROP[1], "the laurels, cropped as the window draws them")
+        end
         eq(cells[i].picture._texture, e.value, "cell " .. i .. " draws " .. e.key)
         eq(cells[i].name:GetText(), e.key, "...and is labelled with its name")
     end

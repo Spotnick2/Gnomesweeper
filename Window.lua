@@ -24,6 +24,10 @@ local T, C = Skin.TEXTURES, Skin.COLORS
 local LABELS = { beginner = "Beginner", intermediate = "Intermediate", expert = "Expert" }
 local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
+-- The title lettering: 28 high (the tagline then ends clear of the difficulty button
+-- at -58), as wide as its drawn part's shape (Skin.ASPECT, from Skin.TITLE_CROP).
+local TITLE_H = 28
+local TITLE_W = math.floor(TITLE_H * Skin.ASPECT.title + 0.5)
 
 local win, game
 Window.shownCount = 0
@@ -415,6 +419,15 @@ end
 ------------------------------------------------------------
 
 local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
+-- A new best crowns its TIME with the laurels (#12). Measured on the texture: the
+-- branches leave about 71% of their drawn width open, in their upper half only;
+-- "New personal best!" (~146 units, 160 at the pulse) would need laurels wider than
+-- the panel, the time (~98 units) fits. So the time sits a quarter of the way down
+-- the wreath (LAUREL_TEXT), and the line and the margin hang under it.
+local LAUREL_W = 150
+local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 53
+local LAUREL_TEXT = 0.25
+local NEW_BEST_H = WIN_H + 44           -- the wreath and the line under it, clear of Play again
 
 local function endTexts()
     if game:State() == "won" then
@@ -444,11 +457,20 @@ local function buildOverlay()
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     -- A new personal best is an event (#10): bigger, gold, and a beat.
     o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
-    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
+
     o.newBest:SetTextColor(unpack(C.gold))
     o.newBest:SetText("New personal best!")
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
+    -- The storyboard's laurels around it (#12): behind the text, open at the top.
+    o.laurels = o:CreateTexture(nil, "ARTWORK")
+    o.laurels:SetSize(LAUREL_W, LAUREL_H)
+    o.laurels:SetTexture(T.laurels)
+    o.laurels:SetTexCoord(unpack(Skin.LAUREL_CROP))
+    -- the time a quarter of the way down: the wreath's centre is that much lower
+    o.laurels:SetPoint("CENTER", o.time, "CENTER", 0, -(0.5 - LAUREL_TEXT) * LAUREL_H)
+    o.laurels:Hide()
+    o.newBest:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)     -- under the wreath (it always shows with it)
     -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
     o.beaten = Glass.Font(o, 12, "CENTER")
     o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
@@ -488,7 +510,7 @@ function Window.ShowEnd()
         local text, col = bestLine()
         local isNew = lastWin and lastWin.new
         local by = margin()
-        o:SetHeight(isNew and (WIN_H + 6 + (by and 16 or 0)) or text and WIN_H or WIN_H - 18)
+        o:SetHeight(isNew and (by and NEW_BEST_H + 17 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
         if by then o.beaten:SetText(by .. " faster than " .. shownTime(lastWin.previous.time, true)) end
         o.beaten:SetShown(by ~= nil)
         o.time:SetText(sub)
@@ -499,12 +521,14 @@ function Window.ShowEnd()
         end
         o.best:SetShown(text ~= nil and not isNew)
         o.newBest:SetShown(isNew and true or false)
+        o.laurels:SetShown(isNew and true or false)
         if isNew then o.pulse.play() else o.pulse.stop() end
     else
         o:SetHeight(LOSS_H)
         o.time:Hide()
         o.best:Hide()
         o.newBest:Hide()
+        o.laurels:Hide()
         o.beaten:Hide()
         o.pulse.stop()
     end
@@ -651,9 +675,15 @@ local function build()
 
     -- Title bar: the name and the tagline (no portrait: the mascot is the HUD's
     -- new-game face), then the icons: music, trophy, ?, gear, close.
-    local title = Glass.Font(win, 19, "LEFT")
-    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
-    title:SetText(Skin.TITLE)
+    -- The gold lettering (#12). Its texture is 512x128 with transparent sides: crop to
+    -- the drawn part (Skin.TITLE_CROP) so it lines up with the tagline, at its own shape.
+    local title = win:CreateTexture(nil, "ARTWORK")
+    title:SetSize(TITLE_W, TITLE_H)
+    title:SetTexture(T.title)
+    title:SetTexCoord(unpack(Skin.TITLE_CROP))
+    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -8)
+    ui.title = title
+
     local tagline = Glass.Font(win, 11, "LEFT")
     tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
     tagline:SetTextColor(unpack(C.tagline))

@@ -126,7 +126,10 @@ local function build(entries)
         cell.bg:SetPoint("TOP", cell, "TOP", 0, 0)
         cell.bg:SetColorTexture(0.10, 0.12, 0.17, 1)
         cell.picture = cell:CreateTexture(nil, "ARTWORK")
-        cell.picture:SetSize(PICTURE, PICTURE)
+        local aspect = Skin.ASPECT[e.key] or 1                   -- a wide texture keeps its shape
+        cell.picture:SetSize(PICTURE, PICTURE / aspect)
+        local crop = (e.key == "title" and Skin.TITLE_CROP) or (e.key == "laurels" and Skin.LAUREL_CROP)
+        if crop then cell.picture:SetTexCoord(unpack(crop)) end  -- the part the window draws, at its shape
         cell.picture:SetPoint("CENTER", cell.bg, "CENTER", 0, 0)
         cell.picture:SetTexture(e.value)
         cell.name = Glass.Font(cell, 10, "CENTER")

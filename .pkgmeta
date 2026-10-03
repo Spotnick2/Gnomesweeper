@@ -19,3 +19,4 @@ ignore:
   - README.md
   - CHANGELOG.md
   - Media/README.md
+  - Media/ART-PROMPTS.md

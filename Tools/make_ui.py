@@ -11,8 +11,8 @@ cut from the logo (see Media/README.md).
 What each is for (colour is a runtime decision wherever it can be: white
 textures are tinted with SetVertexColor):
 
-  icon_flag      a red pennant on a dark post: flagged tiles and the mine counter
   icon_burst     a starburst, ADD blended behind the bomb on the tile that ended the game
+  icon_flag      a red pennant on a dark post: flagged tiles and the mine counter
   icon_clock     a small brass clock beside the timer
   icon_trophy    a brass cup on a plinth: the best times button
   icon_music     a pair of eighth notes, white (tinted): the music button
@@ -25,8 +25,6 @@ textures are tinted with SetVertexColor):
   ui_border      its rim, white, 9-sliced; tinted per button (the difficulty's rarity colour)
   ui_glow        a white rounded fill, 9-sliced: hover (ADD) and pressed (a dark tint)
   face_ring      a white ring round the mascot, tinted by game state
-  face_sparkle   gold stars over the face after a win
-  face_soot      soot smudges over the face after a wipe
 """
 
 import argparse
@@ -346,7 +344,7 @@ def ui_glow():
 
 
 # ---------------------------------------------------------------------------
-# The mascot's frame and its two overlays
+# The mascot's frame
 # ---------------------------------------------------------------------------
 
 def face_ring():
@@ -371,47 +369,10 @@ def face_ring():
     return res
 
 
-def sparkle():
-    size = 64
-    ys, xs = np.mgrid[0:size, 0:size].astype(float) + 0.5
-    out = np.zeros((size, size, 4))
-    alpha = np.zeros((size, size))
-    for cx, cy, rad in [(47, 17, 12.0), (15, 25, 8.0), (50, 47, 7.0), (22, 52, 5.0)]:
-        x, y = np.abs(xs - cx), np.abs(ys - cy)
-        star = (x ** 0.55 + y ** 0.55) ** (1 / 0.55)                       # an astroid: a 4-point star
-        core = np.clip((rad - star) / 1.6, 0, 1)
-        glow = np.exp(-(x ** 2 + y ** 2) / (2 * (rad * 0.45) ** 2)) * 0.45
-        alpha = np.maximum(alpha, np.clip(core + glow, 0, 1))
-    out[..., 0], out[..., 1], out[..., 2] = 1.0, 0.93, 0.55
-    out[..., 3] = alpha
-    # a white-hot core
-    white = np.clip(alpha - 0.55, 0, 1) * 2
-    out[..., 1] = lerp(out[..., 1], 1.0, white)
-    out[..., 2] = lerp(out[..., 2], 0.95, white)
-    return out
-
-
-def soot():
-    size = 64
-    ys, xs = np.mgrid[0:size, 0:size].astype(float) + 0.5
-    alpha = np.zeros((size, size))
-    for cx, cy, sx, sy, a in [(21, 41, 8, 6, 0.85), (43, 39, 7, 6, 0.80), (31, 22, 10, 5, 0.60),
-                              (49, 24, 6, 5, 0.65), (30, 52, 12, 5, 0.65), (12, 30, 5, 7, 0.55)]:
-        alpha = np.maximum(alpha, a * np.exp(-(((xs - cx) / sx) ** 2 + ((ys - cy) / sy) ** 2)))
-    # a smear across one cheek, and a general dimming
-    streak = np.exp(-((((xs - 38) - (ys - 30) * 0.9) / 3.0) ** 2)) * (np.abs(ys - 34) < 9) * 0.35
-    alpha = np.clip(np.maximum(alpha, streak) + 0.16, 0, 1)
-    circle = coverage(np.hypot(xs - size / 2, ys - size / 2) - 31.6, 0.7)
-    out = np.zeros((size, size, 4))
-    out[..., 3] = alpha * circle
-    out[..., 0], out[..., 1], out[..., 2] = 0.04, 0.03, 0.03
-    return out
-
-
 TEXTURES = {
     "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
-    "face_ring": face_ring, "face_sparkle": sparkle, "face_soot": soot,
+    "face_ring": face_ring,
 }
 
 
@@ -431,9 +392,6 @@ def preview(path):
         return c
 
     tex = {k: f() for k, f in TEXTURES.items()}
-    cells.append(cell(64, lambda c: over(c, tex["icon_flag"])))
-    covered = np.zeros((64, 64, 3)) + np.array([0.15, 0.27, 0.52])
-    cells.append(cell(64, lambda c: over(c, tex["icon_flag"]), ) * 0 + over(covered, tex["icon_flag"]))
     cells.append(cell(64, lambda c: over(c, tex["icon_burst"], add=True)))
     cells.append(cell(64, lambda c: over(c, tex["fx_smoke"], tint=(0.55, 0.55, 0.58))))
     cells.append(cell(64, lambda c: over(c, tex["fx_glow"], tint=(0.98, 0.77, 0.38), add=True)))

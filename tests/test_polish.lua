@@ -162,6 +162,12 @@ do
     local ui, Skin = W._test.ui, Gnomesweeper.Skin
     local T = Skin.TEXTURES
     check(T.flag:find("icon_flag", 1, true), "the flag is our own red pennant, not a faction crest")
+    -- The title is the gold lettering (#12), cropped to its drawn part, at its own shape.
+    local title = ui.title
+    eq(title._texture, T.title, "the title is the lettering, not text")
+    eq(title._texCoord[1], Skin.TITLE_CROP[1], "...cropped to what is drawn (it lines up with the tagline)")
+    local ratio = title._width / title._height
+    check(math.abs(ratio - (459 - 53) / (124 - 4)) < 0.05, "...at its own shape, not stretched (" .. string.format("%.2f", ratio) .. ")")
     click(at(4, 4), R)
     eq(tile(at(4, 4)).icon._texture, T.flag, "a flagged tile shows it")
     eq(tile(at(4, 4)).icon._texCoord[1], 0, "...whole (our texture has no border to cut off)")

@@ -3,9 +3,10 @@
 --
 -- Most of the art is ours and lives in Media/: baked tiles (Tools/make_tiles.py),
 -- the UI (Tools/make_ui.py: flag, clock, close, arrow, glass buttons, the face's
--- ring, sparkles and soot) and the mascot's face, cut from the logo
--- (Tools/png_to_tga.py, docs/ART.md). What is still the client's own art is
--- listed in docs/ASSETS.md: the bomb and the settings gear.
+-- ring, the effects), the mascot's ready face cut from the logo (Tools/png_to_tga.py)
+-- and the generated art of #12 (her other expressions, the title lettering, the
+-- laurels: Tools/export_art.py, Media/README.md). What is still the client's own art
+-- is listed in docs/ASSETS.md: the bomb on the board and the settings gear.
 --
 -- A number is a file ID, a string is a texture path.
 
@@ -19,12 +20,10 @@ Skin.TITLE = "|cff7fd4ffGnome|rsweeper"
 local MEDIA = Gnomesweeper.Glass.MEDIA
 
 Skin.TEXTURES = {
-    -- the mascot: the green-haired gnome from the logo (one face; the state shows in
-    -- the ring and the overlays until the real expressions exist, #12)
+    -- the mascot: the green-haired gnome from the logo; her face for each game state
+    -- is Skin.FACE (the expressions, #12)
     face = MEDIA .. "face_mascot",
     faceRing = MEDIA .. "face_ring",
-    faceSparkle = MEDIA .. "face_sparkle",
-    faceSoot = MEDIA .. "face_soot",
     -- icons
     flag = MEDIA .. "icon_flag",
     clock = MEDIA .. "icon_clock",
@@ -37,7 +36,14 @@ Skin.TEXTURES = {
     smoke = MEDIA .. "fx_smoke",            -- puffs rising from the tile that went off (#10)
     glow = MEDIA .. "fx_glow",              -- the soft glow behind the mascot on a win (#10)
     gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
-    mine = 133709,                                      -- inv_misc_bomb_01: the classic black bomb (art needed, #13)
+    mine = 133709,                          -- inv_misc_bomb_01: on the board WoW's own bomb read better than
+                                            -- the generated mine (owner, #12); that one is staged
+    facePlaying = MEDIA .. "face_playing",  -- the mascot's expressions (#12): focused, goggles down
+    faceWon = MEDIA .. "face_won",          -- laughing
+    faceLost = MEDIA .. "face_lost",        -- sooty, a cracked lens
+    facePressed = MEDIA .. "face_pressed",  -- surprised, while a tile is held
+    title = MEDIA .. "title",               -- the gold Gnomesweeper lettering
+    laurels = MEDIA .. "laurels",           -- around "New personal best!"
     -- the glass controls (9-sliced, margin 8)
     uiFill = MEDIA .. "ui_fill",
     uiBorder = MEDIA .. "ui_border",
@@ -49,8 +55,9 @@ Skin.TEXTURES = {
     tileHover = MEDIA .. "tile_hover",
 }
 
--- What shows over the mascot's face, and the colour of its ring, per game state.
-Skin.FACE_OVERLAY = { won = "faceSparkle", lost = "faceSoot" }
+-- The mascot's face for each game state (the expressions, #12), and the colour of
+-- her ring.
+Skin.FACE = { ready = "face", playing = "facePlaying", won = "faceWon", lost = "faceLost" }
 Skin.FACE_RING = {
     ready   = { 0.15, 0.70, 0.99 },
     playing = { 0.15, 0.70, 0.99 },
@@ -73,8 +80,8 @@ function Skin.DifficultyColor(key)
 end
 
 Skin.TILE_ICON = 18                   -- the bomb on a 24-unit tile
-Skin.FLAG_ICON = 20                   -- the flag, a little taller: it has a pole
 Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
+Skin.FLAG_ICON = 20                   -- the flag, a little taller: it has a pole
 Skin.TILE_FONT = 15                   -- the numbers
 
 -- 1-8 on a dark tile: the classic colours, lightened to read on glass.
@@ -91,6 +98,16 @@ Skin.NUMBER_COLORS = {
 
 -- WoW's own icons carry a border: crop it off. (Ours are drawn without one.)
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
+-- The title lettering's drawn part in its 512x128 texture (pixels 53..459 x 4..124).
+Skin.TITLE_CROP = { 53 / 512, 459 / 512, 4 / 128, 124 / 128 }
+
+-- Width over height of the textures that aren't square (the asset sheet keeps their
+-- shape; the title's is its drawn part's).
+-- The laurels' drawn part in their 512x128 texture (pixels 99..415 x 7..118): the
+-- rest is transparent, and sizing the whole canvas would leave the branches far
+-- smaller than they look on paper (Codex, #49).
+Skin.LAUREL_CROP = { 99 / 512, 415 / 512, 7 / 128, 118 / 128 }
+Skin.ASPECT = { title = (459 - 53) / (124 - 4), laurels = (415 - 99) / (118 - 7) }
 
 Skin.COLORS = {
     smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board

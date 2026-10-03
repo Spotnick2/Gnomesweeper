@@ -150,6 +150,14 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     **result bar** with its Play again / Try again button, in place of the controls; the finished
     board is untouched. It does not come back on later clicks, and a new game (the button, the face,
     the difficulty list) clears both. The burst, the smoke and the fireworks are `Effects.lua`'s (#10).
+  - **A difficulty change asks first when there's something to lose (#32, owner):** a game in
+    progress past its first move (`moves`, counted in `Dispatch`; a flag is a move). The list then
+    shows "Start Expert? This game will be lost." with Start / Keep game (`askFor`); anything that
+    closes the list cancels. A fresh board, a first reveal alone, or a finished game switch at once.
+    `/gsweep <difficulty>` asks the same (`Window.Open`).
+  - **The first launch's pointer (#45, owner: a glass callout):** above the face with a gold arrow
+    down, "Click the gnome for a new game..." and Got it; `GnomesweeperDB.seenFaceTip` is saved when
+    it shows. It goes on Got it, the face, the difficulty button (it covers it), or the window closing.
   - **The footer:** "Choose a tile to begin." (ready only), `Left-click: Reveal     Right-click: Flag`,
     `Middle-click: Clear around number`. (The **?** that explains clearing moved to the title bar.)
   - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`

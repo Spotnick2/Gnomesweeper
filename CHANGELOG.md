@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **No more lost games by a stray click**: changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.
+- **A first-launch hint** points at the gnome: she starts a new game.
 - **New art**: the gnome now has a face for every moment: focused while you play, laughing when you clear the field, sooty after a wipe, surprised while you hold a tile. Gold Gnomesweeper lettering, and laurels around a new personal best.
 - **A new personal best** shows your time to the tenth and how much you beat the old one by ("0.8 s faster than 00:22.1"). **Reset best times** in the settings wipes them all (click twice).
 - **Celebrations**: a gold burst turns behind the gnome when you clear the field, smoke rises from the tile that blew, and the gnome flinches while you hold a tile down. **A new personal best** gets a fanfare, a bigger line that pulses, and **fireworks** over the board (turn them off in the settings).

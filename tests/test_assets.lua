@@ -92,7 +92,7 @@ do
 
     -- Saved, for a /reload to write out.
     local probe = GnomesweeperDB.assetProbe
-    eq(probe.build, "1.60.1.70170", "the results are saved with the build")
+    eq(probe.build, "1.60.1.70205", "the results are saved with the build")
     eq(probe.entries.gear.fileID, 136243, "...and each texture's result")
     eq(probe.entries.mine.kind, "fileID", "...and its kind")
     eq(probe.entries.flag.value, T.flag, "...and its value")

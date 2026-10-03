@@ -3,10 +3,10 @@
 -- AN ALLOWLIST, like the siblings' (..\GlassRaidFrames\tests\wow_stubs.lua):
 --   * Globals are STRICT: reading one that isn't defined here is an error.
 --     Before stubbing a global, confirm it is in
---     C:\Projects\References\forever-api-1.60.1.70170.md and copy its signature;
+--     C:\Projects\References\forever-api-1.60.1.70205.md and copy its signature;
 --     defining something Forever lacks lets a broken call pass.
 --   * RegisterEvent throws on an event the client doesn't have (the list is
---     tests/events-1.60.1.70170.txt, generated from the dump by
+--     tests/events-1.60.1.70205.txt, generated from the dump by
 --     Tools/make_events_fixture.py; test_toc checks they agree).
 --   * Widgets answer ANY method as a recorded no-op, so a call to a method
 --     Forever lacks would pass silently: tests/test_methods.lua checks every
@@ -15,7 +15,7 @@
 -- Fields that tests drive: WoW.now (GetTime), WoW.screen (UIParent's size),
 -- frame._left / frame._top (what GetLeft / GetTop answer), frame._mouseOver.
 
-local EVENTS_FIXTURE = "tests/events-1.60.1.70170.txt"
+local EVENTS_FIXTURE = "tests/events-1.60.1.70205.txt"
 
 WoW = { frames = {}, chat = {}, methodsCalled = {}, now = 0, screen = { w = 1366, h = 768 } }
 
@@ -230,7 +230,7 @@ end
 function GetTime() return WoW.now end
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end
-function GetBuildInfo() return "1.60.1", "70170", "Sep 29 2026", 16001 end
+function GetBuildInfo() return "1.60.1", "70205", "Oct  2 2026", 16001 end
 function IsMouseButtonDown(button) return WoW.mouseDown == true end
 function debugprofilestop() return os.clock() * 1000 end
 function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a } end

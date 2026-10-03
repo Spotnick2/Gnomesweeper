@@ -21,7 +21,6 @@ local MEDIA = Gnomesweeper.Glass.MEDIA
 Skin.TEXTURES = {
     -- the mascot: the green-haired gnome from the logo (one face; the state shows in
     -- the ring and the overlays until the real expressions exist, #12)
-    logo = MEDIA .. "face_mascot",
     face = MEDIA .. "face_mascot",
     faceRing = MEDIA .. "face_ring",
     faceSparkle = MEDIA .. "face_sparkle",

@@ -99,7 +99,12 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   **shared baked textures** from `Tools/make_tiles.py`: covered, revealed, exploded) and a hover
   glow up front; its flag/bomb icon and its number are created the first time it needs them. **No
   `Glass.Apply` per tile**: it makes 6 textures, a mask and a frame per host, and its sliced mask
-  is measured to fail on small squares. Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**
+  is measured to fail on small squares. **The new-game wave (#43)**: `Grid.Shuffle()` re-covers the tiles
+  in a diagonal wave from the top-left (each fades in and drops `SHUFFLE_DROP` units), `SHUFFLE_SPREAD`
+  + `SHUFFLE_FALL` = three seconds, the arm's sound (both start on the click), from one `OnUpdate` that exists only while it runs; a press during it
+  finishes it and isn't a click, and a rebuild or the window closing finishes it too. Only the player's
+  new game plays it (`playerNewGame` in Window: the face, Play again, Try again, with the arm's sound).
+  Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**
   (one dispatch path); `upInside` from the client, `IsMouseOver()` when it isn't passed.
 - **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
   `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never
@@ -107,7 +112,9 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (the mascot, name, tagline, the trophy for the best times, the settings gear (#8),
+  - Title bar (name and tagline, no portrait: the mascot is the HUD's face), then its icons: the music
+    note, the trophy for the best times, the **?** (its tooltip is how to play: every click, clearing
+    around a number, the gnome), the settings gear (#8),
     close), a difficulty
     button in the difficulty's **rarity colour** with a small **hand-rolled** list (not Blizzard's
     dropdown API, which no sibling has measured on Forever; each row gives the name and
@@ -139,8 +146,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     board is untouched. It does not come back on later clicks, and a new game (the button, the face,
     the difficulty list) clears both. The golden burst and the loss smoke are #10's.
   - **The footer:** "Choose a tile to begin." (ready only), `Left-click: Reveal     Right-click: Flag`,
-    `Middle-click: Clear around number`, and a **?** whose tooltip explains chording (only when the
-    flags around a number equal it; a wrong flag reveals a mine; left+right does it too).
+    `Middle-click: Clear around number`. (The **?** that explains clearing moved to the title bar.)
   - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`
     still keeps the window inside 95% of the screen, so the scale wanted and the scale shown can
     differ, and the command says so.

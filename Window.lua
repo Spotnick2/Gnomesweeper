@@ -37,6 +37,7 @@ local rule = "area"
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
 local fillBests             -- the best times panel's refresh (defined with the panel)
+local playerNewGame        -- the face / Play again / Try again (defined with the entry points)
 -- The panels that float over the board (the difficulty list, the best times):
 -- one at a time, and all closed with the window.
 local floating = {}
@@ -338,7 +339,6 @@ end
 local function showResultBar(on)
     ui.hintKeys:SetShown(not on)
     ui.hintMid:SetShown(not on)
-    ui.help:SetShown(not on)
     ui.result:SetShown(on)
 end
 
@@ -358,18 +358,6 @@ local function buildFooter()
     ui.hintMid:SetTextColor(unpack(C.hint))
     ui.hintMid:SetText("Middle-click: Clear around number")
 
-    -- A small ? beside it explains what that does.
-    local help = Widgets.GlassButton(win, 16, 16, { square = true, fontSize = 11 })
-    help:SetFrameLevel(Glass.ContentLevel(win))
-    help:SetPoint("LEFT", ui.hintMid, "RIGHT", 6, 0)
-    help.label:SetText("?")
-    Widgets.Tip(help, "Clearing around a number", {
-        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
-        "It only works when the number of flags around it equals the number.",
-        "A wrong flag makes it reveal a mine, so check your flags first.",
-    })
-    ui.help = help
-
     -- The result bar: what the overlay said, and the button to play again.
     local r = CreateFrame("Frame", nil, win)
     r:SetFrameLevel(Glass.ContentLevel(win))
@@ -388,7 +376,7 @@ local function buildFooter()
     r.sub:SetPoint("TOPRIGHT", r.title, "BOTTOMRIGHT", 0, -3)
     r.title:SetWordWrap(false)
     r.sub:SetWordWrap(false)
-    r.button:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
+    r.button:SetScript("OnClick", function() playerNewGame() end)
     r:Hide()
     ui.result = r
 end
@@ -426,7 +414,7 @@ local function buildOverlay()
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
-    o.button:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
+    o.button:SetScript("OnClick", function() playerNewGame() end)
     -- The way to look at the finished board: a visible control, not only a click on the panel.
     o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
     o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
@@ -607,13 +595,10 @@ local function build()
     win.backing:AddMaskTexture(win.glass.mask)
     local content = Glass.ContentLevel(win)
 
-    -- Title bar: the mascot, the name, the tagline, the settings gear, close.
-    ui.logo = win:CreateTexture(nil, "ARTWORK")
-    ui.logo:SetSize(40, 40)
-    ui.logo:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -10)
-    ui.logo:SetTexture(T.logo)
+    -- Title bar: the name and the tagline (no portrait: the mascot is the HUD's
+    -- new-game face), then the icons: music, trophy, ?, gear, close.
     local title = Glass.Font(win, 19, "LEFT")
-    title:SetPoint("TOPLEFT", ui.logo, "TOPRIGHT", 9, -2)
+    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
     title:SetText(Skin.TITLE)
     local tagline = Glass.Font(win, 11, "LEFT")
     tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
@@ -648,7 +633,21 @@ local function build()
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
-    ui.trophy:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    -- How to play: the ? with the other icons (owner), between the trophy and the gear.
+    local help = Widgets.GlassButton(win, 22, 22, { square = true, fontSize = 13 })
+    help:SetFrameLevel(content)
+    help:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    help.label:SetText("?")
+    Widgets.Tip(help, "How to play", {
+        "Left-click reveals a tile. Right-click plants a flag on a mine you've found.",
+        "Middle-click a revealed number (or hold left and right together) to reveal the tiles around it that aren't flagged.",
+        "It only works when the number of flags around it equals the number.",
+        "A wrong flag makes it reveal a mine, so check your flags first.",
+        "The gnome starts a new game; during a game, it gives this one up.",
+    })
+    ui.help = help
+
+    ui.trophy:SetPoint("RIGHT", ui.help, "LEFT", -5, 0)
     ui.music:SetPoint("RIGHT", ui.trophy, "LEFT", -5, 0)
     ui.trophy:setAccent(unpack(C.gold))
     ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)
@@ -686,7 +685,7 @@ local function build()
 
     ui.face = Widgets.FaceButton(hud, 44)
     ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
-    ui.face:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
+    ui.face:SetScript("OnClick", function() playerNewGame() end)
     Widgets.Tip(ui.face, "New game", "Same difficulty.")
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
@@ -731,6 +730,7 @@ local function build()
         game:Pause(GetTime())
         for _, f in ipairs(floating) do f:Hide() end   -- none comes back over the board on the next open
         Grid.Cancel()                  -- a button held when the window closes is not a click
+        Grid.FinishShuffle()           -- a reopened board is never half-drawn
         GS.Sounds.Cancel()
         GS.Sounds.UpdateMusic()        -- the music is for the board: it stops with it
         self:StopMovingOrSizing()
@@ -798,6 +798,15 @@ end
 ------------------------------------------------------------
 -- Entry points
 ------------------------------------------------------------
+
+-- A new game the player asked for (the face, Play again, Try again): the
+-- gnomish arm whirs and the tiles come back in a wave (#43). A difficulty
+-- change or a setting starts one quietly.
+function playerNewGame()
+    GS.Sounds.NewGame()
+    Window.NewGame()
+    Grid.Shuffle()
+end
 
 -- Fit the window and (re)build the tiles for the current game.
 local function syncGame()

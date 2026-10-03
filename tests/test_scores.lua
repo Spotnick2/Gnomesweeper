@@ -275,8 +275,8 @@ do  -- the best times panel: the trophy, /gsweep scores
     local Skin = Gnomesweeper.Skin
     eq(ui.trophy.icon._texture, Skin.TEXTURES.trophy, "the title bar has a trophy")
     local pt = ui.trophy._points[1]
-    eq(pt[1], "RIGHT", "...beside the gear")
-    eq(pt[2], ui.gear, "...to its left")
+    eq(pt[1], "RIGHT", "...with the icons")
+    eq(pt[2], ui.help, "...left of the ? (which is left of the gear)")
     eq(ui.bests, nil, "the panel is built only when asked for")
 
     ui.trophy._scripts.OnClick(ui.trophy)

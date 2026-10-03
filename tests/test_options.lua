@@ -217,9 +217,11 @@ do
     cmds = table.concat(cmds, "\n")
     check(cmds:find("/gsweep scores", 1, true) ~= nil, "...the commands")
     -- Links: read-only boxes to copy from.
-    eq(#about.links, 2, "two links")
+    eq(#about.links, 3, "three links")
     eq(about.links[1]:GetText(), "https://www.curseforge.com/wow/addons/gnomesweeper", "CurseForge")
     eq(about.links[2]:GetText(), "https://github.com/Spotnick2/Gnomesweeper", "GitHub")
+    -- Players' reports are how the setups it isn't tested on get covered (#11).
+    eq(about.links[3]:GetText(), "https://github.com/Spotnick2/Gnomesweeper/issues/new/choose", "...and where to report a bug")
     local box = about.links[1]
     eq(box._type, "EditBox", "...in edit boxes")
     box._scripts.OnEditFocusGained(box)

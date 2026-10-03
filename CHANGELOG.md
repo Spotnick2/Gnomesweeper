@@ -1,34 +1,34 @@
 # Changelog
 
-## Unreleased
+## v0.1.0-beta
 
-- **A key to open the board**: bind one in Key Bindings > Gnomesweeper. Gnomesweeper is also in the minimap's addon list (left-click plays, right-click opens the settings), and the gnome's face is now its icon there and in the AddOns list.
-- **Two looks for the board**: **Classic** (the one you know) and **Modern**, with ice-blue glass tiles. Pick one in the settings; it changes at once, even mid-game.
-- **The gnome moves**: she bounces when you win, shudders on a wipe, nods when you start a new game, and breathes quietly while you play.
-- **A mute button** for the sound effects, next to the music note in the title bar.
-- **The clock warns you**: it turns yellow as you near your best time, flashes in the last 3 seconds, and goes red once you're past it.
-- **Hide in combat** (on by default): pulling a mob puts the board away, paused, and it comes back when the fight ends. Turn it off in the settings or with `/gsweep combat`.
-- **No more lost games by a stray click**: changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.
-- **A first-launch hint** points at the gnome: she starts a new game.
-- **New art**: the gnome now has a face for every moment: focused while you play, laughing when you clear the field, sooty after a wipe, surprised while you hold a tile. Gold Gnomesweeper lettering, and laurels around a new personal best.
-- **A new personal best** shows your time to the tenth and how much you beat the old one by ("0.8 s faster than 00:22.1"). **Reset best times** in the settings wipes them all (click twice).
-- **Celebrations**: a gold burst turns behind the gnome when you clear the field, smoke rises from the tile that blew, and the gnome flinches while you hold a tile down. **A new personal best** gets a fanfare, a bigger line that pulses, and **fireworks** over the board (turn them off in the settings).
-- **A new game reshuffles the field**: the tiles come back in a wave from the top-left while a gnomish arm whirs. A click skips it.
-- **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a female gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
-- **Gnomeregan's music** while the board is open (off by default): the note in the title bar turns it on and off. It stops when you close the board (your zone's music comes back), and never plays in combat.
-- **A minimap button**: left-click opens the board, right-click opens the settings. Drag it around the minimap; hide it in the settings or with `/gsweep minimap`.
-- **Settings**, in the game's Options > AddOns > Gnomesweeper (the gear in the title bar and `/gsweep settings` open it), with an **About** page: question marks, the first click (opens an area, or one safe tile as in Windows XP), clearing around a number with a left-click, and the window size. Changes to a game you haven't started apply at once; otherwise from your next game.
-- **Personal bests.** Each difficulty keeps your best time (shared by all your characters, with the one who set it). A win says "New personal best!" or shows the best to beat, the difficulty list shows your best times, and its tooltip says how many games you've won.
-- **Best times** (the trophy in the title bar, or `/gsweep scores`): every difficulty's best, who set it and when, and how many games you've won, at any time.
-- The result line at the bottom no longer runs under the Play again / Try again button on Beginner.
-- A new look: one glass style for the window, the buttons and the board. The tiles are a calmer, darker glass, the flag is a red pennant, and the gnome from the logo is your reset button, with a ring that changes with the game (sparkles when you clear the field, soot when you blow it).
-- The difficulties wear WoW's item colours: Beginner is green, Intermediate blue, Expert purple. The list now says how big each board is and how many mines it has.
-- The detonated tile gets a starburst behind the bomb, so you can find it without relying on red.
-- "See the field" on the result lets you look at a finished board; Play again or Try again stays at the bottom.
-- The footer explains middle-click ("Clear around number"), and the **?** beside it says exactly when it works.
-- `/gsweep scale 0.5` to `1.5` resizes the window (it never grows past your screen).
+The first beta: Minesweeper in World of Warcraft: Forever, for queues and flight paths.
+`/gsweep` (or `/gnomesweeper`, `/minewipe`) to play. Found a bug? Report it on GitHub
+(the link is in Options > AddOns > Gnomesweeper > About): it's tested on one setup, so
+your reports matter.
 
-- A cleared field and a wipe each get their overlay ("Field cleared!" with your time and Play again; "Boom. Full wipe." with Try again), and the gnome face in the corner changes with the game. Click an overlay to put it away and look at the board.
-- The game is playable: `/gsweep` opens the board. Left-click reveals, right-click flags, and left+right or middle-click on a number opens its neighbours when the flags match.
+**The game**
+- **Windows XP's rules**: Beginner 9x9, Intermediate 16x16, Expert 30x16. The first click is always safe and opens an area (or a single safe tile, as in XP: a setting).
+- Left-click reveals, right-click flags, middle-click (or left+right) clears around a number once its flags match. Question marks and clearing with a left-click are settings.
+- Changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.
+- A cleared field and a wipe each get their result ("Field cleared!" with your time, "Boom. Full wipe."). "See the field" puts it away so you can look at the board; Play again or Try again stays at the bottom.
 
-- Project initialised: glass window material, slash commands (`/gsweep`, `/gnomesweeper`, `/minewipe`). Not playable yet.
+**Your best times**
+- Each difficulty keeps your best time, shared by all your characters (with who set it and when), and how many games you've won. The trophy in the title bar (or `/gsweep scores`) shows them all.
+- **The clock warns you**: yellow as you near your best, flashing in the last 3 seconds, red once you're past it, with an alarm.
+- **A new personal best** shows your time to the tenth and how much you beat the old one by, with a fanfare and **fireworks** over the board (a setting). **Reset best times** in the settings wipes them (click twice).
+
+**The gnome**
+- She's your new-game button, and she reacts: focused while you play, surprised while you hold a tile, laughing when you clear the field, sooty after a wipe. She bounces, shudders, nods, and breathes quietly while you play.
+- A new game reshuffles the field in a wave while a gnomish arm whirs; a click skips it.
+- A first-launch hint points at her.
+
+**Look and sound**
+- Liquid glass, with two looks for the board: **Classic** and **Modern** (ice-blue glass tiles). The difficulties wear WoW's item colours: Beginner green, Intermediate blue, Expert purple.
+- **Sounds**: a click for every reveal and flag, the Walking Bomb and a gnome's last words on a wipe (male or female, like your character), a female gnome's "Congratulations" when you clear the field, a hello when you first open the board. The speaker in the title bar mutes them.
+- **Gnomeregan's music** while the board is open (off by default): the note in the title bar. It never plays in combat, and your zone's music comes back when you close the board.
+
+**Getting to it**
+- **Hide in combat** (on by default): pulling a mob puts the board away, paused, and it comes back when the fight ends (`/gsweep combat`).
+- A **minimap button** (left-click plays, right-click opens the settings; hide it in the settings or with `/gsweep minimap`), an entry in the minimap's addon list, and a **key binding** (Key Bindings > Gnomesweeper).
+- **Settings** in Options > AddOns > Gnomesweeper (the gear in the title bar, or `/gsweep settings`), with an About page. `/gsweep scale 0.5` to `1.5` resizes the window; it never grows past your screen.

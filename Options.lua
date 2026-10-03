@@ -348,6 +348,8 @@ local function aboutLabel(text, template, width) return label(about, text, templ
 Options.LINKS = {
     { "CurseForge", "https://www.curseforge.com/wow/addons/gnomesweeper" },
     { "GitHub", "https://github.com/Spotnick2/Gnomesweeper" },
+    -- One person tests it on one setup: players' reports are how the rest is found (#11).
+    { "Report a bug", "https://github.com/Spotnick2/Gnomesweeper/issues/new/choose" },
 }
 
 -- A link the player can copy: addons can't open a browser or touch the
@@ -403,10 +405,10 @@ local function buildAbout()
     add(aboutLabel("Links", "GameFontNormalLarge"), 24)
     about.links = {}
     for _, link in ipairs(Options.LINKS) do
-        local name = aboutLabel(link[1], nil, 90)
+        local name = aboutLabel(link[1], nil, 110)
         name:SetPoint("TOPLEFT", about, "TOPLEFT", 20, y - 4)
         local box = linkBox(link[2])
-        box:SetPoint("TOPLEFT", about, "TOPLEFT", 110, y)
+        box:SetPoint("TOPLEFT", about, "TOPLEFT", 130, y)
         about.links[#about.links + 1] = box
         y = y - 26
     end

@@ -293,4 +293,60 @@ do
     eq(WoW.music, nil, "...with no music left playing")
 end
 
+do  -- the probe's music follows the same ownership rules (Codex review of #42)
+    local W, S = fresh()                               -- the music setting is off
+    local n = #S.CANDIDATES
+    -- Started, then the board closes: it stops.
+    WoW.slash("/gsweep sounds")
+    WoW.advance(n * S.PROBE_GAP + 1)
+    eq(WoW.music, S.MUSIC, "the probe plays the music even with the setting off")
+    W.win:Hide()
+    eq(WoW.music, nil, "...closing the board stops it")
+    W.win:Show()
+    eq(WoW.music, S.MUSIC, "...back with the board, while the probe still wants it")
+    WoW.fire("PLAYER_REGEN_DISABLED")
+    eq(WoW.music, nil, "...a fight stops it")
+    WoW.fire("PLAYER_REGEN_ENABLED")
+    WoW.advance(S.MUSIC_PROBE)
+    eq(WoW.music, nil, "...and the probe's end stops it")
+
+    -- Closed before the music's turn: it never starts.
+    WoW.slash("/gsweep sounds")
+    W.win:Hide()
+    WoW.advance(n * S.PROBE_GAP + 1)
+    eq(WoW.music, nil, "a probe whose music comes due with the board closed doesn't start it")
+    WoW.advance(S.MUSIC_PROBE)
+    W.win:Show()
+    eq(WoW.music, nil, "...nor later")
+
+    -- In combat before the music's turn: the same.
+    WoW.slash("/gsweep sounds")
+    WoW.fire("PLAYER_REGEN_DISABLED")
+    WoW.advance(n * S.PROBE_GAP + 1)
+    eq(WoW.music, nil, "a probe whose music comes due in combat doesn't start it")
+    WoW.fire("PLAYER_REGEN_ENABLED")
+    WoW.advance(S.MUSIC_PROBE)
+    eq(WoW.music, nil, "...nor after the fight once the probe is over")
+end
+
+do  -- cancelling the probe early never stops music someone else plays
+    local W, S = fresh()
+    WoW.music = 777                                    -- another addon's music
+    local stops = WoW.musicStops
+    WoW.slash("/gsweep sounds")
+    WoW.advance(S.PROBE_GAP)
+    WoW.slash("/gsweep sounds")                        -- cancelled during the sound auditions
+    eq(WoW.musicStops, stops, "no StopMusic: this addon started none")
+    eq(WoW.music, 777, "...the other music plays on")
+    WoW.advance(300)
+    eq(WoW.music, 777, "...and nothing of the probe's comes later")
+end
+
+do  -- with the music setting on, the probe's end leaves it playing
+    local W, S = fresh({ music = true })
+    WoW.slash("/gsweep sounds")
+    WoW.advance(#S.CANDIDATES * S.PROBE_GAP + S.MUSIC_PROBE + 1)
+    eq(WoW.music, S.MUSIC, "the setting on: the music plays on after the probe")
+end
+
 done("test_sounds")

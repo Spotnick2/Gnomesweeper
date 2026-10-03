@@ -64,6 +64,7 @@ end
 -- The game
 ------------------------------------------------------------
 
+local reveals = 0     -- reveals and chords that changed the board this game (#32: progress to lose)
 local beat            -- the best to beat this game (its time at the start), or nil
 local passed          -- the clock went past it this game (the alert played)
 
@@ -78,6 +79,7 @@ local function newBoard()
     rule = db().safeZone == "cell" and "cell" or "area"
     category = Scores.Category(key, rule)
     lastWin = nil
+    reveals = 0
     local best = type(db().scores) == "table" and Scores.Best(db().scores, category)
     beat, passed = best and best.time or nil, false
 end
@@ -301,10 +303,47 @@ end
 ------------------------------------------------------------
 
 local MENU_W, ROW_H, BEST_W = 262, 24, 44
+local MENU_H = #Board.PRESET_ORDER * ROW_H + 8   -- the list's rows
+local CONFIRM_H = 62        -- the question under the rows (#32): room for its text on two lines
+local FACE_TIP_W, FACE_TIP_H = 250, 46   -- the first launch's pointer at the face (#45)
 
-local function pickDifficulty(key)
+-- Something to lose (#32, owner: "a reveal beyond the first, or any flag"): a flag on
+-- the board (read from it, so one placed and taken off again isn't progress), or a
+-- second reveal or chord. A board not started yet counts too if it has flags. A first
+-- reveal alone, or a finished game, has nothing to lose.
+local function hasProgress()
+    if not game then return false end
+    local s = game:State()
+    if s ~= "ready" and s ~= "playing" then return false end
+    return reveals >= 2 or game:FlagsLeft() < game.mines
+end
+
+-- The question inside the list: "Start Expert? This game will be lost."
+local function askFor(key)
+    local c = ui.menu.confirm
+    c.key = key
+    c.text:SetText("Start " .. LABELS[key] .. "? This game will be lost.")
+    local col = Skin.DifficultyColor(key)
+    c.start:setAccent(col[1], col[2], col[3])
+    c:Show()
+    ui.menu:SetHeight(MENU_H + CONFIRM_H)
+    if not ui.menu:IsShown() then ui.menu:Show() end
+end
+
+-- The one place a difficulty change is decided (the list and /gsweep <difficulty>):
+-- the same one closes the list, progress asks, anything else switches.
+local function chooseDifficulty(key)
+    if key == difficultyKey() then ui.menu:Hide(); return end
+    if hasProgress() then askFor(key); return end
     ui.menu:Hide()
-    if key ~= difficultyKey() then Window.NewGame(key) end
+    Window.NewGame(key)
+end
+local pickDifficulty = chooseDifficulty
+
+-- Any mouse button: a right-click (a flag) or a middle-click (a chord) on the board is an
+-- outside click as much as a left one, and must cancel the list's question (Codex, #50).
+local function anyButtonDown()
+    return IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton") or IsMouseButtonDown("MiddleButton")
 end
 
 local function buildMenu()
@@ -312,7 +351,7 @@ local function buildMenu()
     -- Above everything else in the window, including the result overlay (+15) and the glass rim that
     -- overlay draws at its own +10, i.e. +25: a list opened while an overlay is up must not slide under it.
     menu:SetFrameLevel(win:GetFrameLevel() + 30)
-    menu:SetSize(MENU_W, #Board.PRESET_ORDER * ROW_H + 8)
+    menu:SetSize(MENU_W, MENU_H)
     menu:SetPoint("TOP", ui.diff, "BOTTOM", 0, -3)
     menu:EnableMouse(true)
     for i, key in ipairs(Board.PRESET_ORDER) do
@@ -353,12 +392,42 @@ local function buildMenu()
     menu:SetScript("OnShow", function(self)
         fillMenuBests()
         self:SetScript("OnUpdate", function()
-            if IsMouseButtonDown("LeftButton") and not (self:IsMouseOver() or ui.diff:IsMouseOver()) then
+            if anyButtonDown() and not (self:IsMouseOver() or ui.diff:IsMouseOver()) then
                 self:Hide()
             end
         end)
     end)
-    menu:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
+    -- The question (#32): under the rows, only while it asks. Anything that closes the
+    -- list (an outside click, the window closing) cancels it.
+    local c = CreateFrame("Frame", nil, menu)
+    c:SetSize(MENU_W - 8, CONFIRM_H - 4)
+    c:SetPoint("TOPLEFT", menu, "TOPLEFT", 4, -4 - #Board.PRESET_ORDER * ROW_H)
+    c.text = Glass.Font(c, 12, "CENTER")
+    c.text:SetPoint("TOP", c, "TOP", 0, -4)
+    c.text:SetWidth(MENU_W - 24)
+    c.text:SetWordWrap(true)                   -- a wider font wraps rather than spills past the list
+    c.text:SetTextColor(unpack(C.menuText))
+    c.start = Widgets.GlassButton(c, 110, 22, { fontSize = 11 })
+    c.start:SetPoint("BOTTOMRIGHT", c, "BOTTOM", -4, 4)
+    c.start.label:SetText("Start")
+    c.start:SetScript("OnClick", function()
+        local key = c.key
+        menu:Hide()
+        Window.NewGame(key)
+    end)
+    c.keep = Widgets.GlassButton(c, 110, 22, { fontSize = 11 })
+    c.keep:SetPoint("BOTTOMLEFT", c, "BOTTOM", 4, 4)
+    c.keep.label:SetText("Keep game")
+    c.keep:SetScript("OnClick", function() menu:Hide() end)
+    c:Hide()
+    menu.confirm = c
+
+    menu:SetScript("OnHide", function(self)
+        self:SetScript("OnUpdate", nil)
+        c:Hide()
+        c.key = nil
+        self:SetHeight(MENU_H)
+    end)
     Window.Floating(menu)
     menu:Hide()
     ui.menu = menu
@@ -745,7 +814,10 @@ local function build()
     ui.diffArrow:SetSize(14, 14)
     ui.diffArrow:SetTexture(T.arrow)
     ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
-    ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
+    ui.diff:SetScript("OnClick", function()
+        ui.faceTip:Hide()                          -- it sits over this button the first time (#45)
+        ui.menu:SetShown(not ui.menu:IsShown())
+    end)
     Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
     buildMenu()
 
@@ -771,6 +843,32 @@ local function build()
     ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
     ui.face:SetScript("OnClick", function() playerNewGame() end)
     ui.burst = GS.Effects.Burst(hud, ui.face)          -- the win: a gold burst behind her (#10)
+
+    -- The first launch's pointer at the face (#45, owner: a glass callout). Above her with an
+    -- arrow down, never over the tiles; it passes clicks through except its own button.
+    local tip = Widgets.GlassPanel(win)
+    tip:SetFrameLevel(win:GetFrameLevel() + 31)
+    tip:SetSize(FACE_TIP_W, FACE_TIP_H)
+    tip:SetPoint("BOTTOM", ui.face, "TOP", 0, 10)
+    tip.text = Glass.Font(tip, 11, "LEFT")
+    tip.text:SetPoint("LEFT", tip, "LEFT", 10, 0)
+    tip.text:SetWidth(FACE_TIP_W - 84)
+    tip.text:SetWordWrap(true)
+    tip.text:SetTextColor(unpack(C.menuText))
+    tip.text:SetText("Click the gnome for a new game. During a game, it gives this one up.")
+    tip.ok = Widgets.GlassButton(tip, 60, 22, { fontSize = 11 })
+    tip.ok:SetPoint("RIGHT", tip, "RIGHT", -8, 0)
+    tip.ok.label:SetText("Got it")
+    tip.ok:setAccent(unpack(C.gold))
+    tip.ok:SetScript("OnClick", function() tip:Hide() end)
+    tip.arrow = tip:CreateTexture(nil, "OVERLAY")
+    tip.arrow:SetSize(14, 14)
+    tip.arrow:SetPoint("TOP", tip, "BOTTOM", 0, 2)
+    tip.arrow:SetTexture(T.arrow)
+    tip.arrow:SetVertexColor(unpack(C.gold))
+    Window.Floating(tip)                       -- one floating panel at a time: the list or Best times put it away
+    tip:Hide()
+    ui.faceTip = tip
     Widgets.Tip(ui.face, "New game", "Same difficulty.")
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
@@ -822,10 +920,16 @@ local function build()
         Window.Refresh()
         GS.Sounds.UpdateMusic()
         GS.Sounds.Greet()
+        -- The first time ever: point at the face (#45). Saved now, so it never comes back.
+        if not db().seenFaceTip then
+            db().seenFaceTip = true
+            ui.faceTip:Show()
+        end
     end)
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
         for _, f in ipairs(floating) do f:Hide() end   -- none comes back over the board on the next open
+        if ui.faceTip then ui.faceTip:Hide() end       -- nor the first launch's pointer (#45)
         Grid.Cancel()                  -- a button held when the window closes is not a click
         Grid.FinishShuffle()           -- a reopened board is never half-drawn
         GS.Sounds.Cancel()
@@ -878,6 +982,7 @@ function Window.Dispatch(kind, i)
         list = game:ToggleMark(x, y)
     end
     if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
+    if #list > 0 and kind ~= "mark" then reveals = reveals + 1 end   -- flags are read off the board (#32)
     local state = game:State()
     recordScores(was, state)             -- first, so the refresh below shows a new best
     local newBest = state == "won" and was ~= "won" and lastWin and lastWin.new
@@ -891,6 +996,9 @@ function Window.Dispatch(kind, i)
     Window.Refresh()
     -- Only the action that ENDS the game brings the overlay up: a click on a
     -- finished board does nothing, and must not bring back one put away.
+    -- The game ended (a right or middle click outside the list can do it): a question
+    -- about throwing it away no longer applies.
+    if (state == "won" or state == "lost") and state ~= was and ui.menu.confirm:IsShown() then ui.menu:Hide() end
     if (state == "won" or state == "lost") and state ~= was then
         Grid.SetInteractive(false)
         Window.ShowEnd()
@@ -906,6 +1014,7 @@ end
 -- gnomish arm whirs and the tiles come back in a wave (#43). A difficulty
 -- change or a setting starts one quietly.
 function playerNewGame()
+    if ui.faceTip then ui.faceTip:Hide() end       -- they found the gnome (#45)
     GS.Sounds.NewGame()
     Window.NewGame()
     Grid.Shuffle()
@@ -941,8 +1050,11 @@ end
 
 function Window.Open(preset)
     ensure()
-    if preset and Board.PRESETS[preset] and preset ~= difficultyKey() then Window.NewGame(preset) end
+    local switch = preset and Board.PRESETS[preset] and preset ~= difficultyKey()
+    -- Nothing to lose: the new board before showing (one layout, not two).
+    if switch and not hasProgress() then Window.NewGame(preset); switch = false end
     win:Show()
+    if switch then chooseDifficulty(preset) end           -- the same question as the list (#32)
 end
 
 function Window.Toggle()
@@ -1009,6 +1121,7 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        reveals = b:State() == "playing" and 1 or 0        -- a hand-built board is past its first reveal
         local best = cat and type(db().scores) == "table" and Scores.Best(db().scores, cat)
         beat, passed = best and best.time or nil, false
         rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")

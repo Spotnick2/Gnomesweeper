@@ -1,0 +1,225 @@
+-- #32: a difficulty change asks first when the game in progress has something to
+-- lose. #45: the first launch's pointer at the face.
+dofile("tests/wow_stubs.lua")
+dofile("tests/harness.lua")
+
+local L, R = "LeftButton", "RightButton"
+
+local function fresh(db)
+    loadAddon({ db = db })
+    math.randomseed(7)
+    WoW.slash("/gsweep")
+    return Gnomesweeper.Window
+end
+local function tile(i) return Gnomesweeper.Grid._test.tiles[i] end
+local function click(i, b)
+    local t = tile(i)
+    t._scripts.OnMouseDown(t, b or L)
+    t._scripts.OnMouseUp(t, b or L, true)
+end
+local function press(b) b._scripts.OnClick(b, L) end
+local function covered(W)
+    for i = 1, W.game.total do
+        if W.game:Cell(i).state == "covered" and not W.game._mine[i] then return i end
+    end
+end
+
+----------------------------------------------------------------------------
+-- #32: when it asks, and when it doesn't
+----------------------------------------------------------------------------
+do
+    local W = fresh({ seenFaceTip = true })
+    local ui = W._test.ui
+    local function pick(key) press(ui.diff); press(ui.rows[key]) end
+
+    -- A fresh board: switches at once.
+    local g = W.game
+    pick("intermediate")
+    check(W.game ~= g and GnomesweeperDB.difficulty == "intermediate", "a fresh board: the difficulty switches at once")
+    check(not ui.menu:IsShown(), "...and the list closes")
+
+    -- Only the first reveal: nothing to lose yet.
+    click(100)
+    eq(W.game:State(), "playing", "(the first reveal)")
+    g = W.game
+    pick("beginner")
+    check(W.game ~= g, "after only the first reveal: switches at once")
+
+    -- Progress: a second move.
+    click(41)
+    click(covered(W))
+    g = W.game
+    pick("expert")
+    eq(W.game, g, "a game with progress: it doesn't switch")
+    eq(GnomesweeperDB.difficulty, "beginner", "...nor change the saved difficulty")
+    local c = ui.menu.confirm
+    check(ui.menu:IsShown() and c:IsShown(), "...it asks, in the list")
+    eq(c.text:GetText(), "Start Expert? This game will be lost.", "...naming the difficulty")
+    check(ui.menu:GetHeight() > 3 * 24 + 8, "...the list grows for the question")
+    press(c.keep)
+    eq(W.game, g, "Keep game keeps it")
+    check(not ui.menu:IsShown() and not c:IsShown(), "...and puts the list away")
+    eq(ui.menu:GetHeight(), 3 * 24 + 8, "...back to its size")
+
+    pick("expert")
+    press(c.start)
+    check(W.game ~= g and GnomesweeperDB.difficulty == "expert", "Start switches")
+    check(not ui.menu:IsShown(), "...and closes the list")
+    click(200)                                           -- the new game's first reveal
+    g = W.game
+    pick("intermediate")
+    check(W.game ~= g, "the new game counts its own moves: its first reveal alone switches at once")
+    pick("expert")
+
+    -- A flag is progress too.
+    click(200)
+    local f = covered(W)
+    click(f, R)
+    g = W.game
+    pick("beginner")
+    check(W.game == g and c:IsShown(), "a first reveal and a flag: it asks")
+
+    -- An outside click cancels.
+    WoW.mouseDown = true
+    WoW.tick(0.02)
+    WoW.mouseDown = false
+    check(not ui.menu:IsShown(), "an outside click closes the list")
+    eq(W.game, g, "...and keeps the game")
+    pick("beginner")
+    W.win:Hide()
+    check(not c:IsShown(), "closing the window cancels the question")
+    W.win:Show()
+    eq(W.game, g, "...and the game is still there")
+
+    -- The same difficulty: just closes.
+    pick("expert")
+    check(not ui.menu:IsShown() and W.game == g, "the difficulty it already is: the list just closes")
+
+    -- /gsweep <difficulty> mid-game asks the same.
+    WoW.slash("/gsweep intermediate")
+    check(ui.menu:IsShown() and c:IsShown(), "/gsweep intermediate mid-game asks")
+    eq(c.text:GetText(), "Start Intermediate? This game will be lost.", "...the same question")
+    eq(W.game, g, "...without switching")
+    press(c.start)
+    eq(GnomesweeperDB.difficulty, "intermediate", "...and Start switches")
+
+    -- A finished game has nothing to lose, however many moves it had.
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*.." }))
+    click(2, R)                                          -- a flag (a move)
+    click(1)                                             -- then the mine
+    eq(W.game:State(), "lost", "(a wipe, after two moves)")
+    g = W.game
+    pick("expert")
+    check(W.game ~= g, "a finished game: switches at once")
+end
+
+do  -- the review of #50
+    local W = fresh({ seenFaceTip = true })
+    local ui = W._test.ui
+    local c = ui.menu.confirm
+    local function pick(key) press(ui.diff); press(ui.rows[key]) end
+
+    -- Flags on a board not started yet: something to lose.
+    click(5, R); click(6, R)
+    eq(W.game:State(), "ready", "(flags, no reveal yet)")
+    local g = W.game
+    pick("expert")
+    check(W.game == g and c:IsShown(), "flags before the first reveal: it asks")
+    press(c.keep)
+
+    -- A flag placed and taken off again isn't progress.
+    click(5, R); click(6, R)                             -- both flags off
+    click(7, R); click(7, R)                             -- on and off again
+    click(41)                                            -- the first reveal
+    eq(W.game:State(), "playing", "(the first reveal, no flag left)")
+    g = W.game
+    pick("intermediate")
+    check(W.game ~= g, "a flag that came off again isn't progress: switches at once")
+    eq(c:IsShown(), false, "...without asking")
+
+    -- The game ends while the question is up: it goes.
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..." }))
+    click(2)                                             -- a second reveal: progress
+    pick("beginner")
+    check(c:IsShown(), "(the question is up)")
+    click(3, R)                                          -- a wrong flag
+    local t = tile(2)
+    t._scripts.OnMouseDown(t, "MiddleButton"); t._scripts.OnMouseUp(t, "MiddleButton", true)
+    eq(W.game:State(), "lost", "(a middle-click outside the list ends the game)")
+    check(not ui.menu:IsShown(), "the game ended: the question about throwing it away goes")
+
+    -- An outside right- or middle-click cancels the question too (Codex, #50), not only a left one.
+    for _, button in ipairs({ "RightButton", "MiddleButton" }) do
+        W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..." }))
+        click(2)
+        pick("beginner")
+        check(c:IsShown(), "(the question is up)")
+        WoW.mouseDown = button
+        WoW.tick(0.02)
+        WoW.mouseDown = false
+        check(not ui.menu:IsShown(), "an outside " .. button .. " closes the list and its question")
+        eq(W.game:State(), "playing", "...and keeps the game")
+    end
+    -- A click inside the list doesn't.
+    pick("beginner")
+    ui.menu._mouseOver = true
+    WoW.mouseDown = "RightButton"
+    WoW.tick(0.02)
+    WoW.mouseDown = false
+    ui.menu._mouseOver = nil
+    check(c:IsShown(), "a click inside the list keeps it")
+    ui.menu:Hide()
+
+    -- The question can wrap: it has a width.
+    eq(c.text._width, 262 - 24, "the question has a width, so a wider font wraps inside the list")
+end
+
+do  -- the pointer is one of the floating panels: Best times puts it away
+    local W = fresh()
+    check(W._test.ui.faceTip:IsShown(), "(the pointer, first launch)")
+    press(W._test.ui.trophy)
+    check(not W._test.ui.faceTip:IsShown(), "opening Best times puts the pointer away (it would sit over it)")
+end
+
+----------------------------------------------------------------------------
+-- #45: the first launch's pointer at the face
+----------------------------------------------------------------------------
+do
+    local W = fresh()
+    local ui = W._test.ui
+    local tip = ui.faceTip
+    check(tip:IsShown(), "the first time the board opens: a pointer at the face")
+    eq(tip.text:GetText(), "Click the gnome for a new game. During a game, it gives this one up.", "...saying what she does")
+    eq(GnomesweeperDB.seenFaceTip, true, "...saved at once, so it never comes back")
+    eq(tip._points[1][1], "BOTTOM", "...above her")
+    eq(tip._points[1][2], ui.face, "...pointing at the face")
+    eq(tip._points[1][3], "TOP", "...from above (never over the tiles)")
+    check(not tip._mouse, "...and it lets clicks through, but for its button")
+    press(tip.ok)
+    check(not tip:IsShown(), "Got it puts it away")
+    W.win:Hide(); W.win:Show()
+    check(not tip:IsShown(), "...and it doesn't come back")
+end
+
+do  -- each way it goes
+    local W = fresh()
+    W._test.ui.face._scripts.OnClick(W._test.ui.face)
+    check(not W._test.ui.faceTip:IsShown(), "clicking the gnome puts it away")
+
+    W = fresh()
+    press(W._test.ui.diff)
+    check(not W._test.ui.faceTip:IsShown(), "opening the difficulty list (under it) puts it away")
+
+    W = fresh()
+    W.win:Hide()
+    check(not W._test.ui.faceTip:IsShown(), "closing the window puts it away")
+    W.win:Show()
+    check(not W._test.ui.faceTip:IsShown(), "...for good")
+end
+
+do  -- seen before: never
+    local W = fresh({ seenFaceTip = true })
+    check(not W._test.ui.faceTip:IsShown(), "seen before: no pointer")
+end
+
+done("test_confirm")

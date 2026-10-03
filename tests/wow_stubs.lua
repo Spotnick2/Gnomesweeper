@@ -374,7 +374,8 @@ Settings = {
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end
 function GetBuildInfo() return "1.60.1", "70205", "Oct  2 2026", 16001 end
-function IsMouseButtonDown(button) return WoW.mouseDown == true end
+-- WoW.mouseDown: true (every button down) or one button's name ("RightButton").
+function IsMouseButtonDown(button) return WoW.mouseDown == true or WoW.mouseDown == button end
 function debugprofilestop() return os.clock() * 1000 end
 function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a } end
 Enum = { UITextureSliceMode = { Stretched = 0, Tiled = 1 } }

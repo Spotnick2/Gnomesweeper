@@ -7,7 +7,8 @@ Gnomesweeper = Gnomesweeper or {}
 local API = {}
 Gnomesweeper.API = API
 
--- The client build the notes and stubs describe. Nothing has been measured
--- for Gnomesweeper yet: this is the API dump it was written against
--- (C:\Projects\References\forever-api-1.60.1.70170.md).
-Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70170"
+-- The client build the notes and stubs describe: the API dump the tests check
+-- against (C:\Projects\References\forever-api-1.60.1.70205.md). 70205's
+-- documented API is identical to 70170's (Compare-Dumps, 2026-10-02), and the
+-- asset probe ran on it: every texture draws.
+Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70205"

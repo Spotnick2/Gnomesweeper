@@ -18,9 +18,12 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: M1 in progress.** Done: the scaffold (#1), the game model `Board.lua` (#2), the glass
-window (#3), the tile grid (#4) and the game states (#5): **the game is playable** and ends with
-the storyboard's overlays. Left in M1: the asset probe (#6).
+**Status: M1 done; M2 next.** M1: the scaffold (#1), the game model `Board.lua` (#2), the glass
+window (#3), the tile grid (#4), the game states (#5) and the asset probe (#6): **the game is
+playable** at all three difficulties and ends with the storyboard's overlays. Since then: the art
+direction from the logo (#28), the Liquid Glass polish with the rarity colours (#30). Next is M2,
+starting with personal bests (#7); #32 (confirm before a difficulty change) waits on the owner, and
+the mascot's expressions and the mine wait on art (`docs/ART.md`).
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (private), grouped by
 milestone (M1 Playable, M2 Polish, M3 Art pass, M4 Social) and labelled `art`, `measure`
@@ -192,7 +195,7 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
   sounds (`PlaySoundFile` refuses game-file *paths*: use SoundKit / FileDataIDs or shipped files),
   "Draw order inside one layer", "A MaskTexture small in BOTH directions must NOT be sliced"
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
-- `C:\Projects\References\forever-api-1.60.1.70170.md` — the latest API dump: functions, events,
+- `C:\Projects\References\forever-api-1.60.1.70205.md` — the latest API dump: functions, events,
   **widget methods** and the `_G` walk. Proves a name exists, not that it works.
 - `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
@@ -268,7 +271,7 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 - **The stub is an allowlist**, modelled on `..\GlassRaidFrames\tests\wow_stubs.lua`:
   - globals are **strict** (reading one the stub doesn't define is an error), so before stubbing one,
     confirm it's in the dump and copy its signature;
-  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70170.txt`, made from
+  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70205.txt`, made from
     the dump by `Tools/make_events_fixture.py`; `test_toc` checks it against the dump);
   - widgets answer **any** method as a recorded no-op, so **`test_methods.lua`** checks every
     `Type:Method` the addon called against the dump's widget methods (skipped, loudly, without the

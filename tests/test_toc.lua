@@ -29,7 +29,7 @@ end
 -- The event list the stub validates against is checked in; it must be the
 -- dump's, exactly (regenerate with Tools/make_events_fixture.py).
 do
-    local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/References/forever-api-1.60.1.70170.md"
+    local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/References/forever-api-1.60.1.70205.md"
     local f = io.open(DUMP, "r")
     if f then
         local inEvents, dumpEvents, n = false, {}, 0

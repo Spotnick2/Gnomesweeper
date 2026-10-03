@@ -22,17 +22,24 @@ here. They are the standard WoW addon libraries that hundreds of addons embed, a
 inside the addon, as embedding them is meant to be done. Also noticed in `LICENSE`, which says they
 are under their own licences, not ours.
 
-**Licences not verified** (the files carry none except LibStub's public-domain line; GitHub records
-none; a web search was inconclusive, 2026-10-03). Embedding them was the owner's decision (#40),
-as GlassMiniMapBar does. **Before the first release, read each project page's licence on
-CurseForge/WowAce** and write it into the table and `LICENSE`.
+**Licences, read 2026-10-03** (Codex's review of #41 found the pages; each notice ships in its
+folder and is summarised in `LICENSE`):
+- LibStub: public domain (its header).
+- CallbackHandler-1.0: "BSD License", https://www.curseforge.com/wow/addons/callbackhandler/license
+  (the page leaves the holder blank; the Ace3 Development Team is named, CallbackHandler being Ace3's).
+- LibDBIcon-1.0: "Ace3 Style BSD", https://www.curseforge.com/wow/addons/libdbicon-1-0/license.
+  It forbids redistributing it **stand-alone**; embedded is fine.
+- LibDataBroker-1.1: **no licence text anywhere**. Its repository (tekkub/libdatabroker-1-1) has
+  none; https://www.curseforge.com/wow/addons/libdatabroker-1-1/license says "All Rights Reserved
+  unless otherwise explicitly stated". It exists to be embedded and nearly every addon does
+  (GlassMiniMapBar too), and LibDBIcon requires it: **the owner chose to embed it anyway** (#41).
 
 | Library | Version | Authors / notes |
 |---|---|---|
 | LibStub | MINOR 2 | Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel, joshborke. Public domain (its header). |
-| CallbackHandler-1.0 | MINOR 8 | Nevcairiel and the Ace3 team (Ace3's BSD-style licence). |
-| LibDataBroker-1.1 | MINOR 4 | tekkub. |
-| LibDBIcon-1.0 | MINOR 56 | funkydude (the minimap icon). Embedded on the owner's decision (#40), as GlassMiniMapBar does. |
+| CallbackHandler-1.0 | MINOR 8 | Nevcairiel and the Ace3 team. BSD. |
+| LibDataBroker-1.1 | MINOR 4 | tekkub. No published licence ("All Rights Reserved" on CurseForge). |
+| LibDBIcon-1.0 | MINOR 56 | funkydude. Ace3-style BSD (no stand-alone redistribution). |
 
 ## Sibling addons (same owner, same stack)
 

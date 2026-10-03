@@ -267,7 +267,7 @@ do
 
     local boom = tile(at(3, 1))
     eq(boom.bg._texture, Skin.TEXTURES.tileExploded, "the mine you hit is on a red tile")
-    eq(boom.icon._texture, Skin.TEXTURES.mineExploded, "...with the mine that went off on it (its own drawing)")
+    eq(boom.icon._texture, Skin.TEXTURES.mine, "...with the bomb on it")
     local other = tile(at(3, 3))
     eq(other.bg._texture, Skin.TEXTURES.tileRevealed, "the other mines are shown on flat tiles")
     eq(other.icon._texture, Skin.TEXTURES.mine, "...with their bombs")

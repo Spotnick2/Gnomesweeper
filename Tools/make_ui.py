@@ -12,6 +12,7 @@ What each is for (colour is a runtime decision wherever it can be: white
 textures are tinted with SetVertexColor):
 
   icon_burst     a starburst, ADD blended behind the bomb on the tile that ended the game
+  icon_flag      a red pennant on a dark post: flagged tiles and the mine counter
   icon_clock     a small brass clock beside the timer
   icon_trophy    a brass cup on a plinth: the best times button
   icon_music     a pair of eighth notes, white (tinted): the music button
@@ -71,6 +72,40 @@ def paste_shape(im, draw_fn, top, bottom, box):
     mask = Image.new("L", im.size, 0)
     draw_fn(ImageDraw.Draw(mask))
     im.alpha_composite(gradient_fill(mask, top, bottom, box))
+
+
+# ---------------------------------------------------------------------------
+# The flag
+# ---------------------------------------------------------------------------
+
+def flag():
+    size = 64
+    s = size * SS
+    u = s / 256.0                                   # design on a 256 grid
+    im = canvas(size)
+
+    def P(*pts):
+        return [(x * u, y * u) for x, y in pts]
+
+    # base: a gunmetal disc seen from above, with a lit top
+    paste_shape(im, lambda d: d.ellipse(P((46, 200), (150, 242)), fill=255),
+                (84, 92, 108), (30, 33, 42), (200 * u, 242 * u))
+    paste_shape(im, lambda d: d.ellipse(P((60, 204), (136, 226)), fill=255),
+                (120, 130, 148), (62, 68, 82), (204 * u, 226 * u))
+    # pole: a rounded dark post with a thin light edge
+    paste_shape(im, lambda d: d.rounded_rectangle(P((86, 26), (104, 218)), radius=8 * u, fill=255),
+                (96, 104, 120), (34, 37, 46), (26 * u, 218 * u))
+    paste_shape(im, lambda d: d.rounded_rectangle(P((89, 34), (93, 210)), radius=2 * u, fill=255),
+                (190, 200, 216), (110, 118, 134), (34 * u, 210 * u))
+    # pennant: a dark outline, the red body, a bright upper edge
+    tri = P((98, 30), (226, 90), (98, 150))
+    paste_shape(im, lambda d: d.polygon(tri, fill=255), (70, 6, 8), (70, 6, 8), (0, s))
+    inner = P((106, 44), (206, 90), (106, 136))
+    paste_shape(im, lambda d: d.polygon(inner, fill=255), (255, 92, 74), (176, 16, 22), (44 * u, 136 * u))
+    hi = P((108, 48), (200, 90), (108, 100))
+    paste_shape(im, lambda d: d.polygon(hi, fill=255), (255, 190, 170), (255, 120, 100), (48 * u, 100 * u))
+    # the highlight is a sliver: knock the lower half of it back to the body colour
+    return finish(im, size)
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +370,7 @@ def face_ring():
 
 
 TEXTURES = {
-    "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring,
 }

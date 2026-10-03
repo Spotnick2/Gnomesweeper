@@ -43,8 +43,9 @@ PIECES = {
 }
 # In the game (Skin.TEXTURES). The tiles are a different look (bright ice-blue
 # covered tiles) from the calmer one the UI review chose: the owner decides.
-ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "mine", "mine_exploded",
-           "flag", "title", "laurels"]
+# The mine, the exploded mine and the flag too: on the board WoW's bomb and the
+# pennant read better (owner, #12).
+ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "title", "laurels"]
 
 
 def master(name, size, wide):

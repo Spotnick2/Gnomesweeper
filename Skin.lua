@@ -24,7 +24,7 @@ Skin.TEXTURES = {
     face = MEDIA .. "face_mascot",
     faceRing = MEDIA .. "face_ring",
     -- icons
-    flag = MEDIA .. "flag",                 -- the generated pennant (#12; Media/README.md)
+    flag = MEDIA .. "icon_flag",
     clock = MEDIA .. "icon_clock",
     trophy = MEDIA .. "icon_trophy",        -- the best times button
     music = MEDIA .. "icon_music",          -- the music button (white, tinted)
@@ -35,8 +35,8 @@ Skin.TEXTURES = {
     smoke = MEDIA .. "fx_smoke",            -- puffs rising from the tile that went off (#10)
     glow = MEDIA .. "fx_glow",              -- the soft glow behind the mascot on a win (#10)
     gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
-    mine = MEDIA .. "mine",                 -- the gnomish mine: gunmetal, brass studs, orange core (#12)
-    mineExploded = MEDIA .. "mine_exploded", -- the one that went off: a different SHAPE, not only a colour
+    mine = 133709,                          -- inv_misc_bomb_01: on the board WoW's own bomb read better than
+                                            -- the generated mine (owner, #12); that one is staged
     facePlaying = MEDIA .. "face_playing",  -- the mascot's expressions (#12): focused, goggles down
     faceWon = MEDIA .. "face_won",          -- laughing
     faceLost = MEDIA .. "face_lost",        -- sooty, a cracked lens
@@ -97,6 +97,7 @@ Skin.NUMBER_COLORS = {
 }
 
 -- WoW's own icons carry a border: crop it off. (Ours are drawn without one.)
+Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 -- The title lettering's drawn part in its 512x128 texture (pixels 53..459 x 4..124).
 Skin.TITLE_CROP = { 53 / 512, 459 / 512, 4 / 128, 124 / 128 }

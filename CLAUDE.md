@@ -77,7 +77,9 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   the generated mine and flag read worse at tile size (owner), and are staged. The bomb and the
   settings gear are the client's (`docs/ASSETS.md`). **Two board themes (#14, owner)**: `Skin.THEMES` / `THEME_ORDER`, **Classic** (the
   default, `make_tiles.py`'s tiles) and **Modern** (the generated ice-blue tiles, `tile_modern_*`); only
-  the three tiles change (both keep the bomb, the pennant and the number colours). `GnomesweeperDB.theme`,
+  the three tiles change (both keep the bomb, the pennant and the number colours), and what's drawn over
+  them follows (the hover ring, the burst, the "?": light ADDed on Classic, dark BLENDed on Modern's pale
+  tiles, where added light washes out). `GnomesweeperDB.theme`,
   the "Board" choice in Options; `Grid.SetTheme` repaints the tiles in place, the game untouched.
   `Skin.FACE` maps each game state to its expression;
   `Skin.TITLE_CROP` crops the lettering to its drawn part. `Skin.RARITY` has WoW's
@@ -105,7 +107,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   game), `Grid.Refresh(list)` (repaint exactly the cells an action changed), `Grid.SetInteractive`,
   `Grid.Cancel`. Tiles are **pooled** `Button`s (Expert is 480: created once, up to the largest
   board seen, then reused and hidden; never per game). A tile has a background (one of three
-  **shared baked textures** from `Tools/make_tiles.py`: covered, revealed, exploded) and a hover
+  **shared baked textures**, covered, revealed, exploded, from the board's theme: Classic's from
+  `Tools/make_tiles.py`, Modern's generated) and a hover
   glow up front; its flag/bomb icon and its number are created the first time it needs them. **No
   `Glass.Apply` per tile**: it makes 6 textures, a mask and a frame per host, and its sliced mask
   is measured to fail on small squares. **The new-game wave (#43)**: `Grid.Shuffle()` re-covers the tiles

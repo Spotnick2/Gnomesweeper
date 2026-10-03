@@ -60,15 +60,25 @@ Skin.TEXTURES = {
     tileModernExploded = MEDIA .. "tile_modern_exploded",
 }
 
--- The board's themes (#14, owner): only the tiles change. Classic is ours from
+-- The board's themes (#14, owner): the tiles change. Classic is ours from
 -- Tools/make_tiles.py (the default); Modern the generated ice-blue glass. Both keep
 -- WoW's bomb and our pennant, and the number colours read on both revealed tiles.
+-- What's drawn OVER a tile follows its tile: on Classic's dark glass the hover ring
+-- and the detonated tile's burst ADD light, but added to Modern's pale tiles they
+-- wash out to white, so there they're drawn dark (BLEND, tinted); the "?" too
+-- (review of #57). A tint multiplies the texture's own colour.
 Skin.THEME_ORDER = { "classic", "modern" }
 Skin.THEMES = {
     classic = { label = "Classic", covered = Skin.TEXTURES.tileCovered,
-                revealed = Skin.TEXTURES.tileRevealed, exploded = Skin.TEXTURES.tileExploded },
+                revealed = Skin.TEXTURES.tileRevealed, exploded = Skin.TEXTURES.tileExploded,
+                hover = { blend = "ADD", tint = { 1, 1, 1 } },
+                burst = { blend = "ADD", tint = { 1, 1, 1 } },
+                question = { 0.98, 0.77, 0.38 } },
     modern = { label = "Modern", covered = Skin.TEXTURES.tileModernCovered,
-               revealed = Skin.TEXTURES.tileModernRevealed, exploded = Skin.TEXTURES.tileModernExploded },
+               revealed = Skin.TEXTURES.tileModernRevealed, exploded = Skin.TEXTURES.tileModernExploded,
+               hover = { blend = "BLEND", tint = { 0.05, 0.30, 0.75 } },     -- a deep blue ring on the ice
+               burst = { blend = "BLEND", tint = { 0.40, 0.06, 0.02 } },     -- a dark scorched star on the lava
+               question = { 0.05, 0.20, 0.48 } },                            -- navy on pale ice
 }
 function Skin.Theme(key) return Skin.THEMES[key] or Skin.THEMES.classic end
 

@@ -1095,7 +1095,6 @@ end
 
 -- Fit the window and (re)build the tiles for the current game.
 local function syncGame()
-    Grid.SetTheme(db().theme)
     Window.Layout()
     Grid.Rebuild(game)
     if over() then Grid.SetInteractive(false) end
@@ -1106,6 +1105,7 @@ local function ensure()
     if not game then newBoard() end
     if not win then
         build()
+        Grid.SetTheme(db().theme)        -- the saved look (#14); a change later comes through SettingsChanged
         syncGame()
     end
 end
@@ -1159,7 +1159,8 @@ function Window.ScoresReset()
 end
 
 function Window.SettingsChanged()
-    if win then Grid.SetTheme(db().theme) end
+    Grid.SetTheme(db().theme)              -- the board's look (#14); Grid keeps it until it has tiles
+    if not win then return end
     Window.Refresh()
     GS.Sounds.UpdateMusic()
 end

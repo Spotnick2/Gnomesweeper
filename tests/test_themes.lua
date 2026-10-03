@@ -100,4 +100,45 @@ do  -- the settings page has the choice
     eq(GnomesweeperDB.theme, "modern", "...picking Modern sets it")
 end
 
+do  -- what's drawn over a tile follows its theme (review of #57)
+    local W = fresh({ questionMarks = true })
+    local M, C = Skin.THEMES.modern, Skin.THEMES.classic
+    click(4, "RightButton"); click(4, "RightButton")     -- a question mark (a new board follows the setting)
+    eq(tile(4).text:GetText(), "?", "(a ?)")
+    eq(tile(4).text._textColor[1], C.question[1], "Classic: the light ?")
+    eq(tile(4).hl._blend, "ADD", "Classic: the hover adds light")
+
+    Gnomesweeper.Options.Set("theme", "modern")
+    eq(tile(4).text._textColor[3], M.question[3], "Modern: a navy ?, readable on pale ice")
+    eq(tile(4).hl._blend, "BLEND", "Modern: the hover is drawn dark, not added (it washed out)")
+    eq(tile(4).hl._vertex[3], M.hover.tint[3], "...tinted deep blue")
+    eq(Gnomesweeper.Grid._test.tiles[#Gnomesweeper.Grid._test.tiles].hl._blend, "BLEND", "...on every pooled tile")
+
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..*" }))
+    click(9)                                             -- boom
+    eq(tile(9).burst._blend, "BLEND", "Modern: the burst is drawn dark on the lava tile")
+    eq(tile(9).burst._vertex[1], M.burst.tint[1], "...a scorched star")
+    Gnomesweeper.Options.Set("theme", "classic")
+    eq(tile(9).burst._blend, "ADD", "back to Classic: the burst adds light again")
+    eq(tile(4).hl._blend, "ADD", "...and the hover")
+end
+
+do  -- a damaged saved theme shows as Classic on the page too (review of #57)
+    fresh({ theme = "neon" })
+    WoW.fire("PLAYER_LOGIN")
+    local page = Gnomesweeper.Options._test.page
+    page:Show()
+    local radios = page.controls.theme.radios
+    eq(radios[1]:GetChecked(), true, "a damaged theme: the page shows Classic checked (the one drawn)")
+    eq(radios[2]:GetChecked(), false, "...not Modern")
+    eq(Gnomesweeper.Options.Get("theme"), "classic", "...and Options.Get says Classic")
+end
+
+do  -- the page's choices come from Skin's list
+    local item
+    for _, it in ipairs(Gnomesweeper.Options.ITEMS) do if it.key == "theme" then item = it end end
+    eq(#item.choices, #Skin.THEME_ORDER, "one choice per theme in Skin")
+    eq(item.choices[2][2], Skin.THEMES.modern.label, "...labelled from Skin")
+end
+
 done("test_themes")

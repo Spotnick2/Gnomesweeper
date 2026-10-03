@@ -168,7 +168,10 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   played), and the **best times panel**: the trophy or `/gsweep scores` (`Window.ShowBests`) opens a
   `GlassPanel` at window level +30 (like the list; opening one closes the other) with every
   difficulty's best, who and when, and won of played, under the current first-click rule (it says
-  which). It works whatever the game is doing and refreshes on a win. `Window._test.SetGame(board,
+  which). It works whatever the game is doing, refreshes whenever a game starts or ends, and closes
+  with the window. When a win doesn't beat the best but reads the same whole second, the overlay
+  and the result bar show **tenths** on both (`Layout.FormatTenths`), so it can't look like a tie.
+  The list's best column is filled when the list opens, not on every click. `Window._test.SetGame(board,
   category)` keeps no scores unless given a category.
   `API.PlayerFullName()` (Compat, lifted from AltStable) adds the surname. Social leaderboards
   (guild/friends/Battle.net) are milestone 4.

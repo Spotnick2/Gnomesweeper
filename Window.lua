@@ -76,29 +76,53 @@ local function bestTime(record)
     return Layout.FormatTime(Board.DisplaySeconds(record.time))
 end
 
--- The best for a difficulty under the current first-click rule.
-local function bestFor(key)
-    return Scores.Best(peek(), Scores.Category(key, db().safeZone))
+-- A difficulty's best, played and won, under the current first-click rule.
+local function statsFor(key)
+    local cat = Scores.Category(key, db().safeZone)
+    local played, won = Scores.Stats(peek(), cat)
+    return Scores.Best(peek(), cat), played, won
+end
+
+-- Who set a best: Scores only vouches for the time, and the file can be edited.
+local function bestName(record)
+    return type(record.name) == "string" and record.name ~= "" and record.name or nil
+end
+
+-- The best times column in the difficulty list: filled when the list opens.
+local function fillMenuBests()
+    for k, row in pairs(ui.rows) do
+        local best = statsFor(k)
+        row.best:SetText(best and bestTime(best) or "-")
+    end
 end
 
 -- The difficulty button's tooltip: the best and the record, asked on each hover.
 local function difficultyTip()
-    local cat = Scores.Category(difficultyKey(), db().safeZone)
-    local best = Scores.Best(peek(), cat)
-    local played, won = Scores.Stats(peek(), cat)
+    local best, played, won = statsFor(difficultyKey())
     local lines = { "Starts a new game." }
     if best then
-        lines[#lines + 1] = "Best: " .. bestTime(best) .. (best.name and (" by " .. best.name) or "")
+        lines[#lines + 1] = "Best: " .. bestTime(best) .. (bestName(best) and (" by " .. bestName(best)) or "")
     end
     lines[#lines + 1] = played > 0 and string.format("Won %d of %d", won, played) or "Not played yet."
     return lines
+end
+
+-- After a win that didn't beat the best: true when the two would both read the
+-- same whole seconds ("Time 00:42" over "Best 00:42"), so both show tenths.
+local function sameSecond()
+    local prev = lastWin and not lastWin.new and lastWin.previous
+    return prev and Board.DisplaySeconds(prev.time) == Board.DisplaySeconds(game:Elapsed(GetTime())) or false
+end
+
+local function shownTime(t, tenths)
+    return tenths and Layout.FormatTenths(t, Board.DisplaySeconds(math.huge)) or Layout.FormatTime(Board.DisplaySeconds(t))
 end
 
 -- What the end of a won game says about the best: the text and its colour.
 local function bestLine()
     if not lastWin then return nil end
     if lastWin.new then return "New personal best!", C.gold end
-    if lastWin.previous then return "Best " .. bestTime(lastWin.previous), C.hint end
+    if lastWin.previous then return "Best " .. shownTime(lastWin.previous.time, sameSecond()), C.hint end
     return nil
 end
 
@@ -114,8 +138,8 @@ local function recordScores(was, state)
             realm = GetRealmName(),
         })
         lastWin = { new = isNew, previous = previous }
-        if ui.bests and ui.bests:IsShown() then fillBests() end
     end
+    if was ~= state and ui.bests and ui.bests:IsShown() then fillBests() end
 end
 
 local function over()
@@ -158,11 +182,7 @@ function Window.Refresh()
     ui.diff.label:SetTextColor(col[1], col[2], col[3])
     ui.diff:setAccent(col[1], col[2], col[3])
     ui.diffArrow:SetVertexColor(col[1], col[2], col[3])
-    for k, row in pairs(ui.rows) do
-        row.selected:SetShown(k == key); row.bar:SetShown(k == key)
-        local best = bestFor(k)
-        row.best:SetText(best and bestTime(best) or "-")
-    end
+    for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
     ui.face:setState(game:State())
     setTicking(game:State() == "playing")
 end
@@ -275,6 +295,7 @@ local function buildMenu()
     -- Closes on a click anywhere else. Polled while it is open (an OnUpdate
     -- that exists only then) rather than relying on a global mouse event.
     menu:SetScript("OnShow", function(self)
+        fillMenuBests()
         self:SetScript("OnUpdate", function()
             if IsMouseButtonDown("LeftButton") and not (self:IsMouseOver() or ui.diff:IsMouseOver()) then
                 self:Hide()
@@ -357,7 +378,7 @@ local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
 
 local function endTexts()
     if game:State() == "won" then
-        return "Field cleared!", C.gold, "Time " .. timerText(), "Play again", C.winRim
+        return "Field cleared!", C.gold, "Time " .. shownTime(game:Elapsed(GetTime()), sameSecond()), "Play again", C.winRim
     end
     return "Boom. Full wipe.", C.boom, "Wrong flags are crossed out.", "Try again", C.lossRim
 end
@@ -460,13 +481,11 @@ function fillBests()
     if not p then return end
     for _, key in ipairs(Board.PRESET_ORDER) do
         local row = p.rows[key]
-        local cat = Scores.Category(key, db().safeZone)
-        local best = Scores.Best(peek(), cat)
-        local played, won = Scores.Stats(peek(), cat)
+        local best, played, won = statsFor(key)
         if best then
             row.time:SetText(bestTime(best))
-            local who = best.name or "?"
-            if type(best.at) == "number" then who = who .. "  " .. DOT .. "  " .. date("%d %b %Y", best.at) end
+            local who = bestName(best) or "?"
+            if type(best.at) == "number" and best.at > 0 then who = who .. "  " .. DOT .. "  " .. date("%d %b %Y", best.at) end
             row.who:SetText(who)
         else
             row.time:SetText("-")
@@ -512,7 +531,7 @@ local function buildBests()
         row.label:SetText(LABELS[key])
         row.who = Glass.Font(row, 10, "LEFT")
         row.who:SetPoint("TOPLEFT", row.label, "BOTTOMLEFT", 0, -3)
-        row.who:SetPoint("RIGHT", row, "RIGHT", -70, 0)
+        row.who:SetWidth(BESTS_W - 20 - 11 - 70)            -- a width, not a RIGHT point: that would set its middle too
         row.who:SetTextColor(unpack(C.menuText))
         row.time = Glass.Font(row, 18, "RIGHT")
         row.time:SetPoint("TOPRIGHT", row, "TOPRIGHT", -8, -4)
@@ -675,6 +694,7 @@ local function build()
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
         ui.menu:Hide()
+        if ui.bests then ui.bests:Hide() end   -- it must not come back over the board on the next open
         Grid.Cancel()                  -- a button held when the window closes is not a click
         self:StopMovingOrSizing()
     end)

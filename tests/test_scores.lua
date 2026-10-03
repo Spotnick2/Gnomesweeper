@@ -133,6 +133,14 @@ local function winWall(W, cat, seconds)
     eq(W.game:State(), "won", "(the wall is cleared)")
 end
 
+-- The difficulty list's best column, as it reads when the list is opened.
+local function menuBest(ui, key)
+    ui.diff._scripts.OnClick(ui.diff)
+    local text = ui.rows[key].best:GetText()
+    ui.menu:Hide()
+    return text
+end
+
 local function tipLines(widget)
     widget._scripts.OnEnter(widget)
     return GameTooltip._lines or {}
@@ -193,8 +201,8 @@ do  -- the first win, then slower, then faster
     eq(o.best:GetText(), "New personal best!", "...New personal best!")
     eq(o.best._textColor[1], Skin.COLORS.gold[1], "...in gold")
     eq(o:GetHeight(), 152, "...with room for the line")
-    eq(ui.rows.beginner.best:GetText(), "00:42", "the difficulty list shows the best, whole seconds")
-    eq(ui.rows.expert.best:GetText(), "-", "...and a dash where there is none")
+    eq(menuBest(ui, "beginner"), "00:42", "the difficulty list shows the best, whole seconds")
+    eq(menuBest(ui, "expert"), "-", "...and a dash where there is none")
     o.view._scripts.OnClick(o.view)
     check(ui.result.sub:GetText():find("New best!", 1, true) ~= nil, "the result bar keeps it")
 
@@ -207,12 +215,13 @@ do  -- the first win, then slower, then faster
     check(ui.result.sub:GetText():find("00:50", 1, true) ~= nil, "...after this game's time")
 
     winWall(W, "beginner:area", 42.7)
-    eq(o.best:GetText(), "Best 00:42", "a tie is not a new best")
+    eq(o.best:GetText(), "Best 00:42.7", "a tie is not a new best (same second: tenths)")
+    eq(o.time:GetText(), "Time 00:42.7", "...and the time shows tenths too")
     eq(GnomesweeperDB.scores["beginner:area"].won, 3, "every win counts")
 
     winWall(W, "beginner:area", 12)
     eq(o.best:GetText(), "New personal best!", "a faster win is")
-    eq(ui.rows.beginner.best:GetText(), "00:12", "...and the list follows")
+    eq(menuBest(ui, "beginner"), "00:12", "...and the list follows")
 
     local lines = tipLines(ui.diff)
     eq(lines[1], "Starts a new game.", "the difficulty tooltip still says what it does")
@@ -238,7 +247,7 @@ do  -- kept across a reload
     local saved = GnomesweeperDB
     W = fresh(saved)
     eq(GnomesweeperDB.scores["expert:area"].best.time, 300, "the scores survive a reload")
-    eq(W._test.ui.rows.expert.best:GetText(), "05:00", "...and the list shows them")
+    eq(menuBest(W._test.ui, "expert"), "05:00", "...and the list shows them")
 end
 
 do  -- the result bar's text never reaches its button (Codex review of #7)
@@ -323,6 +332,62 @@ do  -- the best times panel: the trophy, /gsweep scores
     eq(p.rows.beginner.time:GetText(), "-", "the XP rule shows its own bests")
     eq(p.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "...and says so")
     GnomesweeperDB.safeZone = "area"
+end
+
+do  -- the same whole second: tenths, so a slower time can't look like a tie (review of #38)
+    local W = fresh()
+    local o = function() return W._test.ui.overlay end
+    winWall(W, "beginner:area", 42.1)
+    eq(o().time:GetText(), "Time 00:42", "a first best: whole seconds")
+    winWall(W, "beginner:area", 42.6)
+    eq(o().time:GetText(), "Time 00:42.6", "slower in the same second: the time shows tenths")
+    eq(o().best:GetText(), "Best 00:42.1", "...and so does the best that stands")
+    o().view._scripts.OnClick(o().view)
+    check(W._test.ui.result.sub:GetText():find("Time 00:42.6", 1, true) ~= nil, "...in the result bar too")
+    check(W._test.ui.result.sub:GetText():find("Best 00:42.1", 1, true) ~= nil, "...both")
+    winWall(W, "beginner:area", 50.3)
+    eq(o().time:GetText(), "Time 00:50", "a different second: whole seconds")
+    eq(o().best:GetText(), "Best 00:42", "...for both")
+    winWall(W, "beginner:area", 42.05)
+    eq(o().best:GetText(), "New personal best!", "a new best by a hundredth")
+    eq(o().time:GetText(), "Time 00:42", "...shows its time whole (the old best isn't on screen)")
+end
+
+do  -- the panel follows every game, closes with the window, and survives a damaged file
+    local W = fresh()
+    local ui = W._test.ui
+    WoW.slash("/gsweep scores")
+    local p = ui.bests
+    click(41)
+    eq(p.rows.beginner.record:GetText(), "won 0 of 1", "an open panel counts a game the moment it starts")
+    for i = 1, W.game.total do if W.game._mine[i] then click(i); break end end
+    eq(W.game:State(), "lost", "(a loss)")
+    eq(p.rows.beginner.who:GetText(), "No win yet", "...and still reads right after a loss")
+
+    W.win:Hide()
+    check(not p:IsShown(), "closing the window closes the panel")
+    WoW.slash("/gsweep")
+    check(W.win:IsShown() and not p:IsShown(), "...so it doesn't come back over the board")
+
+    GnomesweeperDB.scores["beginner:area"].best = { time = 30, name = {}, at = "yesterday" }
+    WoW.slash("/gsweep scores")
+    eq(p.rows.beginner.time:GetText(), "00:30", "a best with a damaged name still shows its time")
+    eq(p.rows.beginner.who:GetText(), "?", "...with no name and no date, and no error")
+    local lines = tipLines(ui.diff)
+    eq(lines[2], "Best: 00:30", "the tooltip leaves the name out")
+    eq(p.rows.beginner.who._width, 264 - 20 - 11 - 70, "the who line has a width (not a RIGHT point)")
+    eq(#p.rows.beginner.who._points, 1, "...and only its top-left point")
+end
+
+do  -- the list's column is filled when the list opens, not on every click
+    local W = fresh()
+    local ui = W._test.ui
+    winWall(W, "expert:area", 77)
+    local row = ui.rows.expert
+    row.best:SetText("stale")
+    click(at(1, 1))
+    eq(row.best:GetText(), "stale", "a click doesn't touch the hidden list")
+    eq(menuBest(ui, "expert"), "01:17", "...opening it fills it")
 end
 
 done("test_scores")

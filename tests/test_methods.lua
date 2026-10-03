@@ -52,6 +52,7 @@ for _, b in ipairs({ ui.gear, ui.face }) do
     b._scripts.OnLeave(b)
 end
 ui.face._scripts.OnClick(ui.face)
+WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
 W.game:Reveal(5, 5, 1)
 W.Refresh()
 WoW.tick(0.2)
@@ -83,9 +84,11 @@ do
     o._scripts.OnMouseUp(o)
     o:Show()
     o.button._scripts.OnClick(o.button)
+    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     W._test.SetGame(Gnomesweeper.Board.New(30, 16, 0))
     press(1, "LeftButton")                                -- no mines: one click wins
     o.button._scripts.OnClick(o.button)
+    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     W.NewGame("expert")
     W.NewGame("beginner")
 end
@@ -109,6 +112,7 @@ do
     press(3, "LeftButton")                              -- a loss: the burst, the soot, the overlay
     ui.overlay.view._scripts.OnClick(ui.overlay.view)   -- See the field: the result bar
     ui.result.button._scripts.OnClick(ui.result.button)
+    WoW.settle()                       -- the new game arrives after the lead and the wave (#43)
     WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
     WoW.slash("/gsweep scores")                         -- the best times panel (#7)
     do                                                  -- the settings (#8): every control, About

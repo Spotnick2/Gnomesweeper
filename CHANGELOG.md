@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **A new game reshuffles the field**: the tiles come back in a quick wave from the top-left, while a gnomish arm whirs. A click skips it.
+- **A new game reshuffles the field**: a gnomish arm whirs, then the tiles come back in a quick wave from the top-left. A click skips it.
 - **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
 - **Gnomeregan's music** while the board is open (off by default): the note in the title bar turns it on and off. It stops when you close the board (your zone's music comes back), and never plays in combat.
 - **A minimap button**: left-click opens the board, right-click opens the settings. Drag it around the minimap; hide it in the settings or with `/gsweep minimap`.

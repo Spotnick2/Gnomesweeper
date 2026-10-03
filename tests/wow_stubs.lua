@@ -210,6 +210,12 @@ function WoW.tick(dt)
     end
 end
 
+-- A player's new game waits SHUFFLE_LEAD (1 s) and then waves in (1 s, #43):
+-- render frames until both are done.
+function WoW.settle()
+    for _ = 1, 140 do WoW.tick(0.02) end
+end
+
 -- Runs a slash command as the chat box would, matching SLASH_<KEY><n> aliases.
 function WoW.slash(line)
     local cmd, rest = line:match("^(%S+)%s*(.*)$")

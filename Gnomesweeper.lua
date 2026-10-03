@@ -18,6 +18,7 @@ local DEFAULTS = {
     sounds = true,             -- the effects (#9)
     music = false,             -- Gnomeregan's music while the board is open (#22)
     fireworks = true,          -- fireworks on a new personal best (#10)
+    hideInCombat = true,       -- a fight puts the window away, its end brings it back (#37)
 }
 
 local function EnsureDefaults()
@@ -40,6 +41,7 @@ local HELP = {
     "/gsweep scores - your best times (also the trophy in the title bar)",
     "/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)",
     "/gsweep music - Gnomeregan's music on or off (also the note in the title bar)",
+    "/gsweep combat - hide the window in combat (and bring it back after), on or off",
     "/gsweep minimap - show or hide the minimap button",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
@@ -64,6 +66,9 @@ local function Slash(msg)
         Print("Gnomeregan's music " .. (GnomesweeperDB.music and "on." or "off."))
     elseif msg == "sounds" then
         GS.Sounds.ToggleProbe()
+    elseif msg == "combat" then
+        GS.Options.Set("hideInCombat", not GnomesweeperDB.hideInCombat)
+        Print("hide in combat " .. (GnomesweeperDB.hideInCombat and "on: a fight puts the window away until it ends." or "off: the window stays up in combat."))
     elseif msg == "minimap" then
         if not GS.Minimap.Available() then
             Print("there is no minimap button: its libraries didn't load (or another addon took the name).")

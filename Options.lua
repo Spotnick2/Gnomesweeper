@@ -41,6 +41,8 @@ Options.ITEMS = {
       note = "Clicks, flags, the bomb and the cheers. The game's own sound settings apply too." },
     { key = "music", kind = "toggle", label = "Gnomeregan music",
       note = "While the board is open; never in combat. Also the note in the title bar." },
+    { key = "hideInCombat", kind = "toggle", label = "Hide in combat",
+      note = "A fight puts the window away, paused; it comes back when the fight ends." },
     { key = "fireworks", kind = "toggle", label = "Fireworks",
       note = "Over the board when you beat your best time." },
     { key = "scale", kind = "scale", label = "Window size",

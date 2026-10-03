@@ -940,6 +940,27 @@ local function build()
     local watcher = CreateFrame("Frame")
     watcher:RegisterEvent("DISPLAY_SIZE_CHANGED")
     watcher:RegisterEvent("UI_SCALE_CHANGED")
+
+    -- Hide in combat (#37, a setting, on by default): a fight puts the window away and
+    -- its end brings it back, only if the fight is what hid it and the player didn't
+    -- show or close it meanwhile (Window.shownCount, as the Settings step-aside does).
+    -- Opened during a fight, it stays until the next one. Hiding pauses the clock,
+    -- cancels a press and stops the music, as any close does.
+    local combat = CreateFrame("Frame")
+    combat:RegisterEvent("PLAYER_REGEN_DISABLED")
+    combat:RegisterEvent("PLAYER_REGEN_ENABLED")
+    combat:SetScript("OnEvent", function(_, event)
+        if event == "PLAYER_REGEN_DISABLED" then
+            if db().hideInCombat ~= false and win:IsShown() then
+                win:Hide()
+                Window.combatHid = Window.shownCount
+            end
+        else
+            local back = Window.combatHid ~= nil and Window.combatHid == Window.shownCount
+            Window.combatHid = nil
+            if back then Window.Open() end
+        end
+    end)
     watcher:SetScript("OnEvent", function()
         Window.Layout()
         GS.Options.Refresh()          -- the settings say what size the window is shown at

@@ -212,7 +212,7 @@ end
 ----------------------------------------------------------------------------
 do
     local W, S = fresh()
-    WoW.willPlay[17569] = false
+    WoW.willPlay[18871] = false
     WoW.chat = {}
     WoW.slash("/gsweep sounds")
     local n = #S.CANDIDATES
@@ -222,8 +222,8 @@ do
     local probe = GnomesweeperDB.soundProbe
     eq(probe.build, "1.60.1.70205", "the results are saved with the build")
     eq(probe.kits[7517].willPlay, true, "...each kit's willPlay")
-    eq(probe.kits[17569].willPlay, false, "...including a kit the client refuses")
-    check(chatHas("17569") and chatHas("won't play"), "chat says which one won't play")
+    eq(probe.kits[18871].willPlay, false, "...including a kit the client refuses")
+    check(chatHas("18871") and chatHas("won't play"), "chat says which one won't play")
     WoW.advance(1)
     eq(WoW.music, S.MUSIC, "then the music plays")
     WoW.advance(S.MUSIC_PROBE)

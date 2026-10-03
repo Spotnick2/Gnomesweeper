@@ -20,8 +20,10 @@ the client said (`GnomesweeperDB.soundProbe`); swap the picks in `Sounds.KITS`.
 **Measured in game** (owner, 1.60.1.70205, 2026-10-03, PR #42): **the music (53189), the bomb (7517)
 then the gnome's death (1038), and the win (6131: a "hurray" and "Congratulations") all play.**
 `PlayMusic` honours the game's Music toggle: with music off in the game's sound settings it is
-silent. Not yet measured: the reveal and flag clicks by name, the other candidates (`/gsweep sounds`
-not run yet), whether the zone's music comes back after `StopMusic`, and whether the track loops.
+silent. **`/gsweep sounds`** (same day, all 16 candidates): **13 play**; the three Cataclysm-era
+Operation: Gnomeregan kits are **refused** (`willPlay` false): 17484, 17487, 17569. `PlayMusic(53189)`
+returns true. Not yet measured: whether the zone's music comes back after `StopMusic`, and whether
+the track loops.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 
 ## Effects (#9)

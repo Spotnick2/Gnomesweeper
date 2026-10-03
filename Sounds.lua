@@ -168,18 +168,17 @@ end)
 -- /gsweep sounds: every candidate, one after another (for measuring)
 ------------------------------------------------------------
 
+-- (17484, 17487 and 17569, the Cataclysm-era Operation: Gnomeregan kits, were
+-- refused on 70205: willPlay false. Dropped.)
 Sounds.CANDIDATES = {
     { 1115, "reveal: U_CHAT_SCROLL_BUTTON (soft click)" },
     { 856, "flag: IG_MAINMENU_OPTION_CHECKBOX_ON" },
     { 857, "unflag: IG_MAINMENU_OPTION_CHECKBOX_OFF" },
     { 7517, "boom: GnomeBomBotDeath (the Walking Bomb)" },
-    { 17484, "boom, bigger: Operation Gnomeregan explosion" },
     { 1038, "wipe voice: GnomeDeath (owner's pick)" },
     { 3278, "wipe voice: GnomeMaleFinalDeath" },
     { 3272, "wipe voice: GnomeFemaleMainDeath1" },
-    { 17569, "wipe: Thermaplugg gloats (1 of 4)" },
     { 6131, "win: a gnome says Congratulations" },
-    { 17487, "win, fanfare: GnomereganEventComplete" },
     { 4779, "new game: G_ButtonBigRed (Mimiron's button)" },
     { 15252, "new game: UL_Gnomewing_ButtonBigRed_Close" },
     { 5925, "window opens: GnomeMaleZanyNPCGreetings" },

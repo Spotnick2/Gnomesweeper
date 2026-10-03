@@ -13,6 +13,16 @@ Gnomesweeper.API = API
 -- asset probe ran on it: every texture draws.
 Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70205"
 
+-- CreateFrame with a template that may be missing on this client. A missing
+-- template doesn't throw, it returns a bare frame (Priestly, FOREVER-PROBE), so
+-- `proof` names a field the template would have made. Returns the frame and
+-- whether the template really applied. Lifted from GlassUnitFrames' Compat.lua.
+function API.SafeFrame(ftype, parent, template, proof)
+    local ok, f = pcall(CreateFrame, ftype, nil, parent, template)
+    if ok and f then return f, (proof == nil) or f[proof] ~= nil end
+    return CreateFrame(ftype, nil, parent), false
+end
+
 -- The player's full name, with the surname every Forever character has.
 -- Lifted from AltStable's API.PlayerFullName (measured there on 69977 and 70009):
 -- through 69977 UnitName("player") returned "First Surname" as one string; on

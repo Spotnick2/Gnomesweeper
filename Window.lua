@@ -32,6 +32,9 @@ local category
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
 local fillBests             -- the best times panel's refresh (defined with the panel)
+-- The panels that float over the board (the difficulty list, the best times,
+-- the settings): one at a time, and all closed with the window.
+local floating = {}
 local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
 local function db() return GnomesweeperDB end
@@ -303,6 +306,7 @@ local function buildMenu()
         end)
     end)
     menu:SetScript("OnHide", function(self) self:SetScript("OnUpdate", nil) end)
+    Window.Floating(menu)
     menu:Hide()
     ui.menu = menu
 end
@@ -545,7 +549,8 @@ local function buildBests()
     p.rule:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
     p.rule:SetTextColor(unpack(C.hint))
 
-    p:SetScript("OnShow", function() ui.menu:Hide(); fillBests() end)
+    p:SetScript("OnShow", function() fillBests() end)
+    Window.Floating(p)
     p:Hide()
     ui.bests = p
 end
@@ -606,10 +611,8 @@ local function build()
     ui.gear = Widgets.IconButton(win, 22, T.gear, { 0.82, 0.92, 1 })
     ui.gear:SetFrameLevel(content)
     ui.gear:SetPoint("RIGHT", ui.close, "LEFT", -5, 0)
-    Widgets.Tip(ui.gear, "Settings", {            -- inert until #8
-        "A settings panel is coming.",
-        "For now: /gsweep scale 0.5 to 1.5 resizes the window.",
-    })
+    ui.gear:SetScript("OnClick", function() GS.Options.ShowPanel() end)
+    Widgets.Tip(ui.gear, "Settings", "Question marks, the first click, left-click clearing, the window size.")
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
@@ -626,10 +629,7 @@ local function build()
     ui.diffArrow:SetSize(14, 14)
     ui.diffArrow:SetTexture(T.arrow)
     ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
-    ui.diff:SetScript("OnClick", function()
-        if ui.bests then ui.bests:Hide() end
-        ui.menu:SetShown(not ui.menu:IsShown())
-    end)
+    ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
     Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
     buildMenu()
 
@@ -643,6 +643,7 @@ local function build()
     hud.bg:SetAllPoints(hud)
     hud.bg:SetColorTexture(unpack(C.hudBg))
     ui.hud = hud
+    Window.hud = hud                  -- what panels over the board hang from (Options.lua)
 
     local flag = hud:CreateTexture(nil, "ARTWORK")
     flag:SetSize(24, 24)
@@ -693,8 +694,7 @@ local function build()
     end)
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
-        ui.menu:Hide()
-        if ui.bests then ui.bests:Hide() end   -- it must not come back over the board on the next open
+        for _, f in ipairs(floating) do f:Hide() end   -- none comes back over the board on the next open
         Grid.Cancel()                  -- a button held when the window closes is not a click
         self:StopMovingOrSizing()
     end)
@@ -702,7 +702,10 @@ local function build()
     local watcher = CreateFrame("Frame")
     watcher:RegisterEvent("DISPLAY_SIZE_CHANGED")
     watcher:RegisterEvent("UI_SCALE_CHANGED")
-    watcher:SetScript("OnEvent", function() Window.Layout() end)
+    watcher:SetScript("OnEvent", function()
+        Window.Layout()
+        GS.Options.Refresh()          -- the settings say what size the window is shown at
+    end)
 end
 
 ------------------------------------------------------------
@@ -796,6 +799,21 @@ function Window.Toggle()
 end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end
+
+-- A panel that floats over the board (Options.lua's settings): showing it puts
+-- the others away, and closing the window closes it.
+function Window.Floating(f)
+    floating[#floating + 1] = f
+    f:HookScript("OnShow", function(self)
+        for _, o in ipairs(floating) do if o ~= self then o:Hide() end end
+    end)
+end
+
+-- After a setting changed (Options.Set): what the window shows that depends on one.
+function Window.SettingsChanged()
+    Window.Refresh()
+    if ui.bests and ui.bests:IsShown() then fillBests() end
+end
 
 -- The player's own scale (/gsweep scale), nil to go back to 1. The window still
 -- never exceeds the screen: the number wanted and the number shown can differ.

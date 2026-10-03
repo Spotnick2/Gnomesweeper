@@ -30,6 +30,7 @@ Skin.TEXTURES = {
     trophy = MEDIA .. "icon_trophy",        -- the best times button
     music = MEDIA .. "icon_music",          -- the music button (white, tinted)
     mute = MEDIA .. "icon_mute",            -- the slash over it when the music is off
+    sound = MEDIA .. "icon_sound",          -- the sounds button (#55), under the same slash when off
     close = MEDIA .. "icon_close",
     arrow = MEDIA .. "icon_arrow",
     burst = MEDIA .. "icon_burst",

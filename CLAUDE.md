@@ -117,7 +117,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (name and tagline, no portrait: the mascot is the HUD's face), then its icons: the music
+  - Title bar (name and tagline, no portrait: the mascot is the HUD's face), then its icons: the
+    **speaker** (the Sounds setting, #55: greyed under the red slash when muted), the music
     note, the trophy for the best times, the **?** (its tooltip is how to play: every click, clearing
     around a number, the gnome), the settings gear (#8),
     close), a difficulty

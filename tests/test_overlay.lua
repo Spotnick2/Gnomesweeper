@@ -225,22 +225,4 @@ do   -- on Expert the overlay is its full width
     check(o.time:GetText():find("^Time %d%d:%d%d$"), "...and shows a clock time")
 end
 
-do  -- the wipe's badge: the bursting mine on the panel's top edge (#12)
-    local W = onWall()
-    local t = tile(at(3, 1))
-    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseUp(t, "LeftButton", true)
-    local o = W._test.ui.overlay
-    check(o.badge:IsShown(), "a wipe: the bursting mine on its panel")
-    eq(o.badge.tex._texture, Gnomesweeper.Skin.TEXTURES.wipeBadge, "...the generated one")
-    eq(o.badge._points[1][1], "CENTER", "...centred")
-    eq(o.badge._points[1][3], "TOP", "...on the panel's top edge, half above it")
-    check(o.badge:GetFrameLevel() > o:GetFrameLevel() + 10, "...over the glass rim")
-    W._test.SetGame(Gnomesweeper.Board._test.FromLayout(WALL))
-    local a, b = tile(at(1, 1)), tile(at(5, 1))
-    a._scripts.OnMouseDown(a, "LeftButton"); a._scripts.OnMouseUp(a, "LeftButton", true)
-    b._scripts.OnMouseDown(b, "LeftButton"); b._scripts.OnMouseUp(b, "LeftButton", true)
-    eq(W.game:State(), "won", "(a win)")
-    check(not o.badge:IsShown(), "a win: no bomb on the panel")
-end
-
 done("test_overlay")

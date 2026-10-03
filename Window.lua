@@ -457,16 +457,6 @@ local function buildOverlay()
     o.laurels:SetPoint("CENTER", o.newBest, "CENTER", 0, -6)
     o.laurels:SetTexture(T.laurels)
     o.laurels:Hide()
-    -- The wipe's badge: the bursting mine, centred on the panel's top edge, half above it
-    -- like a medal (owner: the generated bomb, too small on a tile, belongs here).
-    o.badge = CreateFrame("Frame", nil, o)
-    o.badge:SetFrameLevel(o:GetFrameLevel() + 12)     -- over the panel's glass rim (+10)
-    o.badge:SetSize(48, 48)
-    o.badge:SetPoint("CENTER", o, "TOP", 0, 2)
-    o.badge.tex = o.badge:CreateTexture(nil, "ARTWORK")
-    o.badge.tex:SetAllPoints(o.badge)
-    o.badge.tex:SetTexture(T.wipeBadge)
-    o.badge:Hide()
     -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
     o.beaten = Glass.Font(o, 12, "CENTER")
     o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
@@ -518,7 +508,6 @@ function Window.ShowEnd()
         o.best:SetShown(text ~= nil and not isNew)
         o.newBest:SetShown(isNew and true or false)
         o.laurels:SetShown(isNew and true or false)
-        o.badge:Hide()
         if isNew then o.pulse.play() else o.pulse.stop() end
     else
         o:SetHeight(LOSS_H)
@@ -527,7 +516,6 @@ function Window.ShowEnd()
         o.newBest:Hide()
         o.laurels:Hide()
         o.beaten:Hide()
-        o.badge:Show()
         o.pulse.stop()
     end
     o:Show()

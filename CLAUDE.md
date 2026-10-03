@@ -159,7 +159,7 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
   more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
   it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
-  its first show and never hidden by us, Blizzard's check/radio/button templates with the client's own
+  its first show and **hidden at creation** (or its first show is blank: measured), Blizzard's check/radio/button templates with the client's own
   art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
   unpackaged; how to play; **links** to CurseForge and GitHub in read-only edit boxes to copy from,

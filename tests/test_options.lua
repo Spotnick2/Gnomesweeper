@@ -236,6 +236,17 @@ do
         "...but not the ones for measuring")
 end
 
+do  -- the first show builds the pages (owner: About was blank the first time, fine the second)
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local O = Gnomesweeper.Options
+    check(not O._test.page:IsShown() and not O._test.about:IsShown(), "both pages start hidden")
+    O._test.about:Show()                                    -- the first time Settings shows it
+    check(O._test.about.title ~= nil, "About is built on its very first show")
+    O._test.page:Show()
+    check(O._test.page.controls ~= nil, "...and so is the main page")
+end
+
 do  -- a packaged copy shows its version
     loadAddon()
     WoW.metadata.Version = "v1.2.0"

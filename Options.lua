@@ -121,8 +121,13 @@ end
 -- Options > AddOns > Gnomesweeper (Blizzard's look, Blizzard's templates)
 ------------------------------------------------------------
 
+-- Hidden from the start (GlassRaidFrames' Click-casting page does the same): a
+-- frame is created SHOWN, so the first time Settings displays it no OnShow would
+-- fire, nothing would be built, and the page would be blank until the second
+-- visit (seen on the About page, 70205).
 local page = CreateFrame("Frame")
 page.name = "Gnomesweeper"
+page:Hide()
 local category
 
 local CHECK_ART = {
@@ -263,6 +268,7 @@ end)
 
 local about = CreateFrame("Frame")
 about.name = "About"
+about:Hide()                -- see `page`: or its first show is blank
 
 local function aboutLabel(text, template, width) return label(about, text, template, width) end
 

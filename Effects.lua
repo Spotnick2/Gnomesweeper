@@ -2,8 +2,8 @@
 -- stopped by Window as the game changes; all of it AnimationGroups on a few
 -- textures (the client's own animation, no OnUpdate of ours).
 --
---   Effects.Burst(parent, anchor)  the win: a gold starburst turning slowly
---                                  behind the mascot, popping in on the win
+--   Effects.Burst(parent, anchor)  the win: a gold ring ripples out from the
+--                                  mascot, then a soft glow breathes behind her
 --   Effects.Smoke(parent)          the wipe: three puffs rising from the tile
 --                                  that went off, looping gently
 --   Effects.Pulse(region)          a beat: the "New personal best!" line
@@ -22,56 +22,94 @@ GS.Effects = Effects
 local Skin = GS.Skin
 local T, C = Skin.TEXTURES, Skin.COLORS
 
-Effects.BURST_SIZE = 84      -- around the 44-unit face
-Effects.BURST_TURN = 14      -- seconds a full turn takes
+Effects.GLOW_SIZE = 70       -- the soft glow around the 44-unit face (its edge is all fade)
+Effects.GLOW_LOW = 0.55      -- the glow's alpha at the bottom of a breath
+Effects.GLOW_BREATH = 1.1    -- seconds from bright to dim (and back)
 Effects.SMOKE_SIZE = 26
 Effects.SMOKE_RISE = 34      -- units a puff rises
 Effects.SMOKE_LIFE = 2.4     -- seconds a puff lives
 Effects.PUFFS = 3
 
 ------------------------------------------------------------
--- The win: the burst behind the face
+-- The win: a glow behind the face. Its choreography is the spell-proc glow's
+-- (LibButtonGlow, as Apotheca ports it): a flash that pops out and fades, then
+-- a quiet steady state. Here a gold ring ripples out from the face once, and a
+-- soft round glow (Media/fx_glow) breathes behind her while the win shows. (The
+-- first try, a big spinning starburst, was harsh and spilled over the
+-- difficulty button: owner, 2026-10-03.)
 ------------------------------------------------------------
 
 function Effects.Burst(parent, anchor)
-    local tex = parent:CreateTexture(nil, "BACKGROUND", nil, 7)       -- over the HUD's backing, under the face
-    tex:SetSize(Effects.BURST_SIZE, Effects.BURST_SIZE)
-    tex:SetPoint("CENTER", anchor, "CENTER", 0, 0)
-    tex:SetTexture(T.burst)
-    tex:SetBlendMode("ADD")
-    tex:SetVertexColor(unpack(C.gold))
-    tex:Hide()
+    local glow = parent:CreateTexture(nil, "BACKGROUND", nil, 7)      -- over the HUD's backing, under the face
+    glow:SetSize(Effects.GLOW_SIZE, Effects.GLOW_SIZE)
+    glow:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+    glow:SetTexture(T.glow)
+    glow:SetBlendMode("ADD")
+    glow:SetVertexColor(unpack(C.gold))
+    glow:Hide()
 
-    local turn = tex:CreateAnimationGroup()
-    local spin = turn:CreateAnimation("Rotation")
-    spin:SetDegrees(-360)
-    spin:SetDuration(Effects.BURST_TURN)
-    turn:SetLooping("REPEAT")
+    local ring = parent:CreateTexture(nil, "BACKGROUND", nil, 7)
+    ring:SetSize(anchor:GetWidth(), anchor:GetHeight())
+    ring:SetPoint("CENTER", anchor, "CENTER", 0, 0)
+    ring:SetTexture(T.faceRing)
+    ring:SetBlendMode("ADD")
+    ring:SetVertexColor(unpack(C.gold))
+    ring:SetAlpha(0)
+    ring:Hide()
 
-    local pop = tex:CreateAnimationGroup()
-    local grow = pop:CreateAnimation("Scale")
-    grow:SetScaleFrom(0.3, 0.3)
-    grow:SetScaleTo(1, 1)
-    grow:SetDuration(0.45)
-    grow:SetSmoothing("OUT")
-    local fade = pop:CreateAnimation("Alpha")
-    fade:SetFromAlpha(0)
-    fade:SetToAlpha(1)
-    fade:SetDuration(0.3)
+    -- Once: the ring ripples out and fades; the glow swells in.
+    local ripple = ring:CreateAnimationGroup()
+    local out = ripple:CreateAnimation("Scale")
+    out:SetScaleFrom(1, 1)
+    out:SetScaleTo(1.8, 1.8)
+    out:SetDuration(0.6)
+    out:SetSmoothing("OUT")
+    local flash = ripple:CreateAnimation("Alpha")
+    flash:SetFromAlpha(1)
+    flash:SetToAlpha(0)
+    flash:SetDuration(0.6)
+    ripple:SetScript("OnFinished", function() ring:Hide() end)
 
-    local h = { tex = tex, turn = turn, pop = pop }
+    local pop = glow:CreateAnimationGroup()
+    local swell = pop:CreateAnimation("Scale")
+    swell:SetScaleFrom(0.5, 0.5)
+    swell:SetScaleTo(1, 1)
+    swell:SetDuration(0.35)
+    swell:SetSmoothing("OUT")
+
+    -- Then, while the win shows: the glow breathes.
+    local breathe = glow:CreateAnimationGroup()
+    breathe:SetLooping("REPEAT")
+    local dim = breathe:CreateAnimation("Alpha")
+    dim:SetFromAlpha(1)
+    dim:SetToAlpha(Effects.GLOW_LOW)
+    dim:SetDuration(Effects.GLOW_BREATH)
+    dim:SetSmoothing("IN_OUT")
+    dim:SetOrder(1)
+    local bright = breathe:CreateAnimation("Alpha")
+    bright:SetFromAlpha(Effects.GLOW_LOW)
+    bright:SetToAlpha(1)
+    bright:SetDuration(Effects.GLOW_BREATH)
+    bright:SetSmoothing("IN_OUT")
+    bright:SetOrder(2)
+
+    local h = { tex = glow, ring = ring, ripple = ripple, pop = pop, breathe = breathe }
     function h.play()
-        if tex:IsShown() then return end
-        tex:Show()
+        if glow:IsShown() then return end
+        glow:Show()
+        ring:Show()
+        ripple:Play()
         pop:Play()
-        turn:Play()
+        breathe:Play()
     end
     function h.stop()
-        turn:Stop()
+        ripple:Stop()
         pop:Stop()
-        tex:Hide()
+        breathe:Stop()
+        ring:Hide()
+        glow:Hide()
     end
-    function h.isPlaying() return tex:IsShown() end
+    function h.isPlaying() return glow:IsShown() end
     return h
 end
 

@@ -18,6 +18,7 @@ textures are tinted with SetVertexColor):
   icon_music     a pair of eighth notes, white (tinted): the music button
   icon_mute      a red slash, over the note when the music is off
   fx_smoke       a soft grey puff, rising from the tile that went off (#10)
+  fx_glow        a soft round glow, white (tinted gold), behind the mascot on a win (#10)
   icon_close     the X on the close button            (light, tinted)
   icon_arrow     the dropdown's arrow                 (white, tinted by difficulty)
   ui_fill        a dark glass button body, 9-sliced (margin 8)
@@ -220,6 +221,20 @@ def mute_slash():
 
 
 # ---------------------------------------------------------------------------
+# A soft round glow behind the mascot on a win (#10): white, tinted gold, ADD
+# ---------------------------------------------------------------------------
+
+def soft_glow():
+    size = 64
+    ys, xs = np.mgrid[0:size, 0:size].astype(float) + 0.5
+    r = np.hypot(xs - 32, ys - 32) / 32                               # 0 in the middle, 1 at the edge
+    alpha = np.exp(-(r / 0.5) ** 2) * np.clip((1 - r) / 0.15, 0, 1)   # gaussian, nothing at the edge
+    out = np.ones((size, size, 4))
+    out[..., 3] = alpha
+    return out
+
+
+# ---------------------------------------------------------------------------
 # A puff of smoke, rising from the tile that went off (#10)
 # ---------------------------------------------------------------------------
 
@@ -394,7 +409,7 @@ def soot():
 
 
 TEXTURES = {
-    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring, "face_sparkle": sparkle, "face_soot": soot,
 }
@@ -421,6 +436,7 @@ def preview(path):
     cells.append(cell(64, lambda c: over(c, tex["icon_flag"]), ) * 0 + over(covered, tex["icon_flag"]))
     cells.append(cell(64, lambda c: over(c, tex["icon_burst"], add=True)))
     cells.append(cell(64, lambda c: over(c, tex["fx_smoke"], tint=(0.55, 0.55, 0.58))))
+    cells.append(cell(64, lambda c: over(c, tex["fx_glow"], tint=(0.98, 0.77, 0.38), add=True)))
     cells.append(cell(64, lambda c: over(c, tex["icon_trophy"])))
     cells.append(cell(64, lambda c: over(c, tex["icon_music"], tint=(0.82, 0.92, 1.0))))
     cells.append(cell(64, lambda c: over(over(c, tex["icon_music"], tint=(0.5, 0.55, 0.62)), tex["icon_mute"])))

@@ -35,6 +35,7 @@ Skin.TEXTURES = {
     arrow = MEDIA .. "icon_arrow",
     burst = MEDIA .. "icon_burst",
     smoke = MEDIA .. "fx_smoke",            -- puffs rising from the tile that went off (#10)
+    glow = MEDIA .. "fx_glow",              -- the soft glow behind the mascot on a win (#10)
     gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
     mine = 133709,                                      -- inv_misc_bomb_01: the classic black bomb (art needed, #13)
     -- the glass controls (9-sliced, margin 8)

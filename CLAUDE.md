@@ -106,7 +106,8 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
-  - Title bar (the mascot, name, tagline, an inert settings gear until #8, close), a difficulty
+  - Title bar (the mascot, name, tagline, the trophy for the best times, an inert settings gear until
+    #8, close), a difficulty
     button in the difficulty's **rarity colour** with a small **hand-rolled** list (not Blizzard's
     dropdown API, which no sibling has measured on Forever; each row gives the name and
     `9x9 · 10 mines`, built from `Board.PRESETS`, and the current row has a bar down its edge; the list
@@ -164,7 +165,11 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
   when the board is made, so a setting changed mid-game can't misfile it. Reading never creates the
   table (opening the window leaves the SavedVariables alone). Shown: the end overlay and result bar,
   a best-time column in the difficulty list, and the difficulty button's tooltip (best, who, won of
-  played). `Window._test.SetGame(board, category)` keeps no scores unless given a category.
+  played), and the **best times panel**: the trophy or `/gsweep scores` (`Window.ShowBests`) opens a
+  `GlassPanel` at window level +30 (like the list; opening one closes the other) with every
+  difficulty's best, who and when, and won of played, under the current first-click rule (it says
+  which). It works whatever the game is doing and refreshes on a win. `Window._test.SetGame(board,
+  category)` keeps no scores unless given a category.
   `API.PlayerFullName()` (Compat, lifted from AltStable) adds the surname. Social leaderboards
   (guild/friends/Battle.net) are milestone 4.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash

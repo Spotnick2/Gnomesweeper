@@ -14,6 +14,7 @@ textures are tinted with SetVertexColor):
   icon_flag      a red pennant on a dark post: flagged tiles and the mine counter
   icon_burst     a starburst, ADD blended behind the bomb on the tile that ended the game
   icon_clock     a small brass clock beside the timer
+  icon_trophy    a brass cup on a plinth: the best times button
   icon_close     the X on the close button            (light, tinted)
   icon_arrow     the dropdown's arrow                 (white, tinted by difficulty)
   ui_fill        a dark glass button body, 9-sliced (margin 8)
@@ -137,6 +138,45 @@ def clock():
     d.line([(cx, cy), (cx + 38 * u, cy + 4 * u)], fill=light, width=int(8 * u))  # minute hand
     r = 9 * u
     d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(255, 214, 110, 255))
+    return finish(im, size)
+
+
+# ---------------------------------------------------------------------------
+# The trophy (the best times panel), brass like the clock
+# ---------------------------------------------------------------------------
+
+def trophy():
+    size = 64
+    s = size * SS
+    u = s / 256.0
+    im = canvas(size)
+
+    def P(*pts):
+        return [(x * u, y * u) for x, y in pts]
+
+    brass_top, brass_bottom = (255, 226, 128), (156, 88, 20)
+    dark = (96, 52, 10)
+    # handles: brass rings either side of the cup, drawn first so the cup covers their inner half
+    for box in (P((20, 48), (100, 140)), P((156, 48), (236, 140))):
+        paste_shape(im, lambda d, b=box: d.ellipse(b, outline=255, width=int(18 * u)),
+                    brass_top, brass_bottom, (48 * u, 140 * u))
+    # the cup: a flat rim on top, a rounded bowl below
+    paste_shape(im, lambda d: d.chord(P((52, -40), (204, 172)), 0, 180, fill=255),
+                brass_top, brass_bottom, (66 * u, 172 * u))
+    paste_shape(im, lambda d: d.rounded_rectangle(P((46, 30), (210, 70)), radius=10 * u, fill=255),
+                brass_top, brass_bottom, (30 * u, 70 * u))
+    # a dark mouth along the rim, and a light streak down the bowl
+    paste_shape(im, lambda d: d.rounded_rectangle(P((60, 38), (196, 52)), radius=6 * u, fill=255),
+                dark, dark, (0, s))
+    paste_shape(im, lambda d: d.rounded_rectangle(P((78, 76), (94, 150)), radius=8 * u, fill=255),
+                (255, 246, 210), (255, 220, 140), (76 * u, 150 * u))
+    # stem, collar, plinth
+    paste_shape(im, lambda d: d.rectangle(P((114, 168), (142, 204)), fill=255),
+                (230, 180, 80), (140, 78, 18), (168 * u, 204 * u))
+    paste_shape(im, lambda d: d.rounded_rectangle(P((92, 196), (164, 214)), radius=6 * u, fill=255),
+                brass_top, brass_bottom, (196 * u, 214 * u))
+    paste_shape(im, lambda d: d.rounded_rectangle(P((68, 212), (188, 246)), radius=8 * u, fill=255),
+                (84, 92, 108), (30, 33, 42), (212 * u, 246 * u))
     return finish(im, size)
 
 
@@ -291,7 +331,7 @@ def soot():
 
 
 TEXTURES = {
-    "icon_flag": flag, "icon_clock": clock, "icon_burst": burst, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_burst": burst, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring, "face_sparkle": sparkle, "face_soot": soot,
 }
@@ -317,6 +357,7 @@ def preview(path):
     covered = np.zeros((64, 64, 3)) + np.array([0.15, 0.27, 0.52])
     cells.append(cell(64, lambda c: over(c, tex["icon_flag"]), ) * 0 + over(covered, tex["icon_flag"]))
     cells.append(cell(64, lambda c: over(c, tex["icon_burst"], add=True)))
+    cells.append(cell(64, lambda c: over(c, tex["icon_trophy"])))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(0.15, 0.7, 0.99))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.77, 0.38))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.35, 0.30))))

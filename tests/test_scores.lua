@@ -260,4 +260,69 @@ do  -- the result bar's text never reaches its button (Codex review of #7)
     eq(pt[1], "TOPRIGHT", "...and so does the line under it")
 end
 
+do  -- the best times panel: the trophy, /gsweep scores
+    local W = fresh()
+    local ui = W._test.ui
+    local Skin = Gnomesweeper.Skin
+    eq(ui.trophy.icon._texture, Skin.TEXTURES.trophy, "the title bar has a trophy")
+    local pt = ui.trophy._points[1]
+    eq(pt[1], "RIGHT", "...beside the gear")
+    eq(pt[2], ui.gear, "...to its left")
+    eq(ui.bests, nil, "the panel is built only when asked for")
+
+    ui.trophy._scripts.OnClick(ui.trophy)
+    local p = ui.bests
+    check(p and p:IsShown(), "the trophy opens the best times")
+    eq(p:GetFrameLevel(), W.win:GetFrameLevel() + 30, "...over the board and the end overlay")
+    check(p._mouse, "...and the board under it takes no clicks")
+    eq(p.title:GetText(), "Best times", "...titled")
+    for _, key in ipairs(Gnomesweeper.Board.PRESET_ORDER) do
+        eq(p.rows[key].time:GetText(), "-", key .. ": no best yet")
+        eq(p.rows[key].who:GetText(), "Not played yet", "...never played")
+        eq(p.rows[key].record:GetText(), "", "...no record line")
+        eq(p.rows[key].label._textColor[1], Skin.DifficultyColor(key)[1], "...in its rarity colour")
+    end
+    eq(p.rule:GetText(), "First click: always opens an area.", "it says which first-click rule the bests are for")
+    eq(GnomesweeperDB.scores, nil, "opening it writes nothing")
+    ui.trophy._scripts.OnClick(ui.trophy)
+    check(not p:IsShown(), "the trophy again closes it")
+
+    -- A game played, not won.
+    click(41)
+    WoW.slash("/gsweep scores")
+    check(p:IsShown(), "/gsweep scores opens it")
+    eq(p.rows.beginner.who:GetText(), "No win yet", "played but not won says so")
+    eq(p.rows.beginner.record:GetText(), "won 0 of 1", "...with the record")
+
+    -- A win while it is open updates it.
+    winWall(W, "beginner:area", 35.05)
+    check(p:IsShown(), "it can stay open through a game")
+    eq(p.rows.beginner.time:GetText(), "00:35", "a win shows at once")
+    eq(p.rows.beginner.who:GetText(), "Fizzle Sprocketwhistle  " .. "\194\183" .. "  " .. os.date("%d %b %Y", WoW.epoch), "...with who and when")
+    eq(p.rows.beginner.record:GetText(), "won 1 of 1", "...and the record (the hand-built board adds no game)")
+    eq(p.rows.expert.time:GetText(), "-", "...other difficulties untouched")
+
+    -- Only one of the list and the panel at a time.
+    ui.diff._scripts.OnClick(ui.diff)
+    check(ui.menu:IsShown() and not p:IsShown(), "opening the difficulty list closes the panel")
+    WoW.slash("/gsweep scores")
+    check(p:IsShown() and not ui.menu:IsShown(), "...and opening the panel closes the list")
+    WoW.slash("/gsweep scores")
+    check(p:IsShown(), "/gsweep scores shows it, never toggles it away")
+    p.close._scripts.OnClick(p.close)
+    check(not p:IsShown(), "its close button closes it")
+
+    -- From a closed window.
+    W.win:Hide()
+    WoW.slash("/gsweep scores")
+    check(W.win:IsShown() and p:IsShown(), "/gsweep scores opens the window too")
+
+    -- The other first-click rule has its own bests.
+    GnomesweeperDB.safeZone = "cell"
+    p:Hide(); WoW.slash("/gsweep scores")
+    eq(p.rows.beginner.time:GetText(), "-", "the XP rule shows its own bests")
+    eq(p.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "...and says so")
+    GnomesweeperDB.safeZone = "area"
+end
+
 done("test_scores")

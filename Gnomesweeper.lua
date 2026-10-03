@@ -31,6 +31,7 @@ end
 local HELP = {
     "/gsweep - open or close the board (also /gnomesweeper, /minewipe)",
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
+    "/gsweep scores - your best times (also the trophy in the title bar)",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
     "/gsweep assets - a sheet of every texture, to check by eye that each one draws",
@@ -44,6 +45,8 @@ local function Slash(msg)
         GS.Window.Toggle()
     elseif GS.Board.PRESETS[msg] then
         GS.Window.Open(msg)
+    elseif msg == "scores" or msg == "bests" then
+        GS.Window.ShowBests(true)
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")

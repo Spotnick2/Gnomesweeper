@@ -232,6 +232,7 @@ end
 function GetTime() return WoW.now end
 -- The calendar clock (a global in the client; the dump's _G walk lists it).
 function time() return WoW.epoch end
+function date(fmt, t) return os.date(fmt, t) end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end

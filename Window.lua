@@ -31,6 +31,7 @@ local win, game
 local category
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
+local fillBests             -- the best times panel's refresh (defined with the panel)
 local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
 local function db() return GnomesweeperDB end
@@ -113,6 +114,7 @@ local function recordScores(was, state)
             realm = GetRealmName(),
         })
         lastWin = { new = isNew, previous = previous }
+        if ui.bests and ui.bests:IsShown() then fillBests() end
     end
 end
 
@@ -440,6 +442,103 @@ function Window.DismissEnd()
 end
 
 ------------------------------------------------------------
+-- The best times panel (the trophy, /gsweep scores): every difficulty's best
+-- under the current first-click rule, whatever the game is doing
+------------------------------------------------------------
+
+local BESTS_W, BESTS_ROW = 264, 44
+
+local function bestsRuleText()
+    return db().safeZone == "cell" and "First click: one safe tile (Windows XP's rule)."
+        or "First click: always opens an area."
+end
+
+-- Fills the panel from the saved scores. Reads only: never creates them.
+function fillBests()
+    local p = ui.bests
+    if not p then return end
+    for _, key in ipairs(Board.PRESET_ORDER) do
+        local row = p.rows[key]
+        local cat = Scores.Category(key, db().safeZone)
+        local best = Scores.Best(peek(), cat)
+        local played, won = Scores.Stats(peek(), cat)
+        if best then
+            row.time:SetText(bestTime(best))
+            local who = best.name or "?"
+            if type(best.at) == "number" then who = who .. "  " .. DOT .. "  " .. date("%d %b %Y", best.at) end
+            row.who:SetText(who)
+        else
+            row.time:SetText("-")
+            row.who:SetText(played > 0 and "No win yet" or "Not played yet")
+        end
+        row.record:SetText(played > 0 and string.format("won %d of %d", won, played) or "")
+    end
+    p.rule:SetText(bestsRuleText())
+end
+
+local function buildBests()
+    local p = Widgets.GlassPanel(win)
+    p:SetFrameLevel(win:GetFrameLevel() + 30)           -- over the board and the end overlay, like the list
+    p:SetSize(BESTS_W, 50 + #Board.PRESET_ORDER * BESTS_ROW + 26)
+    p:SetPoint("TOP", ui.hud, "TOP", 0, 0)
+    p:EnableMouse(true)                                  -- the board under it takes no clicks
+
+    p.title = Glass.Font(p, 16, "LEFT")
+    p.title:SetPoint("TOPLEFT", p, "TOPLEFT", 14, -14)
+    p.title:SetTextColor(unpack(C.gold))
+    p.title:SetText("Best times")
+    p.close = Widgets.IconButton(p, 20, T.close, { 1, 0.9, 0.9 })
+    p.close:SetPoint("TOPRIGHT", p, "TOPRIGHT", -8, -8)
+    p.close:setAccent(unpack(C.closeAccent))
+    p.close:SetScript("OnClick", function() p:Hide() end)
+
+    p.rows = {}
+    for i, key in ipairs(Board.PRESET_ORDER) do
+        local col = Skin.DifficultyColor(key)
+        local row = CreateFrame("Frame", nil, p)
+        row:SetSize(BESTS_W - 20, BESTS_ROW - 4)
+        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -44 - (i - 1) * BESTS_ROW)
+        row.bg = row:CreateTexture(nil, "BACKGROUND")
+        row.bg:SetAllPoints(row)
+        row.bg:SetColorTexture(col[1], col[2], col[3], 0.10)
+        row.bar = row:CreateTexture(nil, "ARTWORK")
+        row.bar:SetSize(3, BESTS_ROW - 12)
+        row.bar:SetPoint("LEFT", row, "LEFT", 2, 0)
+        row.bar:SetColorTexture(col[1], col[2], col[3], 1)
+        row.label = Glass.Font(row, 13, "LEFT")
+        row.label:SetPoint("TOPLEFT", row, "TOPLEFT", 11, -5)
+        row.label:SetTextColor(col[1], col[2], col[3])
+        row.label:SetText(LABELS[key])
+        row.who = Glass.Font(row, 10, "LEFT")
+        row.who:SetPoint("TOPLEFT", row.label, "BOTTOMLEFT", 0, -3)
+        row.who:SetPoint("RIGHT", row, "RIGHT", -70, 0)
+        row.who:SetTextColor(unpack(C.menuText))
+        row.time = Glass.Font(row, 18, "RIGHT")
+        row.time:SetPoint("TOPRIGHT", row, "TOPRIGHT", -8, -4)
+        row.time:SetTextColor(unpack(C.gold))
+        row.record = Glass.Font(row, 10, "RIGHT")
+        row.record:SetPoint("TOPRIGHT", row.time, "BOTTOMRIGHT", 0, -2)
+        row.record:SetTextColor(unpack(C.hint))
+        p.rows[key] = row
+    end
+    p.rule = Glass.Font(p, 10, "LEFT")
+    p.rule:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
+    p.rule:SetTextColor(unpack(C.hint))
+
+    p:SetScript("OnShow", function() ui.menu:Hide(); fillBests() end)
+    p:Hide()
+    ui.bests = p
+end
+
+-- Show (or, with no argument, toggle) the best times panel. Opens the window.
+function Window.ShowBests(show)
+    Window.Open()
+    if not ui.bests then buildBests() end
+    if show == nil then show = not ui.bests:IsShown() end
+    ui.bests:SetShown(show)
+end
+
+------------------------------------------------------------
 -- Building it
 ------------------------------------------------------------
 
@@ -492,6 +591,13 @@ local function build()
         "For now: /gsweep scale 0.5 to 1.5 resizes the window.",
     })
 
+    ui.trophy = Widgets.IconButton(win, 22, T.trophy)
+    ui.trophy:SetFrameLevel(content)
+    ui.trophy:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    ui.trophy:setAccent(unpack(C.gold))
+    ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)
+    Widgets.Tip(ui.trophy, "Best times", "Your best at each difficulty, shared by all your characters.")
+
     -- Difficulty: a glass button in the difficulty's rarity colour, and the list it opens.
     ui.diff = Widgets.GlassButton(win, 150, 24, { fontSize = 13 })
     ui.diff:SetFrameLevel(content)
@@ -500,7 +606,10 @@ local function build()
     ui.diffArrow:SetSize(14, 14)
     ui.diffArrow:SetTexture(T.arrow)
     ui.diffArrow:SetPoint("RIGHT", ui.diff, "RIGHT", -7, 0)
-    ui.diff:SetScript("OnClick", function() ui.menu:SetShown(not ui.menu:IsShown()) end)
+    ui.diff:SetScript("OnClick", function()
+        if ui.bests then ui.bests:Hide() end
+        ui.menu:SetShown(not ui.menu:IsShown())
+    end)
     Widgets.Tip(ui.diff, "Difficulty", difficultyTip)
     buildMenu()
 

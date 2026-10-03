@@ -42,7 +42,7 @@ Sounds.KITS = {
     win = 6131,          -- a gnome: "hurray", "Congratulations"
     greetMale = 5925,    -- GnomeMaleZanyNPCGreetings: the first open of a session
     greetFemale = 5931,  -- GnomeFemaleNerdyNPCGreetings
-    alert = 4574,        -- SOUNDKIT.IG_PVP_UPDATE: the clock just passed your best (owner's pick)
+    alert = 8456,        -- the clock just passed your best: the owner's pick (a PvP warning)
     newGame = 4935,      -- GnomeRoboArmFidget01Fidget02: a gnomish arm whirs (owner's pick; its file is 566083)
 }
 Sounds.WIPE_DELAY = 0.7  -- seconds from the bomb to the gnome; tune by ear

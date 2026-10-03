@@ -228,7 +228,7 @@ do
     click(at(3, 1), L)
     local o = ui.overlay
     check(o:IsShown(), "(the wipe overlay is up)")
-    eq(o.view.label:GetText(), "View board", "it has a visible control to look at the board")
+    eq(o.view.label:GetText(), "See the field", "it has a visible control to look at the board (not \"View board\": read as the scores)")
     check(o.view:IsShown(), "...which is shown")
     check(not ui.result:IsShown(), "the result bar waits until the overlay is put away")
 
@@ -238,7 +238,7 @@ do
         before[i] = (t.bg._texture or "") .. "|" .. (t.icon and t.icon._texture or "") .. "|" .. (t.text and t.text:GetText() or "")
     end
     o.view._scripts.OnClick(o.view)
-    check(not o:IsShown(), "View board puts the overlay away")
+    check(not o:IsShown(), "See the field puts the overlay away")
     check(ui.result:IsShown(), "...and the result moves to the footer")
     eq(ui.result.title:GetText(), "Boom. Full wipe.", "...still saying what happened")
     eq(ui.result.button.label:GetText(), "Try again", "...with the button to try again")

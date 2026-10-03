@@ -74,6 +74,13 @@ as file IDs. #6 does the rest.
 - **Wrong flag:** the flag with a red text "X" over it; **question mark:** a gold text "?". No
   textures, so nothing can come out as a green square.
 - **Tiles:** baked textures, `Media/tile_*.tga` (`Media/README.md`), not WoW art.
+- **Trophy** (the best times button, #7): ours, `Media/icon_trophy.tga` (`Tools/make_ui.py`), brass
+  like the clock. Why not the client's: the button is a 22-unit glass square showing a 14-unit icon,
+  the size of the clock and close glyphs beside it, and the client's trophy and achievement art is
+  square item icons with a painted frame and background (they turn into a dark tile at 14 units) or
+  Retail achievement atlases not measured on Forever. **Unmeasured alternative**, if a client icon is
+  wanted: try `Interface\Icons\INV_Misc_Trophy_*` / `Achievement_*` names with `/gsweep assets`
+  (`GetFileIDFromPath`) before switching.
 
 ## The mascot (#5, #30)
 
@@ -104,6 +111,7 @@ characters and then a bomb, which the UI review rightly called out.
 | Flag counter icon | the flag above, small | — | no |
 | Timer icon | `Interface\Icons\INV_Misc_PocketWatch_01` | `Interface\TimeManager\ClockBackground` (in UI source) | no |
 | Settings gear | `Interface\WorldMap\GEAR_64GREY` (in UI source) | `Interface\Icons\Trade_Engineering` | no |
+| Best times (trophy, #7) | ours: `icon_trophy` (see "Chosen for the board") | client trophy/achievement icons, unmeasured | done (script) |
 | Close button | `UIPanelCloseButton` template (measured to exist), or atlas `128-redbutton-exit` (in UI source) | — | no |
 | Difficulty dropdown | `WowStyle1DropdownTemplate` (measured to exist) / `common-dropdown-*` atlases | `UIDropDownMenuTemplate` | no |
 | Win overlay (gold rim, laurels, burst) | `Glass.Apply` + gold rim tint; laurels: `ui-achievement-*` atlases (in UI source: `ui-achievement-glow-shine`) | — | maybe laurels |

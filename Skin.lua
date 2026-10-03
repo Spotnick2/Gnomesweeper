@@ -29,6 +29,7 @@ Skin.TEXTURES = {
     -- icons
     flag = MEDIA .. "icon_flag",
     clock = MEDIA .. "icon_clock",
+    trophy = MEDIA .. "icon_trophy",        -- the best times button
     close = MEDIA .. "icon_close",
     arrow = MEDIA .. "icon_arrow",
     burst = MEDIA .. "icon_burst",

@@ -154,7 +154,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
     the first, or any flag"):** a flag on the board (read from it, so a flag taken off again doesn't
     count; a board not started yet counts too), or a second reveal or chord (`reveals`, counted in
     `Dispatch`). The list then shows "Start Expert? This game will be lost." with Start / Keep game
-    (`askFor`); anything that closes the list cancels, and so does the game ending. A first reveal
+    (`askFor`); anything that closes the list cancels (an outside click with any button), and so does
+    the game ending. A first reveal
     alone or a finished game switch at once. `chooseDifficulty` decides for both the list and
     `/gsweep <difficulty>`.
   - **The first launch's pointer (#45, owner: a glass callout):** above the face with a gold arrow

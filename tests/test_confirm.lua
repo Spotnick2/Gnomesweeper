@@ -148,6 +148,28 @@ do  -- the review of #50
     eq(W.game:State(), "lost", "(a middle-click outside the list ends the game)")
     check(not ui.menu:IsShown(), "the game ended: the question about throwing it away goes")
 
+    -- An outside right- or middle-click cancels the question too (Codex, #50), not only a left one.
+    for _, button in ipairs({ "RightButton", "MiddleButton" }) do
+        W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..." }))
+        click(2)
+        pick("beginner")
+        check(c:IsShown(), "(the question is up)")
+        WoW.mouseDown = button
+        WoW.tick(0.02)
+        WoW.mouseDown = false
+        check(not ui.menu:IsShown(), "an outside " .. button .. " closes the list and its question")
+        eq(W.game:State(), "playing", "...and keeps the game")
+    end
+    -- A click inside the list doesn't.
+    pick("beginner")
+    ui.menu._mouseOver = true
+    WoW.mouseDown = "RightButton"
+    WoW.tick(0.02)
+    WoW.mouseDown = false
+    ui.menu._mouseOver = nil
+    check(c:IsShown(), "a click inside the list keeps it")
+    ui.menu:Hide()
+
     -- The question can wrap: it has a width.
     eq(c.text._width, 262 - 24, "the question has a width, so a wider font wraps inside the list")
 end

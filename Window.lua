@@ -340,6 +340,12 @@ local function chooseDifficulty(key)
 end
 local pickDifficulty = chooseDifficulty
 
+-- Any mouse button: a right-click (a flag) or a middle-click (a chord) on the board is an
+-- outside click as much as a left one, and must cancel the list's question (Codex, #50).
+local function anyButtonDown()
+    return IsMouseButtonDown("LeftButton") or IsMouseButtonDown("RightButton") or IsMouseButtonDown("MiddleButton")
+end
+
 local function buildMenu()
     local menu = Widgets.GlassPanel(win)
     -- Above everything else in the window, including the result overlay (+15) and the glass rim that
@@ -386,7 +392,7 @@ local function buildMenu()
     menu:SetScript("OnShow", function(self)
         fillMenuBests()
         self:SetScript("OnUpdate", function()
-            if IsMouseButtonDown("LeftButton") and not (self:IsMouseOver() or ui.diff:IsMouseOver()) then
+            if anyButtonDown() and not (self:IsMouseOver() or ui.diff:IsMouseOver()) then
                 self:Hide()
             end
         end)

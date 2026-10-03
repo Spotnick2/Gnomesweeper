@@ -41,11 +41,17 @@ PIECES = {
     "title":         ((1024, 256), (512, 128), None),
     "laurels":       ((512, 128), (512, 128), None),
 }
+# Textures made from another piece's original: name -> (source, size, png_to_tga options).
+# The bursting mine, large, as the badge on the wipe's panel (owner: too small to read on a
+# tile, but worth using there).
+EXTRA = {
+    "wipe_badge": ("mine_exploded", 64, ["--trim"]),
+}
 # In the game (Skin.TEXTURES). The tiles are a different look (bright ice-blue
 # covered tiles) from the calmer one the UI review chose: the owner decides.
 # The mine, the exploded mine and the flag too: on the board WoW's bomb and the
 # pennant read better (owner, #12).
-ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "title", "laurels"]
+ADOPTED = ["face_playing", "face_won", "face_lost", "face_pressed", "title", "laurels", "wipe_badge"]
 
 
 def master(name, size, wide):
@@ -75,6 +81,11 @@ def main():
             subprocess.run([sys.executable, str(ROOT / "Tools" / "png_to_tga.py"), str(SOURCE / (name + ".png")),
                             name, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)
         print(f"{name:14} -> {out.relative_to(ROOT)}")
+    for name, (src, size, opts) in EXTRA.items():
+        out = MEDIA if name in ADOPTED else STAGED
+        subprocess.run([sys.executable, str(ROOT / "Tools" / "png_to_tga.py"), str(SOURCE / (src + ".png")),
+                        name, "--size", str(size), "--out", str(out)] + opts, cwd=ROOT, check=True)
+        print(f"{name:14} -> {out.relative_to(ROOT)}  (from {src})")
 
 
 if __name__ == "__main__":

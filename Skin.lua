@@ -43,6 +43,7 @@ Skin.TEXTURES = {
     facePressed = MEDIA .. "face_pressed",  -- surprised, while a tile is held
     title = MEDIA .. "title",               -- the gold Gnomesweeper lettering
     laurels = MEDIA .. "laurels",           -- around "New personal best!"
+    wipeBadge = MEDIA .. "wipe_badge",      -- the bursting mine on the wipe's panel (#12)
     -- the glass controls (9-sliced, margin 8)
     uiFill = MEDIA .. "ui_fill",
     uiBorder = MEDIA .. "ui_border",

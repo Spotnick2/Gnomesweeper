@@ -42,7 +42,8 @@ pigtails and eyes, brass goggles, a red collar. **The prompts are in [ART-PROMPT
 The full-resolution originals are in `Media/Source/Generated/` (ignored by git, as all of
 `Media/Source/` and every PNG: about 66 MB of masters, references and previews stay local).
 
-**In the game** (`Skin.TEXTURES`): the four expressions, the title lettering and the laurels.
+**In the game** (`Skin.TEXTURES`): the four expressions, the title lettering, the laurels, and the
+bursting mine large (`wipe_badge`, 64x64, from the same original) as the badge on the wipe's panel.
 **Staged, not used** (`Media/Source/GameTextures/`): the mine, the exploded mine and the flag (on the
 board, WoW's bomb and the pennant read better: at tile size the generated mine is a small brass
 gear, owner, 2026-10-03), and the three tiles (a bright ice-blue covered tile, a different look from

@@ -19,7 +19,13 @@ before copying anything.
 
 Copied as they are from `..\GlassMiniMapBar\Libs` (which embeds the same versions); never edited
 here. They are the standard WoW addon libraries that hundreds of addons embed, and are shipped
-inside the addon, as embedding them is meant to be done.
+inside the addon, as embedding them is meant to be done. Also noticed in `LICENSE`, which says they
+are under their own licences, not ours.
+
+**Licences not verified** (the files carry none except LibStub's public-domain line; GitHub records
+none; a web search was inconclusive, 2026-10-03). Embedding them was the owner's decision (#40),
+as GlassMiniMapBar does. **Before the first release, read each project page's licence on
+CurseForge/WowAce** and write it into the table and `LICENSE`.
 
 | Library | Version | Authors / notes |
 |---|---|---|

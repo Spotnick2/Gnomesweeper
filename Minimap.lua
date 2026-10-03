@@ -17,12 +17,22 @@ GS.Minimap = Minimap_
 local NAME = "Gnomesweeper"
 local registered = false
 
-local function db()
-    if type(GnomesweeperDB.minimap) ~= "table" then GnomesweeperDB.minimap = {} end
-    return GnomesweeperDB.minimap
-end
+-- LibDBIcon's table. Made (or repaired) once, at ADDON_LOADED (Gnomesweeper.lua),
+-- and never replaced after: LibDBIcon keeps a reference to it, and a new table
+-- would cut the button off from what is saved.
+local function db() return GnomesweeperDB.minimap end
 
 function Minimap_.Shown() return not db().hide end
+
+-- Whether there is a button at all (no libraries, or a name already taken: none).
+function Minimap_.Available() return registered end
+
+-- Show or hide it, and save that. LibDBIcon's own Show/Hide never touch the
+-- saved table, so the choice is written here.
+function Minimap_.SetShown(v)
+    db().hide = not v
+    Minimap_.Apply()
+end
 
 local launcher = {
     type = "launcher",
@@ -37,7 +47,7 @@ local launcher = {
     end,
     OnTooltipShow = function(tip)
         tip:AddLine("Gnomesweeper")
-        tip:AddLine("Left-click: play", 0.75, 0.78, 0.85)
+        tip:AddLine("Left-click: open or close the board", 0.75, 0.78, 0.85)
         tip:AddLine("Right-click: settings", 0.75, 0.78, 0.85)
         tip:AddLine("Drag: move around the minimap", 0.75, 0.78, 0.85)
     end,
@@ -55,8 +65,11 @@ local function register()
     local ok, ldb = pcall(LibStub, "LibDataBroker-1.1")
     local ok2, icon = pcall(LibStub, "LibDBIcon-1.0")
     if not (ok and ok2 and ldb and icon) then return end    -- no libraries: no button, nothing else breaks
-    icon:Register(NAME, ldb:NewDataObject(NAME, launcher), db())
-    registered = true
+    -- NewDataObject answers nil when another addon already took the name; Register
+    -- would then error at login. Either way: no button, and nothing else breaks.
+    local obj = ldb:NewDataObject(NAME, launcher)
+    if not obj then return end
+    registered = pcall(icon.Register, icon, NAME, obj, db())
 end
 
 local reg = CreateFrame("Frame")

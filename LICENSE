@@ -19,3 +19,13 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+-------------------------------------------------------------------------------
+Third-party libraries (Libs\), shipped unmodified under their own licences,
+which this MIT licence does not cover. Credits in docs/REFERENCES.md.
+
+  LibStub              Kaelten, Cladhaire, ckknight, Mikk, Ammo, Nevcairiel,
+                       joshborke. Public domain (its header).
+  CallbackHandler-1.0  Nevcairiel and the Ace3 team.
+  LibDataBroker-1.1    tekkub.
+  LibDBIcon-1.0        funkydude.

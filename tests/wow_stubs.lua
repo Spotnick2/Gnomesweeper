@@ -291,8 +291,10 @@ function WoW.newLDBI()
         if db.hide then b._shown = false end
         self.registered[name], self.buttons[name] = db, b
     end
-    function lib:Show(name) self.buttons[name]:Show(); self.registered[name].hide = false end
-    function lib:Hide(name) self.buttons[name]:Hide(); self.registered[name].hide = true end
+    -- As the real one (LibDBIcon-1.0 MINOR 56): Show/Hide only show or hide the
+    -- button (Show re-anchors it on the ring); neither touches the saved table.
+    function lib:Show(name) self.buttons[name]:Show(); self.buttons[name]._repositioned = true end
+    function lib:Hide(name) self.buttons[name]:Hide() end
     function lib:GetMinimapButton(name) return self.buttons[name] end
     return lib
 end

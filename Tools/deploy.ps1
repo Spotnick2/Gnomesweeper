@@ -64,6 +64,18 @@ Get-ChildItem -LiteralPath $media -File | Where-Object { $_.Extension -in ".tga"
     Remove-Item -LiteralPath $_.FullName -Force
 }
 
+# Every file the TOC lists must be in the deployed copy: a TOC entry in a folder
+# this script doesn't copy would otherwise only show as a load error in game.
+$missing = Get-Content -LiteralPath (Join-Path $RepoRoot "Gnomesweeper.toc") |
+    ForEach-Object { $_.Trim() } | Where-Object { $_ -match '\.(lua|xml)$' -and $_ -notmatch '^#' } |
+    Where-Object { -not (Test-Path -LiteralPath (Join-Path $dest $_)) }
+if ($missing) {
+    $missing | ForEach-Object { Write-Host "  MISSING in the deployed copy: $_" -ForegroundColor Red }
+    Write-Error "Deploy is incomplete: the TOC lists files that weren't copied."
+    exit 1
+}
+Write-Host "  every TOC file is in place" -ForegroundColor DarkGray
+
 Write-Host ""
 Write-Host "Changed files: /reload is enough. A brand-new addon folder needs a client restart." -ForegroundColor Yellow
 Write-Host "In game:  /console scriptErrors 1   then   /gsweep" -ForegroundColor Green

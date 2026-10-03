@@ -36,7 +36,7 @@ do
     function tip:AddLine(text) self.lines[#self.lines + 1] = text end
     obj.OnTooltipShow(tip)
     eq(tip.lines[1], "Gnomesweeper", "the tooltip names it")
-    eq(tip.lines[2], "Left-click: play", "...says what a left-click does")
+    eq(tip.lines[2], "Left-click: open or close the board", "...says what a left-click does (it closes it too)")
     eq(tip.lines[3], "Right-click: settings", "...and a right-click")
 
     -- A setting, through Options.Set.
@@ -80,6 +80,42 @@ end
 do  -- a damaged saved table is replaced
     loadAddon({ db = { minimap = "junk" } })
     eq(type(GnomesweeperDB.minimap), "table", "a minimap entry that isn't a table is replaced")
+end
+
+do  -- the name already taken by another addon: no button, no error at login
+    loadAddon()
+    WoW.ldb = WoW.newLDB()
+    WoW.ldb.objects.Gnomesweeper = {}
+    function WoW.ldb:NewDataObject(name, obj)       -- as the real one: nil for a taken name
+        if self.objects[name] then return nil end
+        self.objects[name] = obj; return obj
+    end
+    WoW.fire("PLAYER_LOGIN")
+    eq(Gnomesweeper.Minimap.Available(), false, "a taken name: no button")
+    eq(WoW.ldbi.registrations, 0, "...nothing registered")
+    WoW.chat = {}
+    WoW.slash("/gsweep minimap")
+    check(chatHas("there is no minimap button"), "/gsweep minimap says there is none, not 'shown'")
+end
+
+do  -- Register itself erroring (LibDBIcon errors on a name it already has)
+    loadAddon()
+    WoW.ldbi = WoW.newLDBI()
+    function WoW.ldbi:Register() error("Object 'Gnomesweeper' is already registered.") end
+    WoW.fire("PLAYER_LOGIN")
+    eq(Gnomesweeper.Minimap.Available(), false, "a Register that errors: no button, no error at login")
+end
+
+do  -- hiding is saved by us: LibDBIcon's Show/Hide never write the table
+    loadAddon()
+    WoW.fire("PLAYER_LOGIN")
+    local button = WoW.ldbi:GetMinimapButton("Gnomesweeper")
+    Gnomesweeper.Options.Set("minimapButton", false)
+    eq(GnomesweeperDB.minimap.hide, true, "hidden: saved, so it stays hidden after a restart")
+    button._repositioned = nil
+    Gnomesweeper.Options.Set("minimapButton", true)
+    eq(GnomesweeperDB.minimap.hide, false, "shown: saved")
+    check(button._repositioned, "(showing it re-anchors it on the ring, as LibDBIcon does)")
 end
 
 do  -- no libraries: no button, nothing else breaks

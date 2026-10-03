@@ -16,7 +16,8 @@
 --
 -- More settings join the list with their issues: sounds (#9), music (#22),
 -- models (#21), hiding in combat (#37). An item with get/set keeps its value
--- somewhere else than GnomesweeperDB[key] (the minimap button: LibDBIcon's table).
+-- somewhere else than GnomesweeperDB[key], or applies it itself (the scale, the
+-- minimap button in LibDBIcon's table); the rest are GnomesweeperDB[key].
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -36,11 +37,16 @@ Options.ITEMS = {
       note = "One safe tile is Windows XP's rule. Each rule keeps its own best times.", nextGame = true },
     { key = "chordOnLeft", kind = "toggle", label = "Clear with left-click",
       note = "Left-click a number whose flags match." },
-    { key = "scale", kind = "scale", label = "Window size" },
+    { key = "scale", kind = "scale", label = "Window size",
+      get = function() return db().scale or 1 end,
+      set = function(v)
+          if math.abs(v - 1) < 0.001 then v = nil end    -- 100% is no saved scale at all
+          GS.Window.SetScale(v)
+      end },
     { key = "minimapButton", kind = "toggle", label = "Minimap button",
-      note = "Left-click plays, right-click opens these settings. Drag it around the minimap.",
+      note = "Left-click opens or closes the board, right-click opens these settings. Drag it around the minimap.",
       get = function() return GS.Minimap.Shown() end,
-      set = function(v) GnomesweeperDB.minimap.hide = not v; GS.Minimap.Apply() end },
+      set = function(v) GS.Minimap.SetShown(v) end },
 }
 local BY_KEY = {}
 for _, item in ipairs(Options.ITEMS) do BY_KEY[item.key] = item end
@@ -52,7 +58,6 @@ Options.SCALE_STEP = 0.1
 ------------------------------------------------------------
 
 function Options.Get(key)
-    if key == "scale" then return db().scale or 1 end
     local item = BY_KEY[key]
     if item and item.get then return item.get() end
     return db()[key]
@@ -91,10 +96,7 @@ function Options.Set(key, v)
     if not (item and valid(item, v)) then return false end
     if v == Options.Get(key) then Options.Refresh(); return true end      -- nothing to change, nothing to replace
     local W = GS.Window
-    if item.kind == "scale" then
-        if math.abs(v - 1) < 0.001 then v = nil end        -- 100% is no saved scale at all
-        W.SetScale(v)
-    elseif item.set then
+    if item.set then
         item.set(v)
     else
         db()[key] = v

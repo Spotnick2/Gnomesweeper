@@ -55,8 +55,12 @@ local function Slash(msg)
     elseif msg == "settings" or msg == "options" or msg == "config" then
         GS.Options.Open()
     elseif msg == "minimap" then
-        GS.Options.Set("minimapButton", not GS.Minimap.Shown())
-        Print("minimap button " .. (GS.Minimap.Shown() and "shown." or "hidden: /gsweep minimap brings it back."))
+        if not GS.Minimap.Available() then
+            Print("there is no minimap button: its libraries didn't load (or another addon took the name).")
+        else
+            GS.Options.Set("minimapButton", not GS.Minimap.Shown())
+            Print("minimap button " .. (GS.Minimap.Shown() and "shown." or "hidden: /gsweep minimap brings it back."))
+        end
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")

@@ -6,7 +6,8 @@ everything the skin names, says which client paths the client doesn't have, and 
 the sheet is a texture the client can't draw.
 
 **Measured with it** (owner, 1.60.1.70205, 2026-10-02): **all 19 textures draw**, with no green
-square and no empty cell: the 17 files of ours (the face and the logo are one file), the settings
+square and no empty cell: the 17 files of ours (the face and the logo were one file; the title-bar
+logo has since gone, #44, so the sheet now lists 18 entries), the settings
 gear (a client path, `GetFileIDFromPath` → `311226`) and the bomb (client id `133709`, judged by
 eye). For our own files `GetFileIDFromPath` answered negative ids (`-2411` to `-2436`), one per path:
 the client does find addon files by path, under temporary ids. Whether it answers `nil` for a missing
@@ -40,7 +41,7 @@ measured: #6 confirms them in game. File IDs can be passed straight to `SetTextu
 | `inv_misc_blackironbomb` | 463515 | Mine candidate |
 | `creatureportrait_g_bomb_02` | 512904 | Mine candidate (a goblin bomb portrait) |
 | `inv_eng_bombfire` | 2115301 | Exploded mine overlay candidate |
-| `achievement_character_gnome_male` / `_female` | 236446 / 236445 | Gnome face placeholder and title-bar logo |
+| `achievement_character_gnome_male` / `_female` | 236446 / 236445 | Gnome face placeholder (there is no title-bar logo any more) |
 | `inv_misc_head_gnome_01` / `_02` | 134164 / 134165 | Gnome face placeholder |
 | `inv_misc_head_clockworkgnome_01` | 134152 | Face for the loss state? |
 | `inv_helm_armor_engineering_b_02_gnome` | 4741993 | Gnomish goggles: a HUD accent |

@@ -595,9 +595,9 @@ local function build()
     win.backing:AddMaskTexture(win.glass.mask)
     local content = Glass.ContentLevel(win)
 
-    -- Title bar: the mascot, the name, the tagline, the settings gear, close.
+    -- Title bar: the name and the tagline (no portrait: the mascot is the HUD's
+    -- new-game face), then the icons: music, trophy, ?, gear, close.
     local title = Glass.Font(win, 19, "LEFT")
-    -- No portrait beside it: the mascot is the HUD's new-game button (owner: a second one was redundant).
     title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
     title:SetText(Skin.TITLE)
     local tagline = Glass.Font(win, 11, "LEFT")
@@ -799,7 +799,6 @@ end
 -- Entry points
 ------------------------------------------------------------
 
--- Fit the window and (re)build the tiles for the current game.
 -- A new game the player asked for (the face, Play again, Try again): the
 -- gnomish arm whirs and the tiles come back in a wave (#43). A difficulty
 -- change or a setting starts one quietly.
@@ -809,6 +808,7 @@ function playerNewGame()
     Grid.Shuffle()
 end
 
+-- Fit the window and (re)build the tiles for the current game.
 local function syncGame()
     Window.Layout()
     Grid.Rebuild(game)

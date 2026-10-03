@@ -181,12 +181,21 @@ end
 function Grid.Logging() return logging end
 
 local shuffling              -- seconds into the new-game wave, or nil
+local swallowed = {}         -- buttons held since a press that ended the wave
 
 local function onDown(self, button)
     log("tile %d  down  %s", self.index, tostring(button))
-    -- A press during the wave finishes it, and is not a click: its release finds
-    -- no recorded press, so it does nothing.
-    if shuffling then Grid.FinishShuffle(); return end
+    -- A press during the wave finishes it and is not a click, and neither is any
+    -- other button pressed before all of them are up again: a left+right begun
+    -- in the wave must not plant a flag on the new board.
+    if shuffling or next(swallowed) then
+        if shuffling then
+            Grid.FinishShuffle()
+            log("tile %d  %s ended the new-game wave (not a click)", self.index, tostring(button))
+        end
+        swallowed[button] = true
+        return
+    end
     input:Down(self.index, button)
 end
 
@@ -199,6 +208,7 @@ local function onUp(self, button, upInside)
         log("tile %d  up    %s  upInside=%s  IsMouseOver=%s", self.index, tostring(button),
             tostring(upInside), tostring(self:IsMouseOver()))
     end
+    if swallowed[button] then swallowed[button] = nil; return end   -- the gesture that ended the wave
     input:Up(self.index, button, inside)
 end
 
@@ -225,9 +235,10 @@ end
 ------------------------------------------------------------
 -- The new-game wave (#43): the tiles re-cover in a diagonal wave from the top-
 -- left, each fading in and dropping a few units into place, three seconds in
--- all: as long as the gnomish arm's sound, which starts on the same click (the
--- owner tried a one-second wave, then a second's wait before it: neither felt right). One OnUpdate, only while it runs: no
--- animation group per tile (Expert is 480).
+-- all, as long as the gnomish arm's sound, which starts on the same click. One
+-- OnUpdate, only while it runs: no animation group per tile (Expert is 480).
+-- Each tile's start is worked out once, and a tile is only touched while it
+-- moves, so a frame costs the band of tiles in flight, not the whole board.
 ------------------------------------------------------------
 
 Grid.SHUFFLE_SPREAD = 2.3    -- seconds from the first tile starting to the last
@@ -238,20 +249,31 @@ local driver                 -- the frame whose OnUpdate runs the wave
 
 local function place(t, dy) t:SetPoint("TOPLEFT", host, "TOPLEFT", t.x0, t.y0 + dy) end
 
--- Draws the wave at `elapsed` seconds; true once every tile has landed.
-local function waveAt(elapsed)
-    local w = game.w
+-- When each tile starts, from its place on the diagonal: worked out once a wave.
+local function startTimes()
     local span = math.max(1, game.w + game.h - 2)
+    for i = 1, game.total do
+        local t = tiles[i]
+        t.waveStart = (t.x0 - t.y0) / TILE / span * Grid.SHUFFLE_SPREAD   -- x0 / TILE + row, from Rebuild's place
+        t.waveE = nil
+    end
+end
+
+-- Draws the wave at `elapsed` seconds; true once every tile has landed. A tile
+-- whose look hasn't changed since the last frame is left alone.
+local function waveAt(elapsed)
     local landed = true
     for i = 1, game.total do
-        local x, y = (i - 1) % w, math.floor((i - 1) / w)
-        local p = (elapsed - (x + y) / span * Grid.SHUFFLE_SPREAD) / Grid.SHUFFLE_FALL
+        local t = tiles[i]
+        local p = (elapsed - t.waveStart) / Grid.SHUFFLE_FALL
         if p < 1 then landed = false end
         p = math.max(0, math.min(1, p))
         local e = 1 - (1 - p) * (1 - p)                    -- ease out: fast, then settling
-        local t = tiles[i]
-        t:SetAlpha(e)
-        place(t, Grid.SHUFFLE_DROP * (1 - e))
+        if e ~= t.waveE then
+            t.waveE = e
+            t:SetAlpha(e)
+            place(t, Grid.SHUFFLE_DROP * (1 - e))
+        end
     end
     return landed
 end
@@ -273,6 +295,7 @@ function Grid.Shuffle()
     Grid.FinishShuffle()
     shuffling = 0
     Grid.SetInteractive(false)                           -- no hover glow while tiles fly in
+    startTimes()
     waveAt(0)
     driver:SetScript("OnUpdate", function(_, dt)
         shuffling = shuffling + dt
@@ -294,6 +317,7 @@ end
 
 function Grid.Cancel()
     if input then input:Cancel() end
+    for b in pairs(swallowed) do swallowed[b] = nil end   -- a release lost to a closing window mustn't eat the next press
 end
 
 -- A new game: every tile placed and painted for `board`, the pool grown only if

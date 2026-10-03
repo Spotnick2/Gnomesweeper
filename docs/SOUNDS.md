@@ -28,8 +28,8 @@ measured: whether the track loops.
 **The owner's picks after listening** (2026-10-03): the clicks are fine ("a normal mouse click");
 the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 3272 after the bomb,
 5925 / 5931 on the first open of a session); an **alert when the clock passes your best** (once a
-game): **4574 `IG_PVP_UPDATE`**, the owner's pick after the audition (25477, the battleground
-countdown, was the other contender); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
+game): **kit 8456**, the owner's pick (a PvP warning; after auditioning 4574 `IG_PVP_UPDATE` and
+25477, the battleground countdown); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
 file is 566083; the owner found the kit ID in Classic's data), a gnomish arm, in place of the big red
 button 4779 that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
 `SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.

@@ -111,19 +111,17 @@ do
     ui.result.button._scripts.OnClick(ui.result.button)
     WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
     WoW.slash("/gsweep scores")                         -- the best times panel (#7)
-    WoW.slash("/gsweep settings")                       -- the settings (#8): every control
-    do
+    do                                                  -- the settings (#8): every control, About
         local O = Gnomesweeper.Options
-        local c = O._test.panel().controls
-        c.questionMarks.switch._scripts.OnClick(c.questionMarks.switch)
-        c.safeZone.buttons[2]._scripts.OnClick(c.safeZone.buttons[2])
-        c.scale.plus._scripts.OnClick(c.scale.plus)
         WoW.fire("PLAYER_LOGIN")
+        WoW.slash("/gsweep settings")
+        SettingsPanel:Hide()
         local page = O._test.page
         page:Hide(); page:Show()
         page.controls.questionMarks.check._scripts.OnClick(page.controls.questionMarks.check)
         page.controls.safeZone.radios[1]._scripts.OnClick(page.controls.safeZone.radios[1])
-        O.OpenPage()
+        page.controls.scale.plus._scripts.OnClick(page.controls.scale.plus)
+        O._test.about:Hide(); O._test.about:Show()
         O.Set("safeZone", "area"); O.Set("questionMarks", false); O.Set("scale", 1)
     end
     local bests = Gnomesweeper.Window._test.ui.bests

@@ -227,7 +227,12 @@ function WoW.reset()
     WoW.mouseDown = false
     WoW.fileIDs = {}
     WoW.missingTemplates = {}
-    WoW.settings = { canvas = {}, addons = {} }
+    WoW.settings = { canvas = {}, addons = {}, subs = {} }
+    WoW.metadata = { Version = "@project-version@" }
+    -- Blizzard's Settings window (HIGH strata), hidden until opened.
+    SettingsPanel = newWidget("Frame", UIParent, "SettingsPanel")
+    SettingsPanel._strata = "HIGH"
+    SettingsPanel._shown = false
     WoW.epoch = 1790000000
     WoW.playerName, WoW.playerSurname, WoW.realm = "Fizzle", "Sprocketwhistle", "Forever"
     WoW.screen = { w = 1366, h = 768 }
@@ -258,6 +263,7 @@ function date(fmt, t) return os.date(fmt, t) end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end
+C_AddOns = { GetAddOnMetadata = function(name, key) return WoW.metadata[key] end }
 -- Retail's Settings framework: Options > AddOns. Recorded in WoW.settings.
 Settings = {
     RegisterCanvasLayoutCategory = function(frame, name)
@@ -266,7 +272,12 @@ Settings = {
         return cat
     end,
     RegisterAddOnCategory = function(cat) WoW.settings.addons[#WoW.settings.addons + 1] = cat end,
-    OpenToCategory = function(id) WoW.settings.opened = id end,
+    OpenToCategory = function(id) WoW.settings.opened = id; SettingsPanel:Show() end,
+    RegisterCanvasLayoutSubcategory = function(parent, frame, name)
+        local cat = { parent = parent, frame = frame, name = name }
+        WoW.settings.subs[#WoW.settings.subs + 1] = cat
+        return cat
+    end,
 }
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end

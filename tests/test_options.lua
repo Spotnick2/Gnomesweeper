@@ -1,5 +1,6 @@
--- Options.lua: the settings (#8). One place that changes them, the glass panel
--- behind the gear, and the page in Options > AddOns.
+-- Options.lua: the settings (#8). One place that changes them, and the one place
+-- to set them: Options > AddOns > Gnomesweeper (the gear opens it), with an About
+-- sub-page.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
@@ -104,73 +105,52 @@ do
 end
 
 ----------------------------------------------------------------------------
--- The glass panel (the gear)
+-- The gear opens Options > AddOns > Gnomesweeper; the window steps aside
 ----------------------------------------------------------------------------
 do
     local W, O = fresh()
     local ui = W._test.ui
-    eq(O._test.panel(), nil, "the panel is built only when asked for")
+    WoW.chat = {}
     press(ui.gear)
-    local p = O._test.panel()
-    check(p and p:IsShown(), "the gear opens the settings")
-    eq(p.title:GetText(), "Settings", "...titled")
-    eq(p:GetFrameLevel(), W.win:GetFrameLevel() + 30, "...over the board, with the list and the best times")
-    check(p._mouse, "...and the board under it takes no clicks")
-    local c = p.controls
+    eq(WoW.settings.opened, nil, "before login there is no page to open")
+    check(WoW.chat[#WoW.chat]:find("Options > AddOns > Gnomesweeper", 1, true) ~= nil, "...so it says where the settings are")
 
-    eq(c.questionMarks.switch.label:GetText(), "Off", "it shows question marks off")
-    eq(c.questionMarks.note:GetText(), "Right-click: flag, then ?, then clear.", "...with what it does")
-    press(c.questionMarks.switch)
-    eq(GnomesweeperDB.questionMarks, true, "the switch turns them on")
-    eq(c.questionMarks.switch.label:GetText(), "On", "...and says so")
-    eq(c.questionMarks.switch.accent[1], Gnomesweeper.Skin.RARITY.uncommon[1], "...in green")
-
-    check(c.safeZone.buttons[1].selected and not c.safeZone.buttons[2].selected, "the first click: opens an area")
-    press(c.safeZone.buttons[2])
-    eq(GnomesweeperDB.safeZone, "cell", "the other button: one safe tile")
-    check(c.safeZone.buttons[2].selected and not c.safeZone.buttons[1].selected, "...and it is the one marked")
-    eq(c.safeZone.buttons[2].label._textColor[1], Gnomesweeper.Skin.COLORS.gold[1], "...in gold")
-
-    press(c.chordOnLeft.switch)
-    eq(GnomesweeperDB.chordOnLeft, true, "left-click clearing on")
-
-    eq(c.scale.value:GetText(), "100%", "the window size")
-    press(c.scale.plus)
-    eq(c.scale.value:GetText(), "110%", "+ makes it bigger")
-    press(c.scale.minus); press(c.scale.minus)
-    eq(c.scale.value:GetText(), "90%", "- smaller")
-    eq(c.scale.note:GetText(), "", "...no note while it fits")
-    WoW.setScreen(500, 380)
-    WoW.fire("DISPLAY_SIZE_CHANGED")
-    check(c.scale.note:GetText():find("^Shown at %d+%% so it fits the screen%.$") ~= nil, "a smaller screen: the open panel says the size it is shown at")
-    WoW.setScreen(1920, 1080)
-    WoW.fire("UI_SCALE_CHANGED")
-    eq(c.scale.note:GetText(), "", "...and drops it when it fits again")
-
-    -- A change made elsewhere shows at once.
-    WoW.slash("/gsweep scale reset")
-    eq(c.scale.value:GetText(), "100%", "a slash command's change shows in the open panel")
-
-    -- One floating panel at a time.
-    press(ui.diff)
-    check(ui.menu:IsShown() and not p:IsShown(), "the difficulty list puts the settings away")
+    WoW.fire("PLAYER_LOGIN")
     press(ui.gear)
-    check(p:IsShown() and not ui.menu:IsShown(), "...and the settings put the list away")
-    press(ui.trophy)
-    check(ui.bests:IsShown() and not p:IsShown(), "the best times put the settings away")
-    press(ui.gear)
-    check(p:IsShown() and not ui.bests:IsShown(), "...and the other way round")
-    press(ui.gear)
-    check(not p:IsShown(), "the gear again closes it")
+    eq(WoW.settings.opened, "cat:Gnomesweeper", "the gear opens the Gnomesweeper page")
+    check(SettingsPanel:IsShown(), "...in Blizzard's Settings window")
+    check(not W.win:IsShown(), "our window steps aside (it would draw over Settings)")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "closing Settings brings it back")
+
     WoW.slash("/gsweep settings")
-    check(p:IsShown(), "/gsweep settings opens it")
+    check(SettingsPanel:IsShown() and not W.win:IsShown(), "/gsweep settings does the same")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...and back")
+
+    -- Settings opened from the game menu, with the window open: the same.
+    SettingsPanel:Show()
+    check(not W.win:IsShown(), "Settings opened any other way: the window steps aside too")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...and comes back")
+
+    -- A window that was closed stays closed.
     W.win:Hide()
-    check(not p:IsShown(), "closing the window closes it")
-    WoW.slash("/gsweep")
-    check(not p:IsShown(), "...so it doesn't come back over the board")
-    WoW.slash("/gsweep settings")
-    press(p.close)
-    check(not p:IsShown(), "its close button closes it")
+    SettingsPanel:Show(); SettingsPanel:Hide()
+    check(not W.win:IsShown(), "a window that was closed is not opened by closing Settings")
+
+    -- Its clock doesn't run while it is away.
+    W.Open()
+    local tiles = Gnomesweeper.Grid._test.tiles
+    WoW.now = 100
+    tiles[41]._scripts.OnMouseDown(tiles[41], "LeftButton"); tiles[41]._scripts.OnMouseUp(tiles[41], "LeftButton", true)
+    eq(W.game:State(), "playing", "(a game in progress)")
+    WoW.now = 110
+    SettingsPanel:Show()
+    WoW.now = 500
+    SettingsPanel:Hide()
+    WoW.now = 505
+    check(math.abs(W.game:Elapsed(WoW.now) - 15) < 1e-9, "the clock is paused while Settings is open")
 end
 
 ----------------------------------------------------------------------------
@@ -213,18 +193,40 @@ do
     WoW.setScreen(1920, 1080); W.Layout(); O.Refresh()
     eq(c.scale.note:GetText(), "", "...nothing when it fits")
 
-    -- The open best times follow a rule changed on this page.
-    O.Set("safeZone", "area")
-    WoW.slash("/gsweep scores")
-    local bests = W._test.ui.bests
-    eq(bests.rule:GetText(), "First click: always opens an area.", "(the best times, open)")
+    -- A change made elsewhere (a slash command) shows on the page.
+    WoW.slash("/gsweep scale reset")
+    eq(c.scale.value:GetText(), "100%", "a slash command's change shows on the open page")
+    -- The best times shown when the window comes back follow the rule changed here.
     c.safeZone.radios[2]._scripts.OnClick(c.safeZone.radios[2])
-    eq(bests.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "an open best times panel follows the rule changed here")
+    WoW.slash("/gsweep scores")
+    eq(W._test.ui.bests.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "the best times follow the rule changed here")
 
-    -- Both views are one: a change in the glass panel shows on this page.
-    WoW.slash("/gsweep settings")
-    press(Gnomesweeper.Options._test.panel().controls.chordOnLeft.switch)
-    eq(c.chordOnLeft.check:GetChecked(), true, "a change in the gear's panel shows on the page")
+    -- The About sub-page, under this one.
+    local sub = WoW.settings.subs[1]
+    check(sub ~= nil, "an About page is registered")
+    eq(sub.parent, cat, "...under the Gnomesweeper page")
+    eq(sub.name, "About", "...named About")
+    eq(#WoW.settings.subs, 1, "...once")
+    local about = O._test.about
+    about:Hide(); about:Show()
+    eq(about.title:GetText(), "Gnomesweeper", "it has the name")
+    eq(about.tagline:GetText(), "One wrong click. Full wipe.", "...the tagline")
+    check(about.version:GetText():find("^Version dev ") ~= nil, "...the version (dev for an unpackaged copy)")
+    local cmds = {}
+    for _, fs in ipairs(about.commands) do cmds[#cmds + 1] = fs:GetText() end
+    cmds = table.concat(cmds, "\n")
+    check(cmds:find("/gsweep scores", 1, true) ~= nil, "...the commands")
+    check(cmds:find("/gsweep perf", 1, true) == nil and cmds:find("/gsweep assets", 1, true) == nil,
+        "...but not the ones for measuring")
+end
+
+do  -- a packaged copy shows its version
+    loadAddon()
+    WoW.metadata.Version = "v1.2.0"
+    WoW.fire("PLAYER_LOGIN")
+    local about = Gnomesweeper.Options._test.about
+    about:Hide(); about:Show()
+    check(about.version:GetText():find("^Version v1.2.0 ") ~= nil, "the About page shows a packaged version")
 end
 
 do  -- a client without the templates: our own art, nothing missing

@@ -32,8 +32,8 @@ local category
 -- How the last win compared: { new = bool, previous = record or nil }.
 local lastWin
 local fillBests             -- the best times panel's refresh (defined with the panel)
--- The panels that float over the board (the difficulty list, the best times,
--- the settings): one at a time, and all closed with the window.
+-- The panels that float over the board (the difficulty list, the best times):
+-- one at a time, and all closed with the window.
 local floating = {}
 local ui = { rows = {} }    -- the widgets Refresh and the layout touch
 
@@ -611,8 +611,8 @@ local function build()
     ui.gear = Widgets.IconButton(win, 22, T.gear, { 0.82, 0.92, 1 })
     ui.gear:SetFrameLevel(content)
     ui.gear:SetPoint("RIGHT", ui.close, "LEFT", -5, 0)
-    ui.gear:SetScript("OnClick", function() GS.Options.ShowPanel() end)
-    Widgets.Tip(ui.gear, "Settings", "Question marks, the first click, left-click clearing, the window size.")
+    ui.gear:SetScript("OnClick", function() GS.Options.Open() end)
+    Widgets.Tip(ui.gear, "Settings", "Opens Options > AddOns > Gnomesweeper: question marks, the first click, left-click clearing, the window size.")
 
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
@@ -643,7 +643,6 @@ local function build()
     hud.bg:SetAllPoints(hud)
     hud.bg:SetColorTexture(unpack(C.hudBg))
     ui.hud = hud
-    Window.hud = hud                  -- what panels over the board hang from (Options.lua)
 
     local flag = hud:CreateTexture(nil, "ARTWORK")
     flag:SetSize(24, 24)
@@ -800,8 +799,8 @@ end
 
 function Window.IsShown() return win ~= nil and win:IsShown() end
 
--- A panel that floats over the board (Options.lua's settings): showing it puts
--- the others away, and closing the window closes it.
+-- A panel that floats over the board: showing it puts the others away, and
+-- closing the window closes it.
 function Window.Floating(f)
     floating[#floating + 1] = f
     f:HookScript("OnShow", function(self)
@@ -810,9 +809,9 @@ function Window.Floating(f)
 end
 
 -- After a setting changed (Options.Set): what the window shows that depends on one.
+-- (The best times refill whenever they show, and can't be open while Settings is.)
 function Window.SettingsChanged()
     Window.Refresh()
-    if ui.bests and ui.bests:IsShown() then fillBests() end
 end
 
 -- The player's own scale (/gsweep scale), nil to go back to 1. The window still

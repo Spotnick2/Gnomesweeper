@@ -152,18 +152,23 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
 - **`Options.lua`** (#8): the settings. `Options.ITEMS` lists them (question marks, the first-click
   rule, left-click clearing, the window scale; sounds #9, music #22, models #21 and hiding in combat
   #37 join it with their issues). **`Options.Set(key, value)` is the one place a setting changes**: it
-  checks the value (refused: nothing changes), saves it, applies it, and refreshes every view. The
-  slash commands go through it too. Question marks and the first-click rule are part of a board: they
-  apply from the next game, and a board nobody has touched (every tile covered: no reveal, no mark) is
-  replaced at once. The same value again does nothing. Two views: the **glass panel** behind the gear
-  (`Options.ShowPanel`, `/gsweep settings`), with glass On/Off switches, a two-button choice and -/+ for
-  the size (no new art); and **Options > AddOns > Gnomesweeper**, a canvas registered at
-  `PLAYER_LOGIN` with Blizzard's check/radio/button templates and GlassUnitFrames' fallbacks
-  (`API.SafeFrame`), built on its first show and never hidden by us (as GlassUnitFrames does).
-  `Window.Floating(frame)` makes the list, the best times and the settings one-at-a-time and closes
-  them with the window; `Window.SettingsChanged()` refreshes what depends on a setting; `Window.hud`
-  is what panels over the board hang from. A screen or UI-scale change refreshes the settings too
-  (the size note says when the window is shown smaller to fit).
+  checks the value (refused: nothing changes), saves it, applies it, and refreshes the page. The slash
+  commands go through it too. Question marks and the first-click rule are part of a board: they apply
+  from the next game, and a board nobody has touched (every tile covered: no reveal, no mark) is
+  replaced at once. The same value again does nothing.
+  **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
+  more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
+  it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on
+  its first show and never hidden by us, Blizzard's check/radio/button templates with the client's own
+  art as the fallback (`API.SafeFrame`). **Sub-pages** go under it, registered right after it, in
+  order (GlassRaidFrames' Click-casting way): **About** (version from `C_AddOns.GetAddOnMetadata`,
+  "dev" unpackaged; how to play; the commands from `GS.HELP`, minus the "(for measuring)" ones).
+  **Blizzard's `SettingsPanel` is in the HIGH strata and our window in FULLSCREEN_DIALOG, above it**:
+  while it is open our window steps aside (hidden, so its clock pauses) and comes back when it closes,
+  if it was open; that is hooked on `SettingsPanel` itself, so it also holds when Settings is opened
+  from the game menu. `Window.Floating(frame)` keeps the difficulty list and the best times one at a
+  time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
+  says when the window is shown smaller to fit).
 - **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
   and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
@@ -314,8 +319,9 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
 - **`test_options.lua`** is the settings: `Options.Set` (refused values, next game vs. now, marks
-  kept, the same value), the steps of the scale, the glass panel, one floating panel at a time, the
-  Options page (registration, templates and the fallback art), and both views staying in step.
+  kept, the same value), the steps of the scale, the gear opening the page and the window stepping
+  aside (and back, and its clock paused), the page (registration, templates and the fallback art), and
+  the About sub-page.
 - **`test_scores.lua`** is personal bests: the model with every global forbidden (categories, ties,
   damaged data), the full name, and in the window: counting, the overlay, the result bar, the list,
   the tooltip, a reload, and the result bar's room for its text on every difficulty.

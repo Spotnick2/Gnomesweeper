@@ -28,14 +28,15 @@ local function Print(msg)
     print("|cff7fd4ffGnome|rsweeper: " .. msg)
 end
 
+-- Also listed on Options > AddOns > Gnomesweeper > About (all but the "(for measuring)" ones).
 local HELP = {
     "/gsweep - open or close the board (also /gnomesweeper, /minewipe)",
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep scores - your best times (also the trophy in the title bar)",
-    "/gsweep settings - the settings (also the gear, and Options > AddOns > Gnomesweeper)",
+    "/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
-    "/gsweep assets - a sheet of every texture, to check by eye that each one draws",
+    "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
 }
@@ -49,7 +50,7 @@ local function Slash(msg)
     elseif msg == "scores" or msg == "bests" then
         GS.Window.ShowBests(true)
     elseif msg == "settings" or msg == "options" or msg == "config" then
-        GS.Options.ShowPanel(true)
+        GS.Options.Open()
     elseif msg == "reset" then
         GS.Window.ResetPosition()
         Print("window position reset.")
@@ -85,6 +86,8 @@ local function Slash(msg)
         for _, line in ipairs(HELP) do Print(line) end
     end
 end
+
+GS.HELP = HELP
 
 SLASH_GNOMESWEEPER1 = "/gnomesweeper"
 SLASH_GNOMESWEEPER2 = "/gsweep"

@@ -1,9 +1,14 @@
 -- Options.lua: the settings (#8). One list of what can be set, one place that
--- checks, saves and applies a change (Options.Set), and two views on it: the
--- glass panel behind the title bar's gear (in the window) and a page in the
--- game's Options > AddOns (Retail's Settings framework, as GlassUnitFrames'
--- Options.lua does on Forever). Both views re-read the values every time they
--- show, and after every change, so neither can show a stale one.
+-- checks, saves and applies a change (Options.Set), and ONE place to set them:
+-- a page in the game's Options > AddOns > Gnomesweeper (Retail's Settings
+-- framework, as GlassUnitFrames' Options.lua does on Forever). The title bar's
+-- gear and /gsweep settings open it. (The owner's call: more settings are coming,
+-- guild scores among them, and a panel inside the window would outgrow it.)
+-- The page re-reads the values every time it shows and after every change.
+--
+-- Blizzard's Settings window is in the HIGH strata and ours in FULLSCREEN_DIALOG,
+-- above it: while the Settings window is open, ours steps aside (hidden, so its
+-- clock pauses), and comes back when it closes.
 --
 -- Question marks and the first-click rule are part of a board, so they apply
 -- from the next game; a game not touched yet (no tile revealed, nothing marked)
@@ -18,8 +23,7 @@ local GS = Gnomesweeper
 local Options = {}
 GS.Options = Options
 
-local Glass, Skin, Widgets, Layout = GS.Glass, GS.Skin, GS.Widgets, GS.Layout
-local C, T = Skin.COLORS, Skin.TEXTURES
+local Layout = GS.Layout
 
 local function db() return GnomesweeperDB end
 
@@ -110,132 +114,6 @@ local function fitNote()
 end
 
 ------------------------------------------------------------
--- The glass panel (the gear)
-------------------------------------------------------------
-
-local PANEL_W = 264
-local panel
-
-local function switch(parent, onClick)
-    local b = Widgets.GlassButton(parent, 54, 20, { fontSize = 11 })
-    b:SetScript("OnClick", onClick)
-    function b.setOn(self, on)
-        self.on = on
-        self.label:SetText(on and "On" or "Off")
-        local col = on and Skin.RARITY.uncommon or C.hint
-        self:setAccent(col[1], col[2], col[3])
-        self.label:SetTextColor(col[1], col[2], col[3])
-    end
-    return b
-end
-
-local function buildPanel()
-    local win = GS.Window.win
-    local p = Widgets.GlassPanel(win)
-    p:SetFrameLevel(win:GetFrameLevel() + 30)            -- with the list and the best times
-    p:SetPoint("TOP", GS.Window.hud, "TOP", 0, 0)
-    p:EnableMouse(true)                                   -- the board under it takes no clicks
-
-    p.title = Glass.Font(p, 16, "LEFT")
-    p.title:SetPoint("TOPLEFT", p, "TOPLEFT", 14, -14)
-    p.title:SetTextColor(unpack(C.gold))
-    p.title:SetText("Settings")
-    p.close = Widgets.IconButton(p, 20, T.close, { 1, 0.9, 0.9 })
-    p.close:SetPoint("TOPRIGHT", p, "TOPRIGHT", -8, -8)
-    p.close:setAccent(unpack(C.closeAccent))
-    p.close:SetScript("OnClick", function() p:Hide() end)
-
-    local y = -44
-    local function text(size, color, s)
-        local fs = Glass.Font(p, size, "LEFT")
-        fs:SetTextColor(unpack(color))
-        fs:SetText(s)
-        return fs
-    end
-    p.controls = {}
-    local refreshers = {}
-    for _, item in ipairs(Options.ITEMS) do
-        local c = {}
-        c.label = text(13, C.menuText, item.label)
-        c.label:SetPoint("TOPLEFT", p, "TOPLEFT", 14, y)
-        if item.kind == "toggle" then
-            c.switch = switch(p, function() Options.Set(item.key, not Options.Get(item.key)) end)
-            c.switch:SetPoint("TOPRIGHT", p, "TOPRIGHT", -14, y + 2)
-            refreshers[#refreshers + 1] = function() c.switch:setOn(Options.Get(item.key) and true or false) end
-            y = y - 20
-        elseif item.kind == "choice" then
-            c.buttons = {}
-            for i, choice in ipairs(item.choices) do
-                local b = Widgets.GlassButton(p, 114, 22, { fontSize = 11 })
-                b:SetPoint("TOPLEFT", p, "TOPLEFT", 14 + (i - 1) * 122, y - 20)
-                b.label:SetText(choice[2])
-                b.value = choice[1]
-                b:SetScript("OnClick", function() Options.Set(item.key, choice[1]) end)
-                c.buttons[i] = b
-            end
-            refreshers[#refreshers + 1] = function()
-                local current = Options.Get(item.key)
-                for _, b in ipairs(c.buttons) do
-                    local on = b.value == current
-                    local col = on and C.gold or C.accent
-                    b:setAccent(col[1], col[2], col[3])
-                    b.label:SetTextColor(unpack(on and C.gold or C.hint))
-                    b.selected = on
-                end
-            end
-            y = y - 46
-        elseif item.kind == "scale" then
-            c.minus = Widgets.GlassButton(p, 22, 20, { square = true })
-            c.minus.label:SetText("-")
-            c.minus:SetScript("OnClick", function() Options.StepScale(-1) end)
-            c.plus = Widgets.GlassButton(p, 22, 20, { square = true })
-            c.plus.label:SetText("+")
-            c.plus:SetScript("OnClick", function() Options.StepScale(1) end)
-            c.plus:SetPoint("TOPRIGHT", p, "TOPRIGHT", -14, y + 2)
-            c.value = text(13, C.menuText, "")
-            c.value:SetJustifyH("CENTER")
-            c.value:SetWidth(44)
-            c.value:SetPoint("RIGHT", c.plus, "LEFT", -4, 0)
-            c.minus:SetPoint("RIGHT", c.value, "LEFT", -4, 0)
-            refreshers[#refreshers + 1] = function() c.value:SetText(percent(Options.Get("scale"))) end
-            y = y - 20
-        end
-        c.note = text(11, C.hint, "")
-        c.note:SetPoint("TOPLEFT", p, "TOPLEFT", 14, y - 2)
-        c.note:SetWidth(PANEL_W - 28)
-        local key = item.key
-        refreshers[#refreshers + 1] = function()
-            local note = item.note
-            if key == "scale" then note = fitNote() end
-            c.note:SetText(note or "")
-        end
-        y = y - 26
-        p.controls[key] = c
-    end
-    p.footer = text(10, C.hint, "Also in the game's Options > AddOns > Gnomesweeper.")
-    p.footer:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
-    p:SetSize(PANEL_W, -y + 26)
-
-    views[#views + 1] = function()
-        if not p:IsShown() then return end
-        for _, fn in ipairs(refreshers) do fn() end
-    end
-    p:SetScript("OnShow", function() Options.Refresh() end)
-    GS.Window.Floating(p)
-    p:Hide()
-    panel = p
-    return p
-end
-
--- Show (or, with no argument, toggle) the glass settings panel. Opens the window.
-function Options.ShowPanel(show)
-    GS.Window.Open()
-    if not panel then buildPanel() end
-    if show == nil then show = not panel:IsShown() end
-    panel:SetShown(show)
-end
-
-------------------------------------------------------------
 -- Options > AddOns > Gnomesweeper (Blizzard's look, Blizzard's templates)
 ------------------------------------------------------------
 
@@ -297,7 +175,7 @@ end
 local function buildPage()
     local title = pageLabel("Gnomesweeper", "GameFontNormalHuge")
     title:SetPoint("TOPLEFT", page, "TOPLEFT", 16, -16)
-    local sub = pageLabel(GS.TAGLINE .. "  /gsweep opens the board; the gear in its title bar has these settings too.",
+    local sub = pageLabel(GS.TAGLINE .. "  /gsweep opens the board; the gear in its title bar opens this page.",
         "GameFontHighlightSmall")
     sub:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 2, -6)
 
@@ -373,10 +251,94 @@ page:SetScript("OnShow", function(self)
     Options.Refresh()
 end)
 
+------------------------------------------------------------
+-- Options > AddOns > Gnomesweeper > About: a sub-page, as GlassRaidFrames'
+-- Click-casting is under its page. More sub-pages (guild scores) go the same way.
+------------------------------------------------------------
+
+local about = CreateFrame("Frame", "GnomesweeperAbout")
+about.name = "About"
+
+local function version()
+    local ok, v = pcall(C_AddOns.GetAddOnMetadata, ADDON, "Version")
+    if not ok or type(v) ~= "string" or v == "" or v:find("@", 1, true) then return "dev" end
+    return v
+end
+
+local function aboutLabel(text, template, width)
+    local fs = about:CreateFontString(nil, "OVERLAY", template or "GameFontHighlight")
+    fs:SetJustifyH("LEFT")
+    if width then fs:SetWidth(width) end
+    fs:SetText(text)
+    return fs
+end
+
+local function buildAbout()
+    local y = -16
+    local function add(fs, height, indent)
+        fs:SetPoint("TOPLEFT", about, "TOPLEFT", 16 + (indent or 0), y)
+        y = y - height
+        return fs
+    end
+    about.title = add(aboutLabel("Gnomesweeper", "GameFontNormalHuge"), 30)
+    about.tagline = add(aboutLabel(GS.TAGLINE, "GameFontHighlightLarge"), 26, 2)
+    about.version = add(aboutLabel("Version " .. version() .. "  " .. "\194\183" .. "  for World of Warcraft: Forever  " .. "\194\183" .. "  by Spotnick",
+        "GameFontHighlightSmall"), 30, 2)
+
+    add(aboutLabel("How to play", "GameFontNormalLarge"), 24)
+    for _, line in ipairs({
+        "Left-click reveals a tile. Right-click flags it. Clear every tile that isn't a mine.",
+        "A number says how many mines touch it. Middle-click a number (or hold left and right) to reveal",
+        "the tiles around it, once its flags match. A wrong flag reveals a mine.",
+        "The first click is always safe. The rules are Windows XP Minesweeper's.",
+    }) do add(aboutLabel(line, nil, 620), 18, 4) end
+
+    y = y - 10
+    add(aboutLabel("Commands", "GameFontNormalLarge"), 24)
+    about.commands = {}
+    for _, line in ipairs(GS.HELP or {}) do
+        if not line:find("(for measuring)", 1, true) then
+            about.commands[#about.commands + 1] = add(aboutLabel(line, "GameFontHighlightSmall", 620), 16, 4)
+        end
+    end
+end
+
+about:SetScript("OnShow", function(self)
+    if not self.built then
+        self.built = true
+        buildAbout()
+    end
+end)
+
+-- While Blizzard's Settings window is open, ours steps aside (it would draw over
+-- it), and comes back when it closes, if it was open.
+local steppedAside = false
+local function watchSettingsWindow()
+    local sp = rawget(_G, "SettingsPanel")
+    if not (sp and sp.HookScript) then return end
+    sp:HookScript("OnShow", function()
+        if GS.Window.IsShown() then
+            steppedAside = true
+            GS.Window.win:Hide()
+        end
+    end)
+    sp:HookScript("OnHide", function()
+        if steppedAside then
+            steppedAside = false
+            GS.Window.Open()
+        end
+    end)
+end
+
 local function register()
     if category or not (Settings and Settings.RegisterCanvasLayoutCategory) then return end
     category = Settings.RegisterCanvasLayoutCategory(page, page.name)
     Settings.RegisterAddOnCategory(category)
+    -- The sub-pages, under this one: registered here, in order (GlassRaidFrames' way).
+    if Settings.RegisterCanvasLayoutSubcategory then
+        pcall(Settings.RegisterCanvasLayoutSubcategory, category, about, about.name)
+    end
+    watchSettingsWindow()
 end
 
 -- Open the Options > AddOns page; false when the Settings framework can't.
@@ -385,12 +347,19 @@ function Options.OpenPage()
     return pcall(Settings.OpenToCategory, category:GetID()) and true or false
 end
 
+-- The gear and /gsweep settings: open the page, or say where it is.
+function Options.Open()
+    if Options.OpenPage() then return true end
+    print("|cff7fd4ffGnome|rsweeper: the settings are in the game's Options > AddOns > Gnomesweeper.")
+    return false
+end
+
 local reg = CreateFrame("Frame")
 reg:RegisterEvent("PLAYER_LOGIN")
 reg:SetScript("OnEvent", register)
 
 Options._test = {
-    panel = function() return panel end,
     page = page,
+    about = about,
     category = function() return category end,
 }

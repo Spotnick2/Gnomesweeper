@@ -185,7 +185,7 @@ do   -- a click on the overlay puts it away, to look at the board
 
     GameTooltip._text = nil
     o._scripts.OnEnter(o)
-    eq(GameTooltip._text, "Click to see the board", "hovering it says what a click does")
+    eq(GameTooltip._text, "Click to see the field", "hovering it says what a click does")
     o._scripts.OnLeave(o)
 end
 

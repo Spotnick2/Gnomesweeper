@@ -386,18 +386,13 @@ local function buildOverlay()
     -- The way to look at the finished board: a visible control, not only a click on the panel.
     o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
     o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
-    o.view.label:SetText("View board")
+    -- "See the field", not "View board": the owner read "board" as the scoreboard (#7).
+    o.view.label:SetText("See the field")
     o.view:SetScript("OnClick", function() Window.DismissEnd() end)
-    -- /gsweep input also logs this button (owner: "View board did nothing"; the stub clicks it fine).
-    o.view:HookScript("OnMouseDown", function(_, b) if Grid.Logging() then Grid.Log("View board: down %s", tostring(b)) end end)
-    o.view:HookScript("OnMouseUp", function(_, b, inside)
-        if Grid.Logging() then Grid.Log("View board: up %s inside=%s", tostring(b), tostring(inside)) end
-    end)
-    o.view:HookScript("OnClick", function(_, b) if Grid.Logging() then Grid.Log("View board: click %s", tostring(b)) end end)
 
     -- And a click on the panel itself does the same.
     o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
-    Widgets.Tip(o, "Click to see the board", "Play again or Try again stays at the bottom, and the face starts a new game.")
+    Widgets.Tip(o, "Click to see the field", "Play again or Try again stays at the bottom, and the face starts a new game.")
     o:Hide()
     ui.overlay = o
 end
@@ -435,14 +430,7 @@ end
 -- Put the overlay away to look at the finished board. The board is exactly as it
 -- was, and the result stays in the footer with the button to play again.
 function Window.DismissEnd()
-    if not (ui.overlay and ui.overlay:IsShown() and over()) then
-        if Grid.Logging() then
-            Grid.Log("DismissEnd ignored: overlay %s, shown %s, game %s", tostring(ui.overlay ~= nil),
-                tostring(ui.overlay ~= nil and ui.overlay:IsShown()), game and game:State() or "none")
-        end
-        return
-    end
-    if Grid.Logging() then Grid.Log("DismissEnd: putting the overlay away") end
+    if not (ui.overlay and ui.overlay:IsShown() and over()) then return end
     ui.overlay:Hide()
     local title, color, sub, button, rim = endTexts()
     ui.result.title:SetTextColor(color[1], color[2], color[3])

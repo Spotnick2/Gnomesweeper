@@ -132,7 +132,7 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     centred on the board, above the tiles (so the board under it takes no clicks; the Board no-ops
     after the end anyway) and under the difficulty list. Cleared: gold title and rim, "Time mm:ss",
     "Play again". Wipe: red title and rim, "Try again". Under a win's time: **"New personal best!"**
-    in gold, or the best that stands ("Best 00:42"), from `Scores` (#7). **"View board"** (and a click on the
+    in gold, or the best that stands ("Best 00:42"), from `Scores` (#7). **"See the field"** (and a click on the
     panel) puts the overlay away, `Window.DismissEnd()`, and the result stays in the footer as a
     **result bar** with its Play again / Try again button, in place of the controls; the finished
     board is untouched. It does not come back on later clicks, and a new game (the button, the face,

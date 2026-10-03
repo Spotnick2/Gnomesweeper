@@ -107,7 +107,7 @@ do
     W.NewGame("expert")                                 -- the list's Expert row, the rarity colours
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "..*..", "..*..", "..*..", "..*.." }))
     press(3, "LeftButton")                              -- a loss: the burst, the soot, the overlay
-    ui.overlay.view._scripts.OnClick(ui.overlay.view)   -- View board: the result bar
+    ui.overlay.view._scripts.OnClick(ui.overlay.view)   -- See the field: the result bar
     ui.result.button._scripts.OnClick(ui.result.button)
     WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
     WoW.slash("/gsweep scores")                         -- the best times panel (#7)

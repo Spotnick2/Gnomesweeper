@@ -15,6 +15,8 @@ local DEFAULTS = {
     safeZone = "area",         -- "area": the first click opens an area; "cell": XP's single safe cell
     questionMarks = false,
     chordOnLeft = false,       -- left-click a satisfied number to chord it (a setting, #8)
+    sounds = true,             -- the effects (#9)
+    music = false,             -- Gnomeregan's music while the board is open (#22)
 }
 
 local function EnsureDefaults()
@@ -36,10 +38,12 @@ local HELP = {
     "/gsweep beginner | intermediate | expert - start a game at that difficulty",
     "/gsweep scores - your best times (also the trophy in the title bar)",
     "/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)",
+    "/gsweep music - Gnomeregan's music on or off (also the note in the title bar)",
     "/gsweep minimap - show or hide the minimap button",
     "/gsweep reset - put the window back in the middle of the screen",
     "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
     "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
+    "/gsweep sounds - play every candidate sound and the music, one after another (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
 }
@@ -54,6 +58,11 @@ local function Slash(msg)
         GS.Window.ShowBests(true)
     elseif msg == "settings" or msg == "options" or msg == "config" then
         GS.Options.Open()
+    elseif msg == "music" then
+        GS.Options.Set("music", not GnomesweeperDB.music)
+        Print("Gnomeregan's music " .. (GnomesweeperDB.music and "on." or "off."))
+    elseif msg == "sounds" then
+        GS.Sounds.ToggleProbe()
     elseif msg == "minimap" then
         if not GS.Minimap.Available() then
             Print("there is no minimap button: its libraries didn't load (or another addon took the name).")

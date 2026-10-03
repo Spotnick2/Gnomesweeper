@@ -228,6 +228,8 @@ function WoW.reset()
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
+    WoW.sounds, WoW.willPlay, WoW.timers = {}, {}, {}
+    WoW.music, WoW.musicStops, WoW.inCombat = nil, 0, false
     WoW.ldb, WoW.ldbi = nil, nil                -- made on first use (LibStub, below)
     WoW.missingTemplates = {}
     WoW.settings = { canvas = {}, addons = {}, subs = {} }
@@ -266,6 +268,38 @@ function date(fmt, t) return os.date(fmt, t) end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end
+-- Sounds: every PlaySound is recorded in WoW.sounds ({ kit, channel }); it answers
+-- WoW.willPlay[kit] (default true), as the client's willPlay.
+function PlaySound(kit, channel)
+    WoW.sounds[#WoW.sounds + 1] = { kit = kit, channel = channel }
+    local will = WoW.willPlay[kit]
+    if will == nil then will = true end
+    return will, will and #WoW.sounds or nil
+end
+-- Music: WoW.music is the file playing (nil when none), WoW.musicStops counts StopMusic.
+function PlayMusic(file) WoW.music = file end
+function StopMusic() WoW.music = nil; WoW.musicStops = WoW.musicStops + 1 end
+function UnitAffectingCombat(unit) return unit == "player" and WoW.inCombat or false end
+-- Timers run when WoW.advance moves the clock past them, in order.
+C_Timer = {
+    After = function(seconds, fn)
+        WoW.timers[#WoW.timers + 1] = { at = WoW.now + seconds, fn = fn, seq = #WoW.timers }
+    end,
+}
+function WoW.advance(seconds)
+    local target = WoW.now + seconds
+    while true do
+        local best, bi
+        for i, t in ipairs(WoW.timers) do
+            if t.at <= target and (not best or t.at < best.at or (t.at == best.at and t.seq < best.seq)) then best, bi = t, i end
+        end
+        if not best then break end
+        table.remove(WoW.timers, bi)
+        WoW.now = math.max(WoW.now, best.at)
+        best.fn()
+    end
+    WoW.now = target
+end
 C_AddOns = { GetAddOnMetadata = function(name, key) return WoW.metadata[key] end }
 
 -- LibStub with fake LibDataBroker-1.1 and LibDBIcon-1.0 (the real Libs\ are not

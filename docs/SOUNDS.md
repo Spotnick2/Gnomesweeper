@@ -12,6 +12,11 @@ empty. Forever runs on Retail's data (its icon list includes 11.1 art), so these
 *probably* present. **None of them has been played on Forever yet**; the probe (#9) does that.
 Low kit IDs (under ~8000) are vanilla-era sounds.
 
+**Wired (#9, #22, `Sounds.lua`):** reveal 1115, flag 856 / unflag 857 (Blizzard's own UI clicks from
+`SOUNDKIT`), wipe 7517 then 1038 (0.7 s later), win 6131, new game 4779, music 53189. **Pick by ear
+with `/gsweep sounds`**: it plays every candidate below, 3 s apart, then the music, and saves what
+the client said (`GnomesweeperDB.soundProbe`); swap the picks in `Sounds.KITS`.
+
 ## Effects (#9)
 
 `PlaySound(kit, "SFX")` is the global; `C_Sound.PlaySound(kit, uiSoundSubType, ...)` takes a

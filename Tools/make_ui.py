@@ -17,6 +17,7 @@ textures are tinted with SetVertexColor):
   icon_trophy    a brass cup on a plinth: the best times button
   icon_music     a pair of eighth notes, white (tinted): the music button
   icon_mute      a red slash, over the note when the music is off
+  icon_sound     a speaker with two sound waves, white (tinted): the sounds button (#55)
   fx_smoke       a soft grey puff, rising from the tile that went off (#10)
   fx_glow        a soft round glow, white (tinted gold), behind the mascot on a win (#10)
   icon_close     the X on the close button            (light, tinted)
@@ -206,6 +207,25 @@ def music_note():
     return finish(im, size)
 
 
+def speaker():
+    """A speaker with two sound waves, white (tinted at runtime): the sounds button (#55)."""
+    size = 64
+    s = size * SS
+    u = s / 256.0
+    im = canvas(size)
+    d = ImageDraw.Draw(im)
+    white = (255, 255, 255, 255)
+    # the box and its cone, opening to the right
+    d.rectangle([28 * u, 98 * u, 74 * u, 158 * u], fill=white)
+    d.polygon([(70 * u, 98 * u), (132 * u, 48 * u), (132 * u, 208 * u), (70 * u, 158 * u)], fill=white)
+    # two waves
+    for r in (44, 84):
+        cx, cy = 132, 128
+        d.arc([(cx - r) * u, (cy - r) * u, (cx + r) * u, (cy + r) * u], start=-50, end=50,
+              fill=white, width=int(18 * u))
+    return finish(im, size)
+
+
 def mute_slash():
     """A red diagonal bar, drawn over the note when the music is off."""
     size = 64
@@ -370,7 +390,7 @@ def face_ring():
 
 
 TEXTURES = {
-    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_sound": speaker, "icon_burst": burst, "fx_smoke": smoke_puff, "fx_glow": soft_glow, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring,
 }
@@ -398,6 +418,8 @@ def preview(path):
     cells.append(cell(64, lambda c: over(c, tex["icon_trophy"])))
     cells.append(cell(64, lambda c: over(c, tex["icon_music"], tint=(0.82, 0.92, 1.0))))
     cells.append(cell(64, lambda c: over(over(c, tex["icon_music"], tint=(0.5, 0.55, 0.62)), tex["icon_mute"])))
+    cells.append(cell(64, lambda c: over(c, tex["icon_sound"], tint=(0.82, 0.92, 1.0))))
+    cells.append(cell(64, lambda c: over(over(c, tex["icon_sound"], tint=(0.5, 0.55, 0.62)), tex["icon_mute"])))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(0.15, 0.7, 0.99))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.77, 0.38))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.35, 0.30))))

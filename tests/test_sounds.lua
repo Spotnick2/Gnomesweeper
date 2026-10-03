@@ -177,6 +177,35 @@ do
     eq(WoW.music, S.MUSIC, "...and on")
 end
 
+do  -- the sounds button (#55, owner): the speaker beside the note mutes the effects
+    loadAddon()
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    local ui, C = W._test.ui, Gnomesweeper.Skin.COLORS
+    eq(ui.sound._points[1][2], ui.music, "the speaker sits left of the music note")
+    eq(ui.sound.icon._texture, Gnomesweeper.Skin.TEXTURES.sound, "...a speaker")
+    check(not ui.sound.slash:IsShown(), "on: no slash")
+    eq(ui.sound.icon._vertex[1], C.musicOn[1], "...lit like the note")
+    ui.sound._scripts.OnClick(ui.sound)
+    eq(GnomesweeperDB.sounds, false, "a click mutes the sounds")
+    check(ui.sound.slash:IsShown(), "...the red slash shows")
+    eq(ui.sound.icon._vertex[1], C.musicOff[1], "...over a greyed speaker")
+    ui.sound._scripts.OnEnter(ui.sound)
+    check(GameTooltip._lines[1]:find("^Muted") ~= nil, "its tooltip says muted")
+    WoW.sounds = {}
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*.." }))
+    local t = Gnomesweeper.Grid._test.tiles[2]
+    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseUp(t, "LeftButton", true)
+    eq(#WoW.sounds, 0, "...and a click on the board is silent")
+
+    -- The settings page shows the same value; changing it there updates the button.
+    Gnomesweeper.Options.Set("sounds", true)
+    check(not ui.sound.slash:IsShown(), "turned on in the settings: the button follows")
+    ui.sound._scripts.OnClick(ui.sound)
+    ui.sound._scripts.OnClick(ui.sound)
+    eq(GnomesweeperDB.sounds, true, "...and two clicks bring it back on")
+end
+
 do  -- the greeting: the first open of a session, by the character's sex
     loadAddon()
     WoW.playerSex = 3

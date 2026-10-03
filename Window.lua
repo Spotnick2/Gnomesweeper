@@ -271,6 +271,9 @@ function Window.Refresh()
     local on = db().music == true
     ui.music.icon:SetVertexColor(unpack(on and C.musicOn or C.musicOff))
     ui.music.slash:SetShown(not on)
+    local sounds = db().sounds ~= false
+    ui.sound.icon:SetVertexColor(unpack(sounds and C.musicOn or C.musicOff))
+    ui.sound.slash:SetShown(not sounds)
 end
 
 ------------------------------------------------------------
@@ -812,6 +815,19 @@ local function build()
                  "It never plays in combat." }
     end)
 
+    -- The sounds button (#55, owner): the speaker, beside the note, greyed and slashed when off.
+    ui.sound = Widgets.IconButton(win, 22, T.sound)
+    ui.sound:SetFrameLevel(content)
+    ui.sound.slash = ui.sound:CreateTexture(nil, "OVERLAY", nil, 2)
+    ui.sound.slash:SetSize(16, 16)
+    ui.sound.slash:SetPoint("CENTER", ui.sound, "CENTER", 0, 0)
+    ui.sound.slash:SetTexture(T.mute)
+    ui.sound:SetScript("OnClick", function() GS.Options.Set("sounds", db().sounds == false) end)
+    Widgets.Tip(ui.sound, "Sounds", function()
+        return { db().sounds ~= false and "On: click to mute the clicks, the bomb and the cheers." or "Muted: click to hear them again.",
+                 "The game's own sound settings apply too. The music has its own button." }
+    end)
+
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
     -- How to play: the ? with the other icons (owner), between the trophy and the gear.
@@ -830,6 +846,7 @@ local function build()
 
     ui.trophy:SetPoint("RIGHT", ui.help, "LEFT", -5, 0)
     ui.music:SetPoint("RIGHT", ui.trophy, "LEFT", -5, 0)
+    ui.sound:SetPoint("RIGHT", ui.music, "LEFT", -5, 0)
     ui.trophy:setAccent(unpack(C.gold))
     ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)
     Widgets.Tip(ui.trophy, "Best times", "Your best at each difficulty, shared by all your characters.")

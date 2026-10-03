@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **The gnome moves**: she bounces when you win, shudders on a wipe, nods when you start a new game, and breathes quietly while you play.
+- **A mute button** for the sound effects, next to the music note in the title bar.
 - **The clock warns you**: it turns yellow as you near your best time, flashes in the last 3 seconds, and goes red once you're past it.
 - **Hide in combat** (on by default): pulling a mob puts the board away, paused, and it comes back when the fight ends. Turn it off in the settings or with `/gsweep combat`.
 - **No more lost games by a stray click**: changing the difficulty mid-game asks first ("Start Expert? This game will be lost."), once you've made progress.
@@ -11,7 +12,7 @@
 - **A new personal best** shows your time to the tenth and how much you beat the old one by ("0.8 s faster than 00:22.1"). **Reset best times** in the settings wipes them all (click twice).
 - **Celebrations**: a gold burst turns behind the gnome when you clear the field, smoke rises from the tile that blew, and the gnome flinches while you hold a tile down. **A new personal best** gets a fanfare, a bigger line that pulses, and **fireworks** over the board (turn them off in the settings).
 - **A new game reshuffles the field**: the tiles come back in a wave from the top-left while a gnomish arm whirs. A click skips it.
-- **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
+- **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a female gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
 - **Gnomeregan's music** while the board is open (off by default): the note in the title bar turns it on and off. It stops when you close the board (your zone's music comes back), and never plays in combat.
 - **A minimap button**: left-click opens the board, right-click opens the settings. Drag it around the minimap; hide it in the settings or with `/gsweep minimap`.
 - **Settings**, in the game's Options > AddOns > Gnomesweeper (the gear in the title bar and `/gsweep settings` open it), with an **About** page: question marks, the first click (opens an area, or one safe tile as in Windows XP), clearing around a number with a left-click, and the window size. Changes to a game you haven't started apply at once; otherwise from your next game.

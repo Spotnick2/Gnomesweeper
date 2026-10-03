@@ -424,7 +424,7 @@ local function buildOverlay()
     o.best = Glass.Font(o, 12, "CENTER")              -- the best that stands ("Best 00:42")
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     -- A new personal best is an event (#10): bigger, gold, and a beat.
-    o.newBest = Glass.Font(o, 17, "CENTER")
+    o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
     o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     o.newBest:SetTextColor(unpack(C.gold))
     o.newBest:SetText("New personal best!")

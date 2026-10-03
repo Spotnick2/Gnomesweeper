@@ -198,7 +198,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   behind the face while a win shows (`Window.Refresh`): no longer a spinning starburst (owner: harsh); a
   gold ring ripples out once and a soft glow (`Media/fx_glow`) breathes, the spell-proc glow's rhythm. **The smoke**: three puffs (`Media/fx_smoke`,
   `Tools/make_ui.py`) rising from the tile that went off, looping while the wipe shows. **The pulse**:
-  the overlay's bigger "New personal best!" line (`o.newBest`, 17 pt, gold; the quiet `o.best` keeps
+  the overlay's bigger "New personal best!" line (`o.newBest`, 16 pt, gold, swelling to 110%; the quiet `o.best` keeps
   "Best 00:42"). **Fireworks** on a new personal best (the owner's idea): seven bursts in gold, the
   difficulty's rarity colour and white, at random places over the board, staggered, with kit 8569;
   a **Fireworks** setting (on). The effects sit on `ui.fx`, a frame at window level +12: over the

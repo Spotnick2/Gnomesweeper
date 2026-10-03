@@ -1,5 +1,5 @@
 -- Effects.lua and its hooks (#10): the burst on a win, the smoke on a wipe, the
--- surprised (flinching) face while a tile is held, and a new personal best's
+-- surprised face while a tile is held, and a new personal best's
 -- beat, fanfare and fireworks.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
@@ -105,17 +105,6 @@ do
     up(at(1, 1))
 end
 
-do  -- without the surprised face's art, she flinches instead
-    loadAddon()
-    Gnomesweeper.Skin.TEXTURES.facePressed = nil
-    WoW.slash("/gsweep")
-    local face = Gnomesweeper.Window._test.ui.face
-    local size = face.face._width
-    down(41)
-    check(face.face._width < size, "no surprised face: a flinch")
-    up(41)
-    eq(face.face._width, size, "...and back to her size")
-end
 
 ----------------------------------------------------------------------------
 -- A new personal best: a beat, a fanfare, fireworks

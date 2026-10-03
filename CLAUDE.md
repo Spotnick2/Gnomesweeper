@@ -80,8 +80,9 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   item-quality colours and `Skin.DIFFICULTY_QUALITY` maps Beginner/Intermediate/Expert to
   uncommon/rare/epic (`Skin.DifficultyColor(key)`); **legendary is held back** for a much harder
   level some day (#18). The mascot shows the game state by her expression (`Skin.FACE`, #12) and a
-  ring coloured by state (`Skin.FACE_RING`); `Skin.FACE_OVERLAY` (drawn over her) is empty now that
-  the expressions exist. `Skin.NUMBER_COLORS` has the 1-8 colours.
+  ring coloured by state (`Skin.FACE_RING`); nothing is drawn over her (the sparkle and soot that
+  stood in for the expressions are gone). `Skin.ASPECT` gives the wide textures' shape (the title, the
+  laurels). `Skin.NUMBER_COLORS` has the 1-8 colours.
 - **`Widgets.lua`**: the Liquid Glass controls: `GlassButton` (a dark glass body, a rim that takes an
   accent colour, a hover glow, a pressed state), `IconButton`, `FaceButton` (the mascot in her ring),
   `GlassPanel`, `Tip`. Baked textures, 9-sliced for the wide buttons; **a small square is never
@@ -211,8 +212,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   a **Fireworks** setting (on). The effects sit on `ui.fx`, a frame at window level +12: over the
   tiles, under the end overlay. **The surprised face**: `Grid.Attach`'s third argument tells Window
   when a tile is held (the first button down, the last up, or `Grid.Cancel`), and the face
-  `setPressed`s while the game can be played: `Skin.TEXTURES.facePressed` once that art exists
-  (`docs/ART.md` #4), a 12% flinch until then. The animation methods are the dump's
+  `setPressed`s while the game can be played: her surprised face, `Skin.TEXTURES.facePressed` (#12).
+  The animation methods are the dump's
   `SimpleAnim*API`; `test_methods` checks each against its type's group.
 - **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound
   kits played with the global `PlaySound(kit, "SFX")` (the game's sound toggle and volume apply;

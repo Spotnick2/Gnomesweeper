@@ -3,9 +3,10 @@
 --
 -- Most of the art is ours and lives in Media/: baked tiles (Tools/make_tiles.py),
 -- the UI (Tools/make_ui.py: flag, clock, close, arrow, glass buttons, the face's
--- ring, sparkles and soot) and the mascot's face, cut from the logo
--- (Tools/png_to_tga.py, docs/ART.md). What is still the client's own art is
--- listed in docs/ASSETS.md: the bomb and the settings gear.
+-- ring, the effects), the mascot's ready face cut from the logo (Tools/png_to_tga.py)
+-- and the generated art of #12 (her other expressions, the title lettering, the
+-- laurels: Tools/export_art.py, Media/README.md). What is still the client's own art
+-- is listed in docs/ASSETS.md: the bomb on the board and the settings gear.
 --
 -- A number is a file ID, a string is a texture path.
 
@@ -19,8 +20,8 @@ Skin.TITLE = "|cff7fd4ffGnome|rsweeper"
 local MEDIA = Gnomesweeper.Glass.MEDIA
 
 Skin.TEXTURES = {
-    -- the mascot: the green-haired gnome from the logo (one face; the state shows in
-    -- the ring and the overlays until the real expressions exist, #12)
+    -- the mascot: the green-haired gnome from the logo; her face for each game state
+    -- is Skin.FACE (the expressions, #12)
     face = MEDIA .. "face_mascot",
     faceRing = MEDIA .. "face_ring",
     -- icons
@@ -54,11 +55,9 @@ Skin.TEXTURES = {
     tileHover = MEDIA .. "tile_hover",
 }
 
--- What shows over the mascot's face, and the colour of its ring, per game state.
--- The face for each game state (the expressions, #12). The sparkle and soot drawn
--- over the one face stood in for them until they existed; with them, nothing is drawn over.
+-- The mascot's face for each game state (the expressions, #12), and the colour of
+-- her ring.
 Skin.FACE = { ready = "face", playing = "facePlaying", won = "faceWon", lost = "faceLost" }
-Skin.FACE_OVERLAY = {}
 Skin.FACE_RING = {
     ready   = { 0.15, 0.70, 0.99 },
     playing = { 0.15, 0.70, 0.99 },
@@ -81,6 +80,7 @@ function Skin.DifficultyColor(key)
 end
 
 Skin.TILE_ICON = 18                   -- the bomb on a 24-unit tile
+Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
 Skin.FLAG_ICON = 20                   -- the flag, a little taller: it has a pole
 Skin.TILE_FONT = 15                   -- the numbers
 
@@ -97,10 +97,13 @@ Skin.NUMBER_COLORS = {
 }
 
 -- WoW's own icons carry a border: crop it off. (Ours are drawn without one.)
-Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 -- The title lettering's drawn part in its 512x128 texture (pixels 53..459 x 4..124).
 Skin.TITLE_CROP = { 53 / 512, 459 / 512, 4 / 128, 124 / 128 }
+
+-- Width over height of the textures that aren't square (the asset sheet keeps their
+-- shape; the title's is its drawn part's).
+Skin.ASPECT = { title = (459 - 53) / (124 - 4), laurels = 4 }
 
 Skin.COLORS = {
     smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board

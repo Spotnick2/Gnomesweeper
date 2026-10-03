@@ -6,7 +6,9 @@ Reads the full-resolution PNGs in Media/Source/Generated/ (ignored by git: the
 prompts that made them are in Media/ART-PROMPTS.md), sizes them, and writes:
   - Media/<name>.tga for every piece the game uses (ADOPTED below);
   - Media/Source/GameTextures/<name>.tga for candidates not wired yet (STAGED);
-  - Media/Source/<name>.png, the sized masters, and Media/Source/art-preview.png.
+  - Media/Source/<name>.png, the sized masters.
+The originals are not in git (66 MB, Media/Source/ is ignored): this runs where
+they are. Their prompts are, so they can be made again.
 Adapted from the export script Codex wrote with the art (2026-10-03); square
 pieces go through Tools/png_to_tga.py, the wide ones (title, laurels) are fitted
 without stretching.
@@ -62,7 +64,7 @@ def master(name, size, wide):
 
 
 def main():
-    STAGED.mkdir(exist_ok=True)
+    STAGED.mkdir(parents=True, exist_ok=True)
     for name, (msize, tsize, opts) in PIECES.items():
         out = MEDIA if name in ADOPTED else STAGED
         im = master(name, msize, opts is None)

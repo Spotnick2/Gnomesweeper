@@ -24,6 +24,10 @@ local T, C = Skin.TEXTURES, Skin.COLORS
 local LABELS = { beginner = "Beginner", intermediate = "Intermediate", expert = "Expert" }
 local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
+-- The title lettering: 28 high (the tagline then ends clear of the difficulty button
+-- at -58), as wide as its drawn part's shape (Skin.ASPECT, from Skin.TITLE_CROP).
+local TITLE_H = 28
+local TITLE_W = math.floor(TITLE_H * Skin.ASPECT.title + 0.5)
 
 local win, game
 Window.shownCount = 0
@@ -415,8 +419,10 @@ end
 ------------------------------------------------------------
 
 local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
-local TITLE_H = 34                      -- the title lettering's height; its width keeps the drawn shape
-local TITLE_W = math.floor(TITLE_H * (459 - 53) / (124 - 4) + 0.5)   -- 115: Skin.TITLE_CROP's 406x120 pixels
+-- A new best's laurels are their own band: LAUREL_PAD above the line, the branches
+-- (LAUREL_W x LAUREL_H) round it, and the panel tall enough that nothing overlaps them.
+local LAUREL_W, LAUREL_H, LAUREL_PAD = 170, 42, 12
+local NEW_BEST_H = WIN_H + 2 * LAUREL_PAD + 10
 
 local function endTexts()
     if game:State() == "won" then
@@ -446,20 +452,20 @@ local function buildOverlay()
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     -- A new personal best is an event (#10): bigger, gold, and a beat.
     o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
-    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
+    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 0, -LAUREL_PAD)
     o.newBest:SetTextColor(unpack(C.gold))
     o.newBest:SetText("New personal best!")
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
     -- The storyboard's laurels around it (#12): behind the text, open at the top.
     o.laurels = o:CreateTexture(nil, "ARTWORK")
-    o.laurels:SetSize(196, 49)
-    o.laurels:SetPoint("CENTER", o.newBest, "CENTER", 0, -6)
+    o.laurels:SetSize(LAUREL_W, LAUREL_H)
+    o.laurels:SetPoint("CENTER", o.newBest, "CENTER", 0, 0)
     o.laurels:SetTexture(T.laurels)
     o.laurels:Hide()
     -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
     o.beaten = Glass.Font(o, 12, "CENTER")
-    o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
+    o.beaten:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)          -- under the laurels, not over them
     o.beaten:SetTextColor(unpack(C.hint))
     o.beaten:Hide()
 
@@ -496,7 +502,7 @@ function Window.ShowEnd()
         local text, col = bestLine()
         local isNew = lastWin and lastWin.new
         local by = margin()
-        o:SetHeight(isNew and (WIN_H + 6 + (by and 16 or 0)) or text and WIN_H or WIN_H - 18)
+        o:SetHeight(isNew and (by and NEW_BEST_H + 16 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
         if by then o.beaten:SetText(by .. " faster than " .. shownTime(lastWin.previous.time, true)) end
         o.beaten:SetShown(by ~= nil)
         o.time:SetText(sub)

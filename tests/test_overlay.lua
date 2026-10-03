@@ -44,7 +44,6 @@ do
     eq(ui.face.face._texture, Skin.TEXTURES.face, "...and her face is the logo's gnome")
     eq(ui.logo, nil, "...and only there: no second portrait in the title bar (owner: redundant)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.ready[1], "...in the ready ring")
-    check(not ui.face.overlay:IsShown(), "...with nothing over her")
     eq(ui.overlay, nil, "...and no overlay has even been built")
 
     click(41, L)
@@ -59,19 +58,16 @@ do
     eq(ui.face.state, "lost", "lost: the mascot follows the game")
     eq(ui.face.face._texture, Skin.TEXTURES.faceLost, "...her soot-covered face (#12)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.lost[1], "...in a red ring")
-    check(not ui.face.overlay:IsShown(), "...with nothing drawn over her: the expression says it")
 
     ui.face._scripts.OnClick(ui.face)
     eq(ui.face.state, "ready", "the face starts a new game, and goes back to ready")
     eq(ui.face.face._texture, Skin.TEXTURES.face, "...and a new game brings back her ready face")
 
-    -- She is one character; the state shows in her ring and what is over her, and the ready,
-    -- cleared and wiped looks are three different ones.
-    local function look(state)
-        return table.concat(Skin.FACE_RING[state], ",") .. "/" .. tostring(Skin.FACE_OVERLAY[state])
-    end
-    check(look("ready") ~= look("won") and look("won") ~= look("lost") and look("ready") ~= look("lost"),
-        "ready, cleared and wiped look different from one another (by ring and overlay, not by colour alone)")
+    -- She is one character; the state shows in her expression (#12) and her ring, and the
+    -- ready, cleared and wiped looks are three different faces, not only three colours.
+    local face = function(state) return Skin.TEXTURES[Skin.FACE[state]] end
+    check(face("ready") ~= face("won") and face("won") ~= face("lost") and face("ready") ~= face("lost"),
+        "ready, cleared and wiped are different faces (by expression, not by colour alone)")
     -- ...and the colours mean what they say (not compared with themselves).
     local ready, won, lost = Skin.FACE_RING.ready, Skin.FACE_RING.won, Skin.FACE_RING.lost
     check(won[1] > 0.9 and won[2] > 0.7 and won[3] < 0.5, "the cleared ring is gold")
@@ -106,7 +102,6 @@ do
     eq(ui.face.state, "won", "the mascot is in her cleared state")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.won[1], "...in a gold ring")
     eq(ui.face.face._texture, Skin.TEXTURES.faceWon, "...laughing (her won face, #12)")
-    check(not ui.face.overlay:IsShown(), "...nothing drawn over her")
     eq(ui.counter:GetText(), "0", "every mine is flagged, so the counter reads 0")
 
     check(o._mouse, "the overlay takes the mouse, so the board under it gets no clicks")

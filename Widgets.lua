@@ -95,8 +95,8 @@ function Widgets.IconButton(parent, size, texture, tint)
     return b
 end
 
--- The mascot as a button: her face in a ring, the ring coloured by the game state,
--- sparkles over her after a win, soot after a wipe, a brighter ring on hover.
+-- The mascot as a button: her face in a ring, the face and the ring's colour
+-- following the game state (Skin.FACE, Skin.FACE_RING), a brighter ring on hover.
 -- b:setState("ready" | "playing" | "won" | "lost").
 function Widgets.FaceButton(parent, size)
     local b = CreateFrame("Button", nil, parent)
@@ -106,10 +106,6 @@ function Widgets.FaceButton(parent, size)
     b.face:SetSize(inner, inner)
     b.face:SetPoint("CENTER", b, "CENTER", 0, 0)
     b.face:SetTexture(T.face)
-    b.overlay = b:CreateTexture(nil, "ARTWORK")
-    b.overlay:SetSize(inner, inner)
-    b.overlay:SetPoint("CENTER", b, "CENTER", 0, 0)
-    b.overlay:Hide()
     b.ring = b:CreateTexture(nil, "OVERLAY")
     b.ring:SetAllPoints(b)
     b.ring:SetTexture(T.faceRing)
@@ -124,27 +120,14 @@ function Widgets.FaceButton(parent, size)
         if not self.pressed then self.face:SetTexture(self.stateFace) end
         local ring = Skin.FACE_RING[state] or Skin.FACE_RING.ready
         self.ring:SetVertexColor(ring[1], ring[2], ring[3])
-        local over = Skin.FACE_OVERLAY[state]
-        if over then
-            self.overlay:SetTexture(T[over])
-            self.overlay:Show()
-        else
-            self.overlay:Hide()
-        end
         self.state = state
     end
-    -- While a tile is held down (#10): the surprised face once its art exists
-    -- (Skin.TEXTURES.facePressed, docs/ART.md); until then the gnome flinches a little.
+    -- While a tile is held down (#10): her surprised face (#12).
     function b.setPressed(self, on)
         on = on and true or false
         if self.pressed == on then return end
         self.pressed = on
-        if T.facePressed then
-            self.face:SetTexture(on and T.facePressed or self.stateFace or T.face)
-        else
-            local s = on and math.floor(inner * 0.88 + 0.5) or inner
-            self.face:SetSize(s, s)
-        end
+        self.face:SetTexture(on and T.facePressed or self.stateFace or T.face)
     end
 
     b:setState("ready")

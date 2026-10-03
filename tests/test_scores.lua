@@ -204,7 +204,8 @@ do  -- the first win, then slower, then faster
     check(o.laurels:IsShown(), "...in laurels (#12)")
     eq(o.laurels._texture, Skin.TEXTURES.laurels, "...the gold branches")
     eq(o.laurels._points[1][2], o.newBest, "...around the line")
-    eq(o:GetHeight(), 158, "...with room for the bigger line")
+    eq(o.beaten._points[1][2], o.laurels, "...the margin line under the laurels, not over them")
+    eq(o:GetHeight(), 152 + 2 * 12 + 10, "...with room for the line in its laurels")
     eq(menuBest(ui, "beginner"), "00:42", "the difficulty list shows the best, whole seconds")
     eq(menuBest(ui, "expert"), "-", "...and a dash where there is none")
     o.view._scripts.OnClick(o.view)
@@ -371,7 +372,7 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     eq(o().time:GetText(), "Time 00:41.2", "another new best")
     eq(o().beaten:GetText(), "0.8 s faster than 00:42.0", "...0.8 s faster than the one before: 42.0 - 41.2 as shown (not 0.85 rounded)")
     check(o().beaten:IsShown() and o().newBest:IsShown(), "...both lines")
-    eq(o():GetHeight(), 152 + 6 + 16, "...the overlay grows for the second line")
+    eq(o():GetHeight(), 152 + 2 * 12 + 10 + 16, "...the overlay grows for the laurels and the second line")
     o().view._scripts.OnClick(o().view)
     eq(W._test.ui.result.sub:GetText(), "Time 00:41.2  " .. string.char(194, 183) .. "  New best (-0.8 s)", "the result bar keeps both, short")
 

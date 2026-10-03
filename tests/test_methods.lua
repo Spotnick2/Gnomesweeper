@@ -110,6 +110,10 @@ do
     ui.overlay.view._scripts.OnClick(ui.overlay.view)   -- View board: the result bar
     ui.result.button._scripts.OnClick(ui.result.button)
     WoW.slash("/gsweep scale 1.2"); WoW.slash("/gsweep scale"); WoW.slash("/gsweep scale reset")
+    WoW.slash("/gsweep assets")                         -- the contact sheet (#6)
+    local sheet = Gnomesweeper.Assets._test.sheet()
+    sheet._scripts.OnDragStart(sheet); sheet._scripts.OnDragStop(sheet)
+    sheet.close._scripts.OnClick(sheet.close)
     W.NewGame("beginner")
 end
 

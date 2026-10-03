@@ -31,8 +31,8 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` →
-`Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → [`Scores.lua`] →
-`Gnomesweeper.lua`.
+`Skin.lua` → `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → `Assets.lua` →
+[`Scores.lua`] → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -145,6 +145,11 @@ TOC load order (planned files in brackets): `Compat.lua` → `Glass.lua` → `Bo
     are also kept in `GnomesweeperDB.inputLog` (last 300, debug only), so a `/reload` writes them to
     `WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua` and they can be **read from disk**
     instead of pasted. The same trick works for any future probe.
+- **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
+  and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
+  by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
+  by eye (getters echo nonsense IDs). What `GetFileIDFromPath` answers for our own files is recorded
+  too. Results go to `GnomesweeperDB.assetProbe` for a `/reload` to write to disk.
 - **`Scores.lua`** (milestone 2): personal bests per difficulty in `GnomesweeperDB`. Social
   leaderboards (guild/friends/Battle.net) are milestone 4 — not day 1.
 - **`Gnomesweeper.lua`**: the entry point — `GnomesweeperDB` defaults at `ADDON_LOADED`, slash
@@ -270,6 +275,8 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_assets.lua`** is the contact sheet: kinds, the survey, a missing path, a throwing check, the
+  sheet's cells, the saved results.
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
   what they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,

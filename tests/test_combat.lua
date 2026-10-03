@@ -122,4 +122,41 @@ do  -- with Blizzard's Settings window open: our window already stepped aside; t
     check(W.win:IsShown(), "...closing Settings does")
 end
 
+do  -- the two step-asides hand over to each other (review of #51)
+    -- A fight hides the board, Settings opens during it, the fight ends: not over Settings.
+    local W = fresh()
+    WoW.fire("PLAYER_LOGIN")
+    pull()
+    check(not W.win:IsShown(), "(the fight hid the board)")
+    SettingsPanel:Show()
+    leave()
+    check(not W.win:IsShown(), "the fight ends with Settings open: the board doesn't open over it")
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "...it comes back when Settings closes")
+
+    -- Settings hides the board, a fight starts, Settings closes mid-fight: not in combat.
+    W = fresh()
+    WoW.fire("PLAYER_LOGIN")
+    SettingsPanel:Show()
+    check(not W.win:IsShown(), "(stepped aside for Settings)")
+    WoW.inCombat = true
+    pull()
+    SettingsPanel:Hide()
+    check(not W.win:IsShown(), "Settings closed mid-fight (Hide in combat on): the board waits")
+    WoW.inCombat = false
+    leave()
+    check(W.win:IsShown(), "...and comes back when the fight ends")
+
+    -- Hide in combat off: closing Settings mid-fight brings it back at once.
+    W = fresh({ hideInCombat = false })
+    WoW.fire("PLAYER_LOGIN")
+    SettingsPanel:Show()
+    WoW.inCombat = true
+    pull()
+    SettingsPanel:Hide()
+    check(W.win:IsShown(), "Hide in combat off: closing Settings brings it back, fight or not")
+    WoW.inCombat = false
+    leave()
+end
+
 done("test_combat")

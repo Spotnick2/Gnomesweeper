@@ -958,7 +958,8 @@ local function build()
         else
             local back = Window.combatHid ~= nil and Window.combatHid == Window.shownCount
             Window.combatHid = nil
-            if back then Window.Open() end
+            -- With Blizzard's Settings window open, it comes back when that closes instead.
+            if back and not GS.Options.ReturnAfterSettings() then Window.Open() end
         end
     end)
     watcher:SetScript("OnEvent", function()

@@ -432,8 +432,24 @@ local function watchSettingsWindow()
         -- Shown again meanwhile (and maybe closed again): the player decided; leave it.
         local back = steppedAside == GS.Window.shownCount
         steppedAside = nil
-        if back then GS.Window.Open() end
+        if not back then return end
+        -- Closed during a fight with Hide in combat on: the fight's end brings it back
+        -- instead (Window's combat handler), not now (review of #51).
+        if GnomesweeperDB.hideInCombat ~= false and UnitAffectingCombat("player") then
+            GS.Window.combatHid = GS.Window.shownCount
+        else
+            GS.Window.Open()
+        end
     end)
+end
+
+-- Window's combat handler, when a fight ends with Settings open: our window would
+-- draw over it, so Settings closing brings it back instead (review of #51).
+function Options.ReturnAfterSettings()
+    local sp = rawget(_G, "SettingsPanel")
+    if not (sp and sp:IsShown()) then return false end
+    steppedAside = GS.Window.shownCount
+    return true
 end
 
 ------------------------------------------------------------

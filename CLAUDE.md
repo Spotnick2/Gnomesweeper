@@ -242,6 +242,8 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   minimap's addon list, `Blizzard_Minimap/Mainline/AddonCompartment.lua` in the forever source): the
   TOC's `AddonCompartmentFunc` names `Gnomesweeper_OnAddonCompartmentClick`, which clicks like the
   minimap button (`Minimap.Click`: left toggles, right opens the settings).
+  **Measured (70205):** `AddonCompartmentFrame` is the client's, shown in `MinimapCluster` as a small
+  16x16 button with the addon count (easy to miss), and Gnomesweeper is in its `registeredAddons`.
 - **`Effects.lua`** (#10): the celebrations, all client `AnimationGroup`s on a few textures (no OnUpdate
   of ours), each built once with `play`/`stop`/`isPlaying`. **The burst**: the gold starburst turning
   behind the face while a win shows (`Window.Refresh`): no longer a spinning starburst (owner: harsh); a

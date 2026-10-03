@@ -5,6 +5,13 @@ everything the skin names, says which client paths the client doesn't have, and 
 (`GnomesweeperDB.assetProbe`) for a `/reload` to write to disk. A green square or an empty cell on
 the sheet is a texture the client can't draw.
 
+**Measured with it** (owner, 1.60.1.70205, 2026-10-02): **all 19 textures draw**, with no green
+square and no empty cell: the 17 files of ours (the face and the logo are one file), the settings
+gear (a client path, `GetFileIDFromPath` → `311226`) and the bomb (client id `133709`, judged by
+eye). For our own files `GetFileIDFromPath` answered negative ids (`-2411` to `-2436`), one per path:
+the client does find addon files by path, under temporary ids. Whether it answers `nil` for a missing
+addon file is still unmeasured, so our art stays judged by eye (and by `tests/test_media.lua`).
+
 Live 3D models (the gnome face, the bomb on a wipe) are in [`MODELS.md`](MODELS.md); this file is
 the 2D art, which is also every model's fallback.
 

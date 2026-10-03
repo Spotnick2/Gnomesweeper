@@ -326,4 +326,51 @@ do  -- the version on a client without C_AddOns, or with the old global
     eq(API.AddOnVersion("Gnomesweeper"), "dev", "an empty version: dev")
 end
 
+do  -- resetting the best times: two clicks (owner: "a wipe high score button")
+    loadAddon({ db = { scores = { version = 1, ["beginner:area"] = { played = 9, won = 7, best = { time = 21.2 } } } } })
+    WoW.fire("PLAYER_LOGIN")
+    local page = Gnomesweeper.Options._test.page
+    page:Show()
+    local b = page.reset
+    eq(b:GetText(), "Reset best times...", "the settings page has the reset button")
+    b._scripts.OnClick(b)
+    check(GnomesweeperDB.scores ~= nil, "one click resets nothing")
+    eq(b:GetText(), "Click again to reset", "...it asks for a second click")
+    WoW.advance(6)
+    eq(b:GetText(), "Reset best times...", "...and forgets it after a few seconds")
+    b._scripts.OnClick(b)
+    WoW.advance(6)
+    b._scripts.OnClick(b)
+    check(GnomesweeperDB.scores ~= nil, "a second click too late arms it again, not resets")
+    WoW.chat = {}
+    b._scripts.OnClick(b)
+    eq(GnomesweeperDB.scores, nil, "two clicks in time: every best and count is gone")
+    eq(b:GetText(), "Reset best times...", "...the button is back to its label")
+    local said = false
+    for _, line in ipairs(WoW.chat) do if line:find("best times reset", 1, true) then said = true end end
+    check(said, "...and chat says so")
+    WoW.advance(10)
+    eq(b:GetText(), "Reset best times...", "...and no late timer changes it")
+
+    -- The board forgets the best to beat, and the best times panel shows none.
+    WoW.slash("/gsweep scores")
+    eq(Gnomesweeper.Window._test.ui.bests.rows.beginner.time:GetText(), "-", "the best times panel shows none")
+end
+
+do  -- after a reset, the alert has nothing to beat
+    loadAddon({ db = { scores = { version = 1, ["beginner:area"] = { played = 3, won = 1, best = { time = 20 } } } } })
+    WoW.fire("PLAYER_LOGIN")
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    WoW.now = 100
+    local t = Gnomesweeper.Grid._test.tiles[41]
+    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseUp(t, "LeftButton", true)
+    local page = Gnomesweeper.Options._test.page
+    page:Show()
+    page.reset._scripts.OnClick(page.reset); page.reset._scripts.OnClick(page.reset)
+    WoW.sounds = {}
+    WoW.now = 130; WoW.tick(0.2)
+    eq(#WoW.sounds, 0, "a game going past the old best after a reset: no alert")
+end
+
 done("test_options")

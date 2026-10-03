@@ -930,6 +930,13 @@ end
 
 -- After a setting changed (Options.Set): what the window shows that depends on one.
 -- (The best times refill whenever they show, and can't be open while Settings is.)
+-- After the best times were reset (Options): nothing to beat in this game, and
+-- whatever shows them shows none.
+function Window.ScoresReset()
+    beat, passed = nil, false
+    if ui.bests and ui.bests:IsShown() then fillBests() end
+end
+
 function Window.SettingsChanged()
     Window.Refresh()
     GS.Sounds.UpdateMusic()

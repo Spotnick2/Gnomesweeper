@@ -23,6 +23,7 @@
 --   Scores.Won(scores, cat, record) -> isNewBest, previousBest (record or nil)
 --   Scores.Best(scores, cat)     -> record or nil
 --   Scores.Stats(scores, cat)    -> played, won
+--   Scores.Reset(db)             -> forgets every best and count (the settings' reset)
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -94,6 +95,11 @@ function Scores.Won(scores, cat, record)
         realm = record.realm,
     }
     return true, previous
+end
+
+-- Forgets every category's best, played and won: the next write starts afresh.
+function Scores.Reset(db)
+    db.scores = nil
 end
 
 Scores._test = { validRecord = validRecord }

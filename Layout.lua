@@ -78,7 +78,8 @@ end
 -- The clock against the best to beat (#46, owner): "normal" far from it (or with no
 -- best), "near" in its last CLOCK_NEAR_SHARE (at most CLOCK_NEAR_MAX seconds), "last"
 -- in its last CLOCK_LAST seconds (the clock flashes), "over" once past it. Exactly at
--- the best is not over (the alert fires past it, too).
+-- the best is not over (the alert fires past it, too). The window shows "normal" before
+-- the first reveal and after a new best, whatever this says.
 Layout.CLOCK_NEAR_SHARE = 0.25
 Layout.CLOCK_NEAR_MAX = 10
 Layout.CLOCK_LAST = 3

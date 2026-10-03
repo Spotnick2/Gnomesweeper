@@ -10,10 +10,15 @@
   <a href="CHANGELOG.md">What's new</a>
 </p>
 
-Classic Minesweeper for **World of Warcraft: Forever**, for the queue, the flight path and the
-wait for the tank. Liquid glass, a gnome who takes every move personally, and Gnomeregan's sounds.
+Classic Minesweeper for **World of Warcraft: Forever**, in liquid glass, with a gnome who takes
+every move personally and Gnomeregan's sounds.
 
-<!-- Screenshots: docs/screenshots/ (board, win, modern, settings). -->
+It's the perfect companion for the long flight from Booty Bay to Ironforge, for the fishing pole
+that hasn't bitten in five minutes, for the dungeon queue, and for the wait before the next pull
+while the raid leader explains the fight one more time. Open it, play a quick round, and it hides
+itself the moment combat starts.
+
+<p align="center"><img src="docs/screenshots/flight-path.jpg" width="720" alt="Gnomesweeper on Expert during a flight over the Barrens"></p>
 
 ## Features
 
@@ -31,6 +36,17 @@ wait for the tank. Liquid glass, a gnome who takes every move personally, and Gn
   anything protected, and is usable in combat if you turn that off. A minimap button, an entry in the
   minimap's addon list, and a key binding.
 
+<table>
+  <tr>
+    <td><img src="docs/screenshots/expert.jpg" alt="An Expert game: 30 by 16, 99 mines"></td>
+    <td><img src="docs/screenshots/wipe.jpg" alt="Boom. Full wipe: the result after a wrong click"></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Expert: 30×16, 99 mines.</em></td>
+    <td align="center"><em>One wrong click.</em></td>
+  </tr>
+</table>
+
 ## How to play
 
 Open the board with **`/gsweep`** (or `/gnomesweeper`, `/minewipe`), the minimap button, or a key
@@ -44,6 +60,8 @@ Open the board with **`/gsweep`** (or `/gnomesweeper`, `/minewipe`), the minimap
 | **The gnome** | Starts a new game. During a game, it gives this one up. |
 
 Clear every tile that isn't a mine. The **?** in the title bar explains it all in game.
+
+<p align="center"><img src="docs/screenshots/flight.jpg" width="720" alt="Playing Expert on a flight path"></p>
 
 ## Commands
 

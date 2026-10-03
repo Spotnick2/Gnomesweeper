@@ -12,6 +12,29 @@ empty. Forever runs on Retail's data (its icon list includes 11.1 art), so these
 *probably* present. **None of them has been played on Forever yet**; the probe (#9) does that.
 Low kit IDs (under ~8000) are vanilla-era sounds.
 
+**Wired (#9, #22, `Sounds.lua`):** reveal 1115, flag 856 / unflag 857 (Blizzard's own UI clicks from
+`SOUNDKIT`), wipe 7517 then 1038 (0.7 s later), win 6131, new game 4779, music 53189. **Pick by ear
+with `/gsweep sounds`**: it plays every candidate below, 3 s apart, then the music, and saves what
+the client said (`GnomesweeperDB.soundProbe`); swap the picks in `Sounds.KITS`.
+
+**Measured in game** (owner, 1.60.1.70205, 2026-10-03, PR #42): **the music (53189), the bomb (7517)
+then the gnome's death (1038), and the win (6131: a "hurray" and "Congratulations") all play.**
+`PlayMusic` honours the game's Music toggle: with music off in the game's sound settings it is
+silent. **`/gsweep sounds`** (same day, all 16 candidates): **13 play**; the three Cataclysm-era
+Operation: Gnomeregan kits are **refused** (`willPlay` false): 17484, 17487, 17569. `PlayMusic(53189)`
+returns true. **Closing the board stops ours and the zone's music comes back** (owner). Not yet
+measured: whether the track loops.
+
+**The owner's picks after listening** (2026-10-03): the clicks are fine ("a normal mouse click");
+the **wipe cry and a greeting follow the character's sex** (`UnitSex`: 3278 / 3272 after the bomb,
+5925 / 5931 on the first open of a session); an **alert when the clock passes your best** (once a
+game): **kit 8456**, the owner's pick (a PvP warning; after auditioning 4574 `IG_PVP_UPDATE` and
+25477, the battleground countdown); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
+file is 566083; the owner found the kit ID in Classic's data), a gnomish arm, in place of the big red
+button 4779 that "doesn't sound like much". The API can't list the client's sound kits (they are game data,
+`SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/gsweep sounds`.
+The owner once heard the zone's music and ours together; the music log is in place to catch when.
+
 ## Effects (#9)
 
 `PlaySound(kit, "SFX")` is the global; `C_Sound.PlaySound(kit, uiSoundSubType, ...)` takes a

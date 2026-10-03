@@ -37,6 +37,10 @@ Options.ITEMS = {
       note = "One safe tile is Windows XP's rule. Each rule keeps its own best times.", nextGame = true },
     { key = "chordOnLeft", kind = "toggle", label = "Clear with left-click",
       note = "Left-click a number whose flags match." },
+    { key = "sounds", kind = "toggle", label = "Sounds",
+      note = "Clicks, flags, the bomb and the cheers. The game's own sound settings apply too." },
+    { key = "music", kind = "toggle", label = "Gnomeregan music",
+      note = "While the board is open; never in combat. Also the note in the title bar." },
     { key = "scale", kind = "scale", label = "Window size",
       get = function() return db().scale or 1 end,
       set = function(v)

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Sounds**: a click for every reveal and flag, the Walking Bomb going off and a gnome's last words on a wipe (a male or female gnome, like your character), a gnome's "Congratulations" when you clear the field, a hello when you first open the board, and an alarm when the clock passes your best time. Turn them off in the settings.
+- **Gnomeregan's music** while the board is open (off by default): the note in the title bar turns it on and off. It stops when you close the board (your zone's music comes back), and never plays in combat.
 - **A minimap button**: left-click opens the board, right-click opens the settings. Drag it around the minimap; hide it in the settings or with `/gsweep minimap`.
 - **Settings**, in the game's Options > AddOns > Gnomesweeper (the gear in the title bar and `/gsweep settings` open it), with an **About** page: question marks, the first click (opens an area, or one safe tile as in Windows XP), clearing around a number with a left-click, and the window size. Changes to a game you haven't started apply at once; otherwise from your next game.
 - **Personal bests.** Each difficulty keeps your best time (shared by all your characters, with the one who set it). A win says "New personal best!" or shows the best to beat, the difficulty list shows your best times, and its tooltip says how many games you've won.

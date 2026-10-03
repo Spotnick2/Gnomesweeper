@@ -15,6 +15,8 @@ textures are tinted with SetVertexColor):
   icon_burst     a starburst, ADD blended behind the bomb on the tile that ended the game
   icon_clock     a small brass clock beside the timer
   icon_trophy    a brass cup on a plinth: the best times button
+  icon_music     a pair of eighth notes, white (tinted): the music button
+  icon_mute      a red slash, over the note when the music is off
   icon_close     the X on the close button            (light, tinted)
   icon_arrow     the dropdown's arrow                 (white, tinted by difficulty)
   ui_fill        a dark glass button body, 9-sliced (margin 8)
@@ -181,6 +183,42 @@ def trophy():
 
 
 # ---------------------------------------------------------------------------
+# The music button: a note, and a slash over it when the music is off
+# ---------------------------------------------------------------------------
+
+def music_note():
+    """A beamed pair of eighth notes, white (tinted at runtime)."""
+    size = 64
+    s = size * SS
+    u = s / 256.0
+    im = canvas(size)
+    d = ImageDraw.Draw(im)
+    white = (255, 255, 255, 255)
+    # two note heads, tilted ovals
+    for cx, cy in ((78, 190), (182, 168)):
+        head = Image.new("RGBA", im.size, (0, 0, 0, 0))
+        ImageDraw.Draw(head).ellipse([(cx - 34) * u, (cy - 24) * u, (cx + 34) * u, (cy + 24) * u], fill=white)
+        im.alpha_composite(head.rotate(20, center=(cx * u, cy * u), resample=Image.BICUBIC))
+    # stems and the beam joining them
+    d.rectangle([104 * u, 52 * u, 120 * u, 186 * u], fill=white)
+    d.rectangle([208 * u, 30 * u, 224 * u, 164 * u], fill=white)
+    d.polygon([(104 * u, 52 * u), (224 * u, 30 * u), (224 * u, 72 * u), (104 * u, 94 * u)], fill=white)
+    return finish(im, size)
+
+
+def mute_slash():
+    """A red diagonal bar, drawn over the note when the music is off."""
+    size = 64
+    s = size * SS
+    u = s / 256.0
+    im = canvas(size)
+    d = ImageDraw.Draw(im)
+    d.line([(40 * u, 216 * u), (216 * u, 40 * u)], fill=(30, 8, 8, 255), width=int(40 * u))     # a dark edge
+    d.line([(40 * u, 216 * u), (216 * u, 40 * u)], fill=(232, 64, 56, 255), width=int(24 * u))
+    return finish(im, size)
+
+
+# ---------------------------------------------------------------------------
 # The burst behind the bomb
 # ---------------------------------------------------------------------------
 
@@ -331,7 +369,7 @@ def soot():
 
 
 TEXTURES = {
-    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_burst": burst, "icon_close": close_glyph, "icon_arrow": arrow,
+    "icon_flag": flag, "icon_clock": clock, "icon_trophy": trophy, "icon_music": music_note, "icon_mute": mute_slash, "icon_burst": burst, "icon_close": close_glyph, "icon_arrow": arrow,
     "ui_fill": ui_fill, "ui_border": ui_border, "ui_glow": ui_glow,
     "face_ring": face_ring, "face_sparkle": sparkle, "face_soot": soot,
 }
@@ -358,6 +396,8 @@ def preview(path):
     cells.append(cell(64, lambda c: over(c, tex["icon_flag"]), ) * 0 + over(covered, tex["icon_flag"]))
     cells.append(cell(64, lambda c: over(c, tex["icon_burst"], add=True)))
     cells.append(cell(64, lambda c: over(c, tex["icon_trophy"])))
+    cells.append(cell(64, lambda c: over(c, tex["icon_music"], tint=(0.82, 0.92, 1.0))))
+    cells.append(cell(64, lambda c: over(over(c, tex["icon_music"], tint=(0.5, 0.55, 0.62)), tex["icon_mute"])))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(0.15, 0.7, 0.99))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.77, 0.38))))
     cells.append(cell(64, lambda c: over(c, tex["face_ring"], tint=(1.0, 0.35, 0.30))))

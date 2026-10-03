@@ -36,7 +36,7 @@ holds the decided design, so update it when the design changes.
 TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Window.lua` → `Options.lua` → `Minimap.lua` →
-`Assets.lua` → `Gnomesweeper.lua`.
+`Sounds.lua` → `Assets.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -187,6 +187,23 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   (made at `ADDON_LOADED`, replaced if damaged). Showing it is a setting ("Minimap button", and
   `/gsweep minimap`), through `Options.Set` (an item with `get`/`set` keeps its value outside
   `GnomesweeperDB[key]`). Without the libraries there is simply no button.
+- **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound
+  kits played with the global `PlaySound(kit, "SFX")` (the game's sound toggle and volume apply;
+  `PlaySoundFile` refuses game paths here, and `C_Sound.PlaySound`'s second argument is an enum, not
+  a channel). `Sounds.KITS` holds the picks (`docs/SOUNDS.md`, all measured to play): a reveal or
+  chord clicks, a flag on and off each click, a win congratulates (no click on top), a wipe is the
+  bomb and then, after `WIPE_DELAY`, a gnome's last words (two `PlaySound`s at once overlap), the
+  face / Play again / Try again press the big red button. **Voices follow the character's sex**
+  (`UnitSex`: the wipe cry, and a greeting on the first open of a session). The clock passing the
+  best to beat (its time when the game started) plays an alert, once a game. An action that changes nothing is silent. A new game or the window
+  closing cancels a sound still waiting (`Sounds.Cancel`). `Window.Dispatch` calls `Sounds.Action`.
+  **Music**: `PlayMusic(53189)` replaces the zone's music; **one check** (the setting on, the window
+  shown, not in combat) runs whenever any of them changes (`Sounds.UpdateMusic`: the window's
+  show/hide, `PLAYER_REGEN_*`, a setting), and `StopMusic()` only for music this addon started.
+  Off by default. The title bar's **note** button (greyed under a red slash when off) and the
+  settings change the same value. **`/gsweep sounds`** plays every candidate, `PROBE_GAP` apart,
+  then the music, and saves each kit's `willPlay` in `GnomesweeperDB.soundProbe` (a probe, to pick
+  by ear; a second `/gsweep sounds` stops it).
 - **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
   and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
@@ -336,6 +353,10 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
     dump: set `GNOMESWEEPER_API_DUMP` to another path);
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
+- **`test_sounds.lua`** is the sounds and music on the stub's recorded `PlaySound`/`PlayMusic`/
+  `StopMusic` and its clock (`WoW.advance` runs `C_Timer`s): every effect, the delayed gnome and its
+  cancelling, the music's one check (window, combat, setting, a login in combat), the note button,
+  the probe.
 - **`test_minimap.lua`** is the minimap button on the library fakes: registration, both clicks, the
   tooltip, the setting and `/gsweep minimap`, a button saved hidden, a damaged table, no libraries.
 - **`test_options.lua`** is the settings: `Options.Set` (refused values, next game vs. now, marks

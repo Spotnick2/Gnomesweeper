@@ -59,6 +59,9 @@ end
 -- The game
 ------------------------------------------------------------
 
+local beat            -- the best to beat this game (its time at the start), or nil
+local passed          -- the clock went past it this game (the alert played)
+
 local function newBoard()
     local key = difficultyKey()
     local p = Board.PRESETS[key]
@@ -70,6 +73,8 @@ local function newBoard()
     rule = db().safeZone == "cell" and "cell" or "area"
     category = Scores.Category(key, rule)
     lastWin = nil
+    local best = type(db().scores) == "table" and Scores.Best(db().scores, category)
+    beat, passed = best and best.time or nil, false
 end
 
 ------------------------------------------------------------
@@ -171,6 +176,11 @@ local function onUpdate(_, dt)
     acc = 0
     local text = timerText()
     if text ~= ui.timer:GetText() then ui.timer:SetText(text) end
+    -- The clock just went past the best to beat: an alert, once a game.
+    if beat and not passed and game:Elapsed(GetTime()) > beat then
+        passed = true
+        GS.Sounds.BestPassed()
+    end
 end
 
 -- The clock text only needs driving while a game is in progress and the window
@@ -194,6 +204,9 @@ function Window.Refresh()
     for k, row in pairs(ui.rows) do row.selected:SetShown(k == key); row.bar:SetShown(k == key) end
     ui.face:setState(game:State())
     setTicking(game:State() == "playing")
+    local on = db().music == true
+    ui.music.icon:SetVertexColor(unpack(on and C.musicOn or C.musicOff))
+    ui.music.slash:SetShown(not on)
 end
 
 ------------------------------------------------------------
@@ -375,7 +388,7 @@ local function buildFooter()
     r.sub:SetPoint("TOPRIGHT", r.title, "BOTTOMRIGHT", 0, -3)
     r.title:SetWordWrap(false)
     r.sub:SetWordWrap(false)
-    r.button:SetScript("OnClick", function() Window.NewGame() end)
+    r.button:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
     r:Hide()
     ui.result = r
 end
@@ -413,7 +426,7 @@ local function buildOverlay()
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
-    o.button:SetScript("OnClick", function() Window.NewGame() end)
+    o.button:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
     -- The way to look at the finished board: a visible control, not only a click on the panel.
     o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
     o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
@@ -620,9 +633,23 @@ local function build()
     ui.gear:SetScript("OnClick", function() GS.Options.Open() end)
     Widgets.Tip(ui.gear, "Settings", "Opens Options > AddOns > Gnomesweeper: question marks, the first click, left-click clearing, the window size.")
 
+    -- The music button: the note, greyed with a red slash when the music is off.
+    ui.music = Widgets.IconButton(win, 22, T.music)
+    ui.music:SetFrameLevel(content)
+    ui.music.slash = ui.music:CreateTexture(nil, "OVERLAY", nil, 2)
+    ui.music.slash:SetSize(16, 16)
+    ui.music.slash:SetPoint("CENTER", ui.music, "CENTER", 0, 0)
+    ui.music.slash:SetTexture(T.mute)
+    ui.music:SetScript("OnClick", function() GS.Options.Set("music", not db().music) end)
+    Widgets.Tip(ui.music, "Gnomeregan music", function()
+        return { db().music and "On: click to turn it off." or "Off: click to play it while the board is open.",
+                 "It never plays in combat." }
+    end)
+
     ui.trophy = Widgets.IconButton(win, 22, T.trophy)
     ui.trophy:SetFrameLevel(content)
     ui.trophy:SetPoint("RIGHT", ui.gear, "LEFT", -5, 0)
+    ui.music:SetPoint("RIGHT", ui.trophy, "LEFT", -5, 0)
     ui.trophy:setAccent(unpack(C.gold))
     ui.trophy:SetScript("OnClick", function() Window.ShowBests() end)
     Widgets.Tip(ui.trophy, "Best times", "Your best at each difficulty, shared by all your characters.")
@@ -659,7 +686,7 @@ local function build()
 
     ui.face = Widgets.FaceButton(hud, 44)
     ui.face:SetPoint("CENTER", hud, "CENTER", 0, 0)
-    ui.face:SetScript("OnClick", function() Window.NewGame() end)
+    ui.face:SetScript("OnClick", function() GS.Sounds.NewGame(); Window.NewGame() end)
     Widgets.Tip(ui.face, "New game", "Same difficulty.")
 
     ui.timer = Glass.Font(hud, 22, "RIGHT")
@@ -697,11 +724,15 @@ local function build()
         game:Resume(GetTime())
         Window.Layout()
         Window.Refresh()
+        GS.Sounds.UpdateMusic()
+        GS.Sounds.Greet()
     end)
     win:SetScript("OnHide", function(self)
         game:Pause(GetTime())
         for _, f in ipairs(floating) do f:Hide() end   -- none comes back over the board on the next open
         Grid.Cancel()                  -- a button held when the window closes is not a click
+        GS.Sounds.Cancel()
+        GS.Sounds.UpdateMusic()        -- the music is for the board: it stops with it
         self:StopMovingOrSizing()
     end)
 
@@ -752,6 +783,7 @@ function Window.Dispatch(kind, i)
     if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
     local state = game:State()
     recordScores(was, state)             -- first, so the refresh below shows a new best
+    GS.Sounds.Action(kind, was, state, game:Cell(i), #list)
     Grid.Refresh(list)
     Window.Refresh()
     -- Only the action that ENDS the game brings the overlay up: a click on a
@@ -785,6 +817,7 @@ end
 
 -- A fresh game, at `preset` (remembered) or the current difficulty.
 function Window.NewGame(preset)
+    GS.Sounds.Cancel()                   -- the last game's gnome mustn't speak over the new one
     if preset and Board.PRESETS[preset] then db().difficulty = preset end
     newBoard()
     if ui.overlay then ui.overlay:Hide() end
@@ -819,6 +852,7 @@ end
 -- (The best times refill whenever they show, and can't be open while Settings is.)
 function Window.SettingsChanged()
     Window.Refresh()
+    GS.Sounds.UpdateMusic()
 end
 
 -- The player's own scale (/gsweep scale), nil to go back to 1. The window still
@@ -855,6 +889,8 @@ Window._test = {
         game = b
         Window.game = b
         category, lastWin = cat, nil
+        local best = cat and type(db().scores) == "table" and Scores.Best(db().scores, cat)
+        beat, passed = best and best.time or nil, false
         rule = cat and cat:match(":(%a+)$") or (db().safeZone == "cell" and "cell" or "area")
         if ui.overlay then ui.overlay:Hide() end
         if ui.result then showResultBar(false) end

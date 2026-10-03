@@ -153,7 +153,8 @@ Gnomesweeper.Options._test.page:Show()
 -- Global functions the addon calls through the strict _G are, by construction,
 -- defined in the stub; confirm each is a real one.
 for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor",
-        "GetFileIDFromPath", "GetBuildInfo", "UnitName", "GetRealmName", "time", "date" }) do
+        "GetFileIDFromPath", "GetBuildInfo", "UnitName", "GetRealmName", "time", "date",
+        "PlaySound", "PlayMusic", "StopMusic", "UnitAffectingCombat", "UnitSex" }) do
     check(globals[name], "global function exists on Forever: " .. name)
 end
 

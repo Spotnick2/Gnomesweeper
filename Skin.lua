@@ -30,6 +30,8 @@ Skin.TEXTURES = {
     flag = MEDIA .. "icon_flag",
     clock = MEDIA .. "icon_clock",
     trophy = MEDIA .. "icon_trophy",        -- the best times button
+    music = MEDIA .. "icon_music",          -- the music button (white, tinted)
+    mute = MEDIA .. "icon_mute",            -- the slash over it when the music is off
     close = MEDIA .. "icon_close",
     arrow = MEDIA .. "icon_arrow",
     burst = MEDIA .. "icon_burst",
@@ -90,6 +92,8 @@ Skin.NUMBER_COLORS = {
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
 
 Skin.COLORS = {
+    musicOn = { 0.82, 0.92, 1 },      -- the note when the music plays
+    musicOff = { 0.50, 0.55, 0.62 },  -- greyed under its red slash
     gold         = { 0.98, 0.77, 0.38 },       -- the logo's lettering, #fbc560
     hint         = { 0.72, 0.76, 0.85 },
     tagline      = { 0.78, 0.87, 1 },

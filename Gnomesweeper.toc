@@ -22,5 +22,6 @@ Grid.lua
 Window.lua
 Options.lua
 Minimap.lua
+Sounds.lua
 Assets.lua
 Gnomesweeper.lua

@@ -68,6 +68,10 @@ says the logo differs; it is not a placeholder to be thrown away until the art e
 
 ## Art we still need (requests)
 
+**Delivered 2026-10-03 (#12)**: 1-7 below, plus an exploded mine, a flag and three tiles; in the game
+except the tiles (a brighter look than the UI review chose: the owner decides). `Media/README.md`
+has where each is and how it is exported; the prompts are in `Media/ART-PROMPTS.md`.
+
 In priority order. Each is a **PNG with a transparent background**, put in `Media/Source/`, and
 the prompts and the style block are in "Briefs and prompts" below. Tell me when one is there and
 I'll convert and wire it (`Tools/png_to_tga.py`); nothing else changes.

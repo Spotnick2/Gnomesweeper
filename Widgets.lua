@@ -120,6 +120,8 @@ function Widgets.FaceButton(parent, size)
     b.glow:SetVertexColor(1, 1, 1, 0.9)
 
     function b.setState(self, state)
+        self.stateFace = T[Skin.FACE[state] or "face"] or T.face
+        if not self.pressed then self.face:SetTexture(self.stateFace) end
         local ring = Skin.FACE_RING[state] or Skin.FACE_RING.ready
         self.ring:SetVertexColor(ring[1], ring[2], ring[3])
         local over = Skin.FACE_OVERLAY[state]
@@ -138,7 +140,7 @@ function Widgets.FaceButton(parent, size)
         if self.pressed == on then return end
         self.pressed = on
         if T.facePressed then
-            self.face:SetTexture(on and T.facePressed or T.face)
+            self.face:SetTexture(on and T.facePressed or self.stateFace or T.face)
         else
             local s = on and math.floor(inner * 0.88 + 0.5) or inner
             self.face:SetSize(s, s)

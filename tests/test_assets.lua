@@ -10,6 +10,7 @@ local function chatHas(text)
 end
 
 loadAddon()
+Gnomesweeper.Skin.TEXTURES.clientIcon = 133709   -- a client file ID, as the skin may name one
 local A, Skin, Glass = Gnomesweeper.Assets, Gnomesweeper.Skin, Gnomesweeper.Glass
 local T = Skin.TEXTURES
 
@@ -18,7 +19,7 @@ local T = Skin.TEXTURES
 ----------------------------------------------------------------------------
 eq(A.Kind(T.flag), "media", "our own file in Media/ is media")
 eq(A.Kind(T.gear), "path", "a client texture path is a path")
-eq(A.Kind(T.mine), "fileID", "a number is a client file ID")
+eq(A.Kind(133709), "fileID", "a number is a client file ID")
 eq(A.Kind(nil), "unknown", "anything else is unknown")
 eq(A.Kind(Glass.MEDIA .. "x"), "media", "anything under our Media/ is ours")
 
@@ -38,7 +39,7 @@ do
     eq(byKey.gear.checked, true, "...and is marked as checked")
     eq(byKey.flag.fileID, nil, "what the client says for our own file is recorded (here: nothing)")
     eq(byKey.flag.checked, true, "...after asking")
-    eq(byKey.mine.checked, nil, "a file ID isn't asked about: getters echo anything")
+    eq(byKey.clientIcon.checked, nil, "a file ID isn't asked about: getters echo anything")
     eq(#A.Missing(entries), 0, "nothing is missing")
 
     WoW.fileIDs = {}
@@ -64,6 +65,7 @@ end
 ----------------------------------------------------------------------------
 do
     loadAddon()
+    Gnomesweeper.Skin.TEXTURES.clientIcon = 133709
     A, Skin, T = Gnomesweeper.Assets, Gnomesweeper.Skin, Gnomesweeper.Skin.TEXTURES
     WoW.fileIDs = { [T.gear] = 136243 }
     check(rawget(_G, "GnomesweeperAssets") == nil, "nothing is built until it is asked for")
@@ -84,7 +86,7 @@ do
     local byKey = {}
     for i, e in ipairs(entries) do byKey[e.key] = cells[i] end
     eq(byKey.gear.state:GetText(), "path: file 136243", "a known client path shows its file ID")
-    eq(byKey.mine.state:GetText(), "client id " .. tostring(T.mine), "a file ID says so")
+    eq(byKey.clientIcon.state:GetText(), "client id 133709", "a file ID says so")
     eq(byKey.flag.state:GetText(), "ours", "our own file says so")
 
     check(chatHas("textures on the sheet"), "it reports in chat")
@@ -94,7 +96,7 @@ do
     local probe = GnomesweeperDB.assetProbe
     eq(probe.build, "1.60.1.70205", "the results are saved with the build")
     eq(probe.entries.gear.fileID, 136243, "...and each texture's result")
-    eq(probe.entries.mine.kind, "fileID", "...and its kind")
+    eq(probe.entries.clientIcon.kind, "fileID", "...and its kind")
     eq(probe.entries.flag.value, T.flag, "...and its value")
 
     WoW.slash("/gsweep assets")

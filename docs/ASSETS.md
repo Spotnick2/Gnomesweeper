@@ -65,7 +65,9 @@ as file IDs. #6 does the rest.
 
 ## Chosen for the board (#4)
 
-- **Mine:** `inv_misc_bomb_01` (133709), the classic black bomb with a lit fuse; the candidates
+- **Mine (since #12): our own**, `Media/mine` (a gnomish mine, brass studs, orange core) and
+  `Media/mine_exploded` for the tile that went off (a different drawing, so the detonated tile is a
+  shape as well as a colour). **Before #12:** `inv_misc_bomb_01` (133709), the classic black bomb with a lit fuse; the candidates
   were compared at 18 px and it is the one that stays legible. (The spiked `_02`, the smiley `_04`,
   the dynamite and the red crab bomb were set aside; `inv_eng_bombfire`, 2115301, is a bomb in
   flames for a later "boom".) **Measured to render** (owner's screenshots of games and losses).

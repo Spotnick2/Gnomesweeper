@@ -415,6 +415,8 @@ end
 ------------------------------------------------------------
 
 local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
+local TITLE_H = 34                      -- the title lettering's height; its width keeps the drawn shape
+local TITLE_W = math.floor(TITLE_H * (459 - 53) / (124 - 4) + 0.5)   -- 115: Skin.TITLE_CROP's 406x120 pixels
 
 local function endTexts()
     if game:State() == "won" then
@@ -449,6 +451,12 @@ local function buildOverlay()
     o.newBest:SetText("New personal best!")
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
+    -- The storyboard's laurels around it (#12): behind the text, open at the top.
+    o.laurels = o:CreateTexture(nil, "ARTWORK")
+    o.laurels:SetSize(196, 49)
+    o.laurels:SetPoint("CENTER", o.newBest, "CENTER", 0, -6)
+    o.laurels:SetTexture(T.laurels)
+    o.laurels:Hide()
     -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
     o.beaten = Glass.Font(o, 12, "CENTER")
     o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
@@ -499,12 +507,14 @@ function Window.ShowEnd()
         end
         o.best:SetShown(text ~= nil and not isNew)
         o.newBest:SetShown(isNew and true or false)
+        o.laurels:SetShown(isNew and true or false)
         if isNew then o.pulse.play() else o.pulse.stop() end
     else
         o:SetHeight(LOSS_H)
         o.time:Hide()
         o.best:Hide()
         o.newBest:Hide()
+        o.laurels:Hide()
         o.beaten:Hide()
         o.pulse.stop()
     end
@@ -651,9 +661,15 @@ local function build()
 
     -- Title bar: the name and the tagline (no portrait: the mascot is the HUD's
     -- new-game face), then the icons: music, trophy, ?, gear, close.
-    local title = Glass.Font(win, 19, "LEFT")
-    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -12)
-    title:SetText(Skin.TITLE)
+    -- The gold lettering (#12). Its texture is 512x128 with transparent sides: crop to
+    -- the drawn part (Skin.TITLE_CROP) so it lines up with the tagline, at its own shape.
+    local title = win:CreateTexture(nil, "ARTWORK")
+    title:SetSize(TITLE_W, TITLE_H)
+    title:SetTexture(T.title)
+    title:SetTexCoord(unpack(Skin.TITLE_CROP))
+    title:SetPoint("TOPLEFT", win, "TOPLEFT", PAD, -8)
+    ui.title = title
+
     local tagline = Glass.Font(win, 11, "LEFT")
     tagline:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
     tagline:SetTextColor(unpack(C.tagline))

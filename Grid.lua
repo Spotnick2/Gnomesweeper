@@ -65,23 +65,6 @@ local function setIcon(t, texture, opts)
     end
 end
 
--- The starburst behind the bomb on the tile that ended the game: a SHAPE as well as
--- a colour, so the detonated tile isn't told apart by red alone.
-local function setBurst(t, on)
-    if on then
-        if not t.burst then
-            t.burst = t:CreateTexture(nil, "ARTWORK", nil, -1)
-            t.burst:SetSize(Skin.BURST, Skin.BURST)
-            t.burst:SetPoint("CENTER", t, "CENTER", 0, 0)
-            t.burst:SetTexture(Skin.TEXTURES.burst)
-            t.burst:SetBlendMode("ADD")
-        end
-        t.burst:Show()
-    elseif t.burst then
-        t.burst:Hide()
-    end
-end
-
 local function setText(t, text, color)
     if text then
         if not t.text then
@@ -112,15 +95,14 @@ local function paint(i)
     if c.state == "revealed" then
         t.covered = false
         t.bg:SetTexture(c.exploded and T.tileExploded or T.tileRevealed)
-        setBurst(t, c.exploded)
-        -- The bomb that ended it is drawn smaller, so the red tile and the burst show round it.
-        setIcon(t, c.mine and T.mine or nil, { crop = true, size = c.exploded and 14 or nil })
+        -- The mine that went off is its own drawing (bursting), a SHAPE as well as the red
+        -- tile, so it isn't told apart by colour alone.
+        setIcon(t, c.mine and (c.exploded and T.mineExploded or T.mine) or nil)
         local n = c.count
         if n and n > 0 then setText(t, tostring(n), Skin.NUMBER_COLORS[n]) else setText(t, nil) end
     else
         t.covered = true
         t.bg:SetTexture(T.tileCovered)
-        setBurst(t, false)
         if c.state == "flag" then
             -- A wrong flag: the banner greyed and a red X over it. (A red X on the
             -- red banner was invisible: seen in game.)

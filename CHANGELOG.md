@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **New art**: the gnome now has a face for every moment: focused while you play, laughing when you clear the field, sooty after a wipe, surprised while you hold a tile. A gnomish mine (and a bursting one for the tile that blew), a new flag, gold Gnomesweeper lettering, and laurels around a new personal best.
 - **A new personal best** shows your time to the tenth and how much you beat the old one by ("0.8 s faster than 00:22.1"). **Reset best times** in the settings wipes them all (click twice).
 - **Celebrations**: a gold burst turns behind the gnome when you clear the field, smoke rises from the tile that blew, and the gnome flinches while you hold a tile down. **A new personal best** gets a fanfare, a bigger line that pulses, and **fireworks** over the board (turn them off in the settings).
 - **A new game reshuffles the field**: the tiles come back in a wave from the top-left while a gnomish arm whirs. A click skips it.

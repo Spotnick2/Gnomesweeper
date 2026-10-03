@@ -23,10 +23,8 @@ Skin.TEXTURES = {
     -- the ring and the overlays until the real expressions exist, #12)
     face = MEDIA .. "face_mascot",
     faceRing = MEDIA .. "face_ring",
-    faceSparkle = MEDIA .. "face_sparkle",
-    faceSoot = MEDIA .. "face_soot",
     -- icons
-    flag = MEDIA .. "icon_flag",
+    flag = MEDIA .. "flag",                 -- the generated pennant (#12; Media/README.md)
     clock = MEDIA .. "icon_clock",
     trophy = MEDIA .. "icon_trophy",        -- the best times button
     music = MEDIA .. "icon_music",          -- the music button (white, tinted)
@@ -37,7 +35,14 @@ Skin.TEXTURES = {
     smoke = MEDIA .. "fx_smoke",            -- puffs rising from the tile that went off (#10)
     glow = MEDIA .. "fx_glow",              -- the soft glow behind the mascot on a win (#10)
     gear = "Interface\\WorldMap\\GEAR_64GREY",          -- the client's own; tinted
-    mine = 133709,                                      -- inv_misc_bomb_01: the classic black bomb (art needed, #13)
+    mine = MEDIA .. "mine",                 -- the gnomish mine: gunmetal, brass studs, orange core (#12)
+    mineExploded = MEDIA .. "mine_exploded", -- the one that went off: a different SHAPE, not only a colour
+    facePlaying = MEDIA .. "face_playing",  -- the mascot's expressions (#12): focused, goggles down
+    faceWon = MEDIA .. "face_won",          -- laughing
+    faceLost = MEDIA .. "face_lost",        -- sooty, a cracked lens
+    facePressed = MEDIA .. "face_pressed",  -- surprised, while a tile is held
+    title = MEDIA .. "title",               -- the gold Gnomesweeper lettering
+    laurels = MEDIA .. "laurels",           -- around "New personal best!"
     -- the glass controls (9-sliced, margin 8)
     uiFill = MEDIA .. "ui_fill",
     uiBorder = MEDIA .. "ui_border",
@@ -50,7 +55,10 @@ Skin.TEXTURES = {
 }
 
 -- What shows over the mascot's face, and the colour of its ring, per game state.
-Skin.FACE_OVERLAY = { won = "faceSparkle", lost = "faceSoot" }
+-- The face for each game state (the expressions, #12). The sparkle and soot drawn
+-- over the one face stood in for them until they existed; with them, nothing is drawn over.
+Skin.FACE = { ready = "face", playing = "facePlaying", won = "faceWon", lost = "faceLost" }
+Skin.FACE_OVERLAY = {}
 Skin.FACE_RING = {
     ready   = { 0.15, 0.70, 0.99 },
     playing = { 0.15, 0.70, 0.99 },
@@ -74,7 +82,6 @@ end
 
 Skin.TILE_ICON = 18                   -- the bomb on a 24-unit tile
 Skin.FLAG_ICON = 20                   -- the flag, a little taller: it has a pole
-Skin.BURST = 26                       -- the starburst behind the bomb that ended the game
 Skin.TILE_FONT = 15                   -- the numbers
 
 -- 1-8 on a dark tile: the classic colours, lightened to read on glass.
@@ -91,6 +98,8 @@ Skin.NUMBER_COLORS = {
 
 -- WoW's own icons carry a border: crop it off. (Ours are drawn without one.)
 Skin.ICON_CROP = { 0.07, 0.93, 0.07, 0.93 }
+-- The title lettering's drawn part in its 512x128 texture (pixels 53..459 x 4..124).
+Skin.TITLE_CROP = { 53 / 512, 459 / 512, 4 / 128, 124 / 128 }
 
 Skin.COLORS = {
     smoke = { 0.80, 0.80, 0.84 },     -- the wipe's smoke, over the dark board

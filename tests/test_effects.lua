@@ -77,13 +77,13 @@ end
 do
     local W = fresh()
     local face = W._test.ui.face
-    local size = face.face._width
+    local T = Gnomesweeper.Skin.TEXTURES
     down(41)
     check(face.pressed, "a tile held down: the gnome reacts")
-    check(face.face._width < size, "...flinching a little (until the surprised face's art exists)")
+    eq(face.face._texture, T.facePressed, "...surprised (the art, #12)")
     up(41)
     check(not face.pressed, "let go: she's back")
-    eq(face.face._width, size, "...at her size")
+    eq(face.face._texture, T.facePlaying, "...with the face of the game in progress")
 
     -- Two buttons: she reacts until the last one is up.
     down(41, L); down(41, R)
@@ -105,15 +105,16 @@ do
     up(at(1, 1))
 end
 
-do  -- with the art, the surprised face itself
+do  -- without the surprised face's art, she flinches instead
     loadAddon()
-    Gnomesweeper.Skin.TEXTURES.facePressed = "Interface\\AddOns\\Gnomesweeper\\Media\\face_pressed"
+    Gnomesweeper.Skin.TEXTURES.facePressed = nil
     WoW.slash("/gsweep")
     local face = Gnomesweeper.Window._test.ui.face
+    local size = face.face._width
     down(41)
-    eq(face.face._texture, Gnomesweeper.Skin.TEXTURES.facePressed, "the surprised face's art, once it exists")
+    check(face.face._width < size, "no surprised face: a flinch")
     up(41)
-    eq(face.face._texture, Gnomesweeper.Skin.TEXTURES.face, "...and back")
+    eq(face.face._width, size, "...and back to her size")
 end
 
 ----------------------------------------------------------------------------

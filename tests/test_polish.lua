@@ -161,7 +161,13 @@ do
     local W = onWall()
     local ui, Skin = W._test.ui, Gnomesweeper.Skin
     local T = Skin.TEXTURES
-    check(T.flag:find("icon_flag", 1, true), "the flag is our own red pennant, not a faction crest")
+    check(T.flag:find("Media\\flag", 1, true), "the flag is our own red pennant (#12), not a faction crest")
+    -- The title is the gold lettering (#12), cropped to its drawn part, at its own shape.
+    local title = ui.title
+    eq(title._texture, T.title, "the title is the lettering, not text")
+    eq(title._texCoord[1], Skin.TITLE_CROP[1], "...cropped to what is drawn (it lines up with the tagline)")
+    local ratio = title._width / title._height
+    check(math.abs(ratio - (459 - 53) / (124 - 4)) < 0.05, "...at its own shape, not stretched (" .. string.format("%.2f", ratio) .. ")")
     click(at(4, 4), R)
     eq(tile(at(4, 4)).icon._texture, T.flag, "a flagged tile shows it")
     eq(tile(at(4, 4)).icon._texCoord[1], 0, "...whole (our texture has no border to cut off)")
@@ -173,19 +179,16 @@ do
     eq(W.game:State(), "lost", "(a mine was revealed)")
     local boom, other = tile(at(3, 1)), tile(at(3, 3))
     eq(boom.bg._texture, T.tileExploded, "the detonated tile is on the red tile")
-    check(boom.burst ~= nil and boom.burst:IsShown(), "...with a starburst behind it, so it isn't told apart by colour alone")
-    eq(boom.burst._blend, "ADD", "(the burst is additive light)")
-    eq(boom.icon._width, 14, "...and the bomb on it is smaller, so the red and the burst show round it")
-    eq(other.icon._width, Skin.TILE_ICON, "the other mines are the normal size")
-    check(other.burst == nil or not other.burst:IsShown(), "...with no burst")
-    eq(other.icon._texCoord[1], Skin.ICON_CROP[1], "(WoW's own bomb icon has its border cropped off)")
+    eq(boom.icon._texture, T.mineExploded, "...with the mine that went off: its own drawing, a SHAPE, not only the red")
+    eq(other.icon._texture, T.mine, "the other mines are the whole mine")
+    check(T.mine ~= T.mineExploded, "(two different drawings)")
+    eq(other.icon._texCoord[1], 0, "(our own art: no border to crop, unlike WoW's item icons)")
     eq(tile(at(4, 4)).text:GetText(), "X", "the wrong flag has an X, a shape")
     eq(tile(at(4, 4)).icon._desaturated, true, "...on a greyed flag")
 
     -- A new game takes the burst off.
     ui.face._scripts.OnClick(ui.face)
-    check(boom.burst == nil or not boom.burst:IsShown(), "a new game clears the burst")
-    eq(boom.icon == nil or not boom.icon:IsShown(), true, "...and the bomb")
+    eq(boom.icon == nil or not boom.icon:IsShown(), true, "a new game clears the mine")
 end
 
 ----------------------------------------------------------------------------

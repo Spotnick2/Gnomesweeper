@@ -50,20 +50,20 @@ do
     click(41, L)
     eq(W.game:State(), "playing", "(the first click started the game)")
     eq(ui.face.state, "playing", "playing: the mascot follows the game")
-    eq(ui.face.face._texture, Skin.TEXTURES.face, "...still the same gnome")
+    eq(ui.face.face._texture, Skin.TEXTURES.facePlaying, "...focused, goggles down (her playing face, #12)")
 
     for i = 1, W.game.total do                          -- end it on a mine
         if W.game._mine[i] then click(i, L); break end
     end
     eq(W.game:State(), "lost", "(a mine was revealed)")
     eq(ui.face.state, "lost", "lost: the mascot follows the game")
-    eq(ui.face.face._texture, Skin.TEXTURES.face, "...still the same gnome, not a bomb")
+    eq(ui.face.face._texture, Skin.TEXTURES.faceLost, "...her soot-covered face (#12)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.lost[1], "...in a red ring")
-    check(ui.face.overlay:IsShown() and ui.face.overlay._texture == Skin.TEXTURES.faceSoot, "...with soot over her")
+    check(not ui.face.overlay:IsShown(), "...with nothing drawn over her: the expression says it")
 
     ui.face._scripts.OnClick(ui.face)
     eq(ui.face.state, "ready", "the face starts a new game, and goes back to ready")
-    check(not ui.face.overlay:IsShown(), "...and the soot is gone")
+    eq(ui.face.face._texture, Skin.TEXTURES.face, "...and a new game brings back her ready face")
 
     -- She is one character; the state shows in her ring and what is over her, and the ready,
     -- cleared and wiped looks are three different ones.
@@ -105,7 +105,8 @@ do
     eq(o.glass.rim._vertex[3], Skin.COLORS.winRim[3], "(its blue is low)")
     eq(ui.face.state, "won", "the mascot is in her cleared state")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.won[1], "...in a gold ring")
-    check(ui.face.overlay:IsShown() and ui.face.overlay._texture == Skin.TEXTURES.faceSparkle, "...with sparkles over her")
+    eq(ui.face.face._texture, Skin.TEXTURES.faceWon, "...laughing (her won face, #12)")
+    check(not ui.face.overlay:IsShown(), "...nothing drawn over her")
     eq(ui.counter:GetText(), "0", "every mine is flagged, so the counter reads 0")
 
     check(o._mouse, "the overlay takes the mouse, so the board under it gets no clicks")

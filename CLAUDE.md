@@ -162,7 +162,10 @@ LibDBIcon-1.0) → `Compat.lua` → `Glass.lua` → `Board.lua` → `Layout.lua`
   checks the value (refused: nothing changes), saves it, applies it, and refreshes the page. The slash
   commands go through it too. Question marks and the first-click rule are part of a board: they apply
   from the next game, and a board nobody has touched (every tile covered: no reveal, no mark) is
-  replaced at once. The same value again does nothing.
+  replaced at once. The same value again does nothing. **Reset best times...** on the page (owner)
+  forgets every best and count (`Scores.Reset`): the first click only arms it for `RESET_WINDOW`
+  (5 s), a second resets (no popup: none measured on Forever); `Window.ScoresReset` drops the best
+  to beat.
   **The one place to set them is Options > AddOns > Gnomesweeper** (owner's call: guild scores and
   more are coming, and a panel in the window would outgrow it); the gear and `/gsweep settings` open
   it (`Options.Open`). It is GlassUnitFrames' recipe: a canvas registered at `PLAYER_LOGIN`, built on

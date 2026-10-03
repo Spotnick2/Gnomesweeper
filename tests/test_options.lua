@@ -352,6 +352,16 @@ do  -- resetting the best times: two clicks (owner: "a wipe high score button")
     WoW.advance(10)
     eq(b:GetText(), "Reset best times...", "...and no late timer changes it")
 
+    -- A stale timer mustn't disarm a newer arming: arm, reset, arm again quickly.
+    GnomesweeperDB.scores = { version = 1 }
+    b._scripts.OnClick(b)                                -- arm (timer due at +5)
+    WoW.advance(1)
+    b._scripts.OnClick(b)                                -- reset
+    WoW.advance(1)
+    b._scripts.OnClick(b)                                -- arm again (its own timer due at +5 from here)
+    WoW.advance(3.5)                                     -- the first timer has come due
+    eq(b:GetText(), "Click again to reset", "an old arming's timer doesn't disarm the newer one")
+
     -- The board forgets the best to beat, and the best times panel shows none.
     WoW.slash("/gsweep scores")
     eq(Gnomesweeper.Window._test.ui.bests.rows.beginner.time:GetText(), "-", "the best times panel shows none")

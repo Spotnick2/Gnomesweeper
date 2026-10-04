@@ -141,10 +141,10 @@ sheet, boxes read from `GnomesweeperDB.modelProbe`.
   to wait for a box. A present one answered within 0.22 s (0 s when already cached).
 - **A box isn't the visible size**: the Walking Bomb (3.91) and the Alarm-a-bomb (a 5.6 cube) carry
   room for their effects; fitted from the box they come out smaller than their frame.
-- **Frame cost** (`/gsweep models perf`, an Expert board): 92.2 fps (10.8 ms) without models,
-  89.4 fps (11.2 ms) with Emi Shortfuse's head on the face and a Walking Bomb with particles over
-  the tiles: **about +0.3 ms a frame** for two scenes. (That run may have had the models sheet open,
-  its 25 scenes counting in both halves; the probe now closes it first: to be re-run.)
+- **Frame cost** (`/gsweep models perf`, an Expert board, the models sheet closed): 92.8 fps
+  (10.78 ms) without models and 92.8 fps (10.78 ms) with Tally's head on the face and a Walking
+  Bomb with particles over the tiles: **no measurable cost** for two scenes. (A first run showed
+  +0.3 ms, with the sheet's 25 scenes open in both halves: noise, now excluded.)
 - **The head crop** (tuned by the owner on Emi Shortfuse: her face filling the 44-unit square, the
   buns and pigtails cut, the round ring hiding the corners): **35% of the box height, centred 69%
   up**, by raising the camera (the actor stays at the origin). A first guess, the top 40% centred
@@ -168,5 +168,5 @@ sheet, boxes read from `GnomesweeperDB.modelProbe`.
   and laugh when #21 uses them. The lost face stays 2D (or a reaction elsewhere): the loss
   animations leave the crop. Whether a 3D face beats the 2D art at 44 units is the owner's call.
 - **Any candidate is safe to try**: an absent display says so at once (`false`), a present one
-  loads within ~0.2 s, and two scenes cost about 0.3 ms a frame on Expert.
+  loads within ~0.2 s, and two scenes cost nothing measurable on Expert.
 - **The player's own character** works as a face (`actor:SetModelByUnit("player")`, textured).

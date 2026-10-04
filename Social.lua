@@ -41,6 +41,7 @@ Social.SYNC_WINDOW = Social.REPLY_GAP + Social.JITTER_MAX + 4
 Social.TOAST_QUEUE = 3           -- toasts waiting, at most (the oldest go)
 Social.LOGIN_RETRIES = 12        -- the guild not known yet at login: retry every LOGIN_DELAY, up to a minute
 Social.LOG_KEEP = 60             -- lines kept in GnomesweeperDB.socialLog
+Social.PRIO = "NORMAL"           -- every message's ChatThrottleLib priority: one, so they stay in order
 
 local registered                 -- the prefix's registration result, once asked
 local lastQuery                  -- GetTime() of our last Q
@@ -160,7 +161,10 @@ local function register()
     return registered
 end
 
--- ChatThrottleLib (Libs\, as AltStable) paces it when it's there; else a direct send.
+-- ChatThrottleLib (Libs\, as AltStable) paces it when it's there; else a direct send. Every
+-- message goes at ONE priority (Social.PRIO): the library keeps a pipe first-in, first-out
+-- but not across priorities, and a reset must reach a guildmate before any newer time
+-- (Codex, #69: a throttled BULK B arrived after a NORMAL R).
 -- The result is read (docs/SOCIAL.md): a failure calls onFail (with ChatThrottleLib, when the
 -- message actually leaves, which can be later) and is kept in Social.lastFailure, which
 -- /gsweep guildprobe reports. Returns false when it failed at once.
@@ -169,12 +173,12 @@ local function failed(result, onFail)
     slog("send FAILED: %s", tostring(result))
     if onFail then onFail() end
 end
-local function send(msg, prio, onFail)
+local function send(msg, onFail)
     if not (msg and IsInGuild()) then return false end
     register()
     local ctl = rawget(_G, "ChatThrottleLib")
     if ctl and ctl.SendAddonMessage then
-        local ok, err = pcall(ctl.SendAddonMessage, ctl, prio or "BULK", Social.PREFIX, msg, "GUILD", nil, nil,
+        local ok, err = pcall(ctl.SendAddonMessage, ctl, Social.PRIO, Social.PREFIX, msg, "GUILD", nil, nil,
             function(_, didSend, result) if not didSend then failed(result, onFail) end end)
         if not ok then failed(err, onFail) end
         return ok
@@ -186,6 +190,8 @@ local function send(msg, prio, onFail)
 end
 
 -- A query: counted only if it isn't refused (a failed one would block the tab's for 5 minutes).
+local sendReset                  -- a pending reset (defined with Reset), sent before any newer time
+
 local function query(force)
     local gk = guildKey()
     if not gk then return false end
@@ -196,7 +202,7 @@ local function query(force)
     local wasFirst = firstQuery[gk]
     firstQuery[gk] = firstQuery[gk] or now
     local mineQ = now
-    local ok = send(Guild.Encode("Q"), "BULK", function()
+    local ok = send(Guild.Encode("Q"), function()
         if lastQuery == mineQ then lastQuery, queriedGuild = wasQuery, wasGuild end
         if firstQuery[gk] == mineQ then firstQuery[gk] = wasFirst end
     end)
@@ -231,7 +237,8 @@ local function scheduleReply(gk)
         local wasReply = lastReply
         lastReply = GetTime()
         local mineR = lastReply
-        send(Guild.Encode("B", records), "BULK", function()
+        sendReset()                                       -- a reset still pending goes first
+        send(Guild.Encode("B", records), function()
             if lastReply == mineR then lastReply = wasReply end   -- a failed reply doesn't hold back the next
         end)
     end)
@@ -250,7 +257,10 @@ function Social.RecordWin(category, seconds)
     if type(held) == "table" and type(held.cs) == "number" and held.cs <= cs then return false end
     local at = time()
     m[category] = { cs = cs, at = at }
-    if guildKey() then send(Guild.Encode("N", { { cat = category, cs = cs, at = at } }), "NORMAL") end
+    if guildKey() then
+        sendReset()                                       -- a reset still pending goes first
+        send(Guild.Encode("N", { { cat = category, cs = cs, at = at } }))
+    end
     return true
 end
 
@@ -262,7 +272,7 @@ end
 -- later through ChatThrottleLib's callback), as queries and replies are (Codex, #69). It
 -- carries the reset's time: a guildmate drops only the records from before it, so a win
 -- earned after the reset survives whatever order the messages arrive in.
-local function sendReset()
+sendReset = function()
     local s = social(false)
     local key = ownKey()
     if not (s and key and type(s.resetAt) == "number" and guildKey()) then return end
@@ -271,7 +281,7 @@ local function sendReset()
     local was, at = s.resetSent[key], s.resetAt
     s.resetSent[key] = at
     -- (A refusal, at once or later, calls this back: send() does for both.)
-    local ok = send(Guild.Encode("R", nil, at), "NORMAL", function()
+    local ok = send(Guild.Encode("R", nil, at), function()
         if s.resetSent[key] == at then s.resetSent[key] = was end
     end)
     slog("R (before %d) to %s: %s", at, tostring(guildKey()), ok and "sent" or "refused")
@@ -423,7 +433,13 @@ local function receive(text, channel, sender)
     if msg.type == "R" then
         local s = social(false)
         local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
-        if type(bucket) == "table" then bucket[key] = Guild.Forget(bucket[key], msg.at) end
+        if type(bucket) ~= "table" then
+            s = social(true)
+            s.guilds[gk] = s.guilds[gk] or {}
+            bucket = s.guilds[gk]
+        end
+        bucket[key] = Guild.Forget(bucket[key], msg.at)   -- kept with its cutoff, even empty
+        bucket[key].seen = time()
         for i = #queue, 1, -1 do
             if queue[i].key == key and (queue[i].at or 0) < msg.at then table.remove(queue, i) end
         end

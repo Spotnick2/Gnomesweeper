@@ -334,7 +334,12 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   sends `R` with the reset's time; every online guildmate drops that character's records **from before
   it** (`Guild.Forget`: a win after the reset survives any message order) and its toasts from before it.
   A refused `R` stays pending (restored by `send()`'s failure path, at once or through ChatThrottleLib's
-  callback), and it also goes when the guild becomes known through `PLAYER_GUILD_UPDATE`. The reset is account-wide,
+  callback), and it also goes when the guild becomes known through `PLAYER_GUILD_UPDATE`. **Order:**
+  every message goes at ONE ChatThrottleLib priority (`Social.PRIO`; the library is first-in, first-out
+  within a priority, not across), and a pending `R` is sent before any new `N` or `B`, so a guildmate
+  gets the reset before any post-reset time. **The receiver keeps the reset as the member's cutoff**
+  (`entry.resetAt`, kept even when the entry is emptied): `Guild.Merge` refuses any record from before
+  it, so a late message can't bring an old best back. The reset is account-wide,
   so each other character of the account sends its own `R` at its next login, once
   (`social.resetAt` / `resetSent`). Older clients ignore `R` as an unknown type.
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**

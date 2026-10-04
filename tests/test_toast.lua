@@ -403,7 +403,8 @@ do  -- receiving an R: that guildmate's times, and any toast of theirs waiting, 
     from("Bob Cog", N("expert:area", 8000))              -- on screen
     from("Cal Bolt", N("intermediate:area", 9000))       -- waiting
     from("Cal Bolt", "1\tR\t" .. (T + 60))               -- a reset after those times
-    eq(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"], nil, "an R drops that guildmate's entry")
+    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(cal and next(cal.bests), nil, "an R drops that guildmate's times")
     eq(#S._test.queue(), 0, "...and their waiting toast")
     check(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Bob Cog-Forever"] ~= nil, "...nobody else's")
     local log = table.concat(GnomesweeperDB.socialLog, "\n")
@@ -492,6 +493,55 @@ do  -- a guild found after the login retries still gets the pending reset (Codex
     WoW.guildLoading = nil
     WoW.fire("PLAYER_GUILD_UPDATE", "player")
     eq(rCount(), 1, "the guild found through the event: the pending reset goes")
+end
+
+do  -- one priority, and a pending reset first: the sender's order is reset, then newer times (Codex, #69)
+    local S = synced()
+    S.RecordWin("beginner:area", 10)                     -- a 10 s best, before the reset
+    S.Reset()
+    WoW.addonSent = {}
+    S.RecordWin("beginner:area", 20)                     -- a slower win after it
+    local seq = {}
+    for _, m in ipairs(WoW.addonSent) do seq[#seq + 1] = m.message:sub(3, 3) end
+    eq(table.concat(seq), "N", "(the R already went with the reset; the new win's N follows)")
+    S.Reset()                                            -- a second reset, not sent: refused
+    local s = GnomesweeperDB.social
+    s.resetSent = {}                                     -- (as if this character's R were still pending)
+    WoW.addonSent = {}
+    S.RecordWin("beginner:area", 30)
+    seq = {}
+    for _, m in ipairs(WoW.addonSent) do seq[#seq + 1] = m.message:sub(3, 3) end
+    eq(table.concat(seq), "RN", "a pending reset goes before the new win's N, never after")
+end
+
+do  -- the receiver: a slower post-reset win in the same category survives; a late old B doesn't restore (Codex, #69)
+    local S = synced()
+    from("Cal Bolt", B("beginner:area", 1000))           -- Cal's 10 s, at T
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- Cal resets
+    from("Cal Bolt", "1\tN\tbeginner:area=2000@" .. (T + 120))   -- a slower win after it
+    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(cal.bests["beginner:area"].cs, 2000, "the slower win after the reset is kept (the old best is gone first)")
+    from("Cal Bolt", B("beginner:area", 1000))           -- a late B from before the reset
+    eq(cal.bests["beginner:area"].cs, 2000, "a late message from before the reset doesn't bring the old best back")
+    from("Dee Nut", "1\tR\t" .. (T + 60))                -- an R before anything is cached
+    from("Dee Nut", B("expert:area", 5000))              -- then an older B
+    local dee = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Dee Nut-Forever"]
+    eq(dee and dee.bests["expert:area"], nil, "an R arriving first still refuses an older message after it")
+end
+
+do  -- every send at one priority (ChatThrottleLib keeps one priority in order)
+    local S = synced()
+    local prios = {}
+    ChatThrottleLib = { SendAddonMessage = function(self, prio) prios[prio] = true end }
+    WoW.advance(301)                                     -- (so the query is stale: it really goes)
+    check(S.QueryIfStale(), "(the query sent)")
+    S.RecordWin("expert:area", 50); S.Reset()
+    from("Ann Gear", "1\tQ")
+    WoW.advance(70)
+    ChatThrottleLib = nil
+    local n = 0
+    for p in pairs(prios) do n = n + 1 end
+    eq(n, 1, "Q, N, R and B all go at one priority")
 end
 
 done("test_toast")

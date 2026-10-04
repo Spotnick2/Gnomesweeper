@@ -12,7 +12,8 @@
 -- (Codex, #69): ordering across ChatThrottleLib's priorities isn't guaranteed.
 --
 --   Guild.Encode("R", nil, at)        -> "1\tR\t<at>"
---   Guild.Forget(entry, at)            -> entry with every record older than at dropped (nil if none left)
+--   Guild.Forget(entry, at)            -> the entry, its records from before at dropped, and at kept
+--                                         as its cutoff: Merge refuses anything older (a late message)
 -- A record is <category>=<cs>@<at>: one of the six categories, the time in whole
 -- centiseconds (100..9999999, digits only, no leading zero), the win's epoch
 -- (1000000000..9999999999). Anything else is malformed, and a malformed message is
@@ -143,10 +144,12 @@ end
 function Guild.Merge(entry, records, seen)
     entry = type(entry) == "table" and entry or {}
     if type(entry.bests) ~= "table" then entry.bests = {} end
+    -- The member's reset (Forget): a record from before it is refused, however late it arrives.
+    local cutoff = type(entry.resetAt) == "number" and entry.resetAt or 0
     for _, r in ipairs(records) do
         local held = entry.bests[r.cat]
-        if type(held) ~= "table" or not validNumber(held.cs, Guild.MIN_CS, Guild.MAX_CS)
-            or not validNumber(held.at, Guild.MIN_AT, Guild.MAX_AT) or Guild.Better(r, held) then
+        if r.at >= cutoff and (type(held) ~= "table" or not validNumber(held.cs, Guild.MIN_CS, Guild.MAX_CS)
+            or not validNumber(held.at, Guild.MIN_AT, Guild.MAX_AT) or Guild.Better(r, held)) then
             entry.bests[r.cat] = { cs = r.cs, at = r.at }
         end
     end
@@ -156,12 +159,16 @@ end
 
 -- A reset (R): a member's records from before `at` go; a record earned after it stays.
 -- nil when nothing is left (the member is then forgotten).
+-- The entry is kept, even with nothing left, so its cutoff holds against a late message from
+-- before the reset (Codex, #69: a throttled B can arrive after the R). Prune forgets it in time.
 function Guild.Forget(entry, at)
-    if type(entry) ~= "table" or type(entry.bests) ~= "table" then return nil end
+    entry = type(entry) == "table" and entry or {}
+    if type(entry.bests) ~= "table" then entry.bests = {} end
     for cat, b in pairs(entry.bests) do
         if type(b) ~= "table" or type(b.at) ~= "number" or b.at < at then entry.bests[cat] = nil end
     end
-    return next(entry.bests) and entry or nil
+    if type(entry.resetAt) ~= "number" or at > entry.resetAt then entry.resetAt = at end
+    return entry
 end
 
 -- Members not heard from in maxAge seconds go.

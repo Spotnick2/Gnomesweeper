@@ -108,8 +108,9 @@ scheduled for `max(now + 1..6 s, last reply + 60 s + 1..6 s)`. A `Q` that arrive
 pending changes nothing (no new timer, the deadline doesn't move). So a late joiner always gets
 an answer, at worst a minute later, and 50 queries cost one reply each, not one per query.
 
-**Sending** goes through ChatThrottleLib (copied from AltStable's `Libs\`, credited), `BULK` for
-`Q` and `B`, `NORMAL` for `N`, else a direct `SendAddonMessage`. Never when not in a guild. The
+**Sending** goes through ChatThrottleLib (copied from AltStable's `Libs\`, credited), every message at
+**one** priority (`NORMAL`: the library keeps a priority first-in, first-out but not across them, and
+a reset must arrive before any newer time: Codex, #69), else a direct `SendAddonMessage`. Never when not in a guild. The
 result code is read (a throttled or failed send is logged, not assumed delivered).
 
 **Receiving:** `CHAT_MSG_ADDON`, prefix `GSWEEP`, channel `GUILD` (anything else is ignored in

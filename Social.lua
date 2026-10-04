@@ -348,6 +348,9 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if loggedIn then return end                    -- once a session, not on every loading screen
         loggedIn = true
         register()
+        -- This character's records from the account's scores, kept now (Codex, #63): left
+        -- until a win or the Guild tab, an alt's new best could take them from the scores first.
+        mine(false)
         -- Forget members silent for 30 days, in every guild we've kept.
         local s = social(false)
         if s and type(s.guilds) == "table" then
@@ -357,7 +360,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
             loginDue = true
             local gk = guildKey()
             if gk and currentGuild == nil then currentGuild = gk end
-            if gk and query(true) then loginDue = false end
+            -- Already asked this guild (the Guild tab, in the first seconds): that was the login
+            -- query; the once-a-minute limit holds (Codex, #63).
+            if gk and queriedGuild == gk then loginDue = false end
+            if gk and loginDue and query(true) then loginDue = false end
         end)
     elseif event == "PLAYER_GUILD_UPDATE" then
         local gk = guildKey()

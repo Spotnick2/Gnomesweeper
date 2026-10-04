@@ -408,4 +408,31 @@ do  -- the panel: the tabs' own row; reopened on the Guild tab, it asks; a guild
     eq(p.rule:GetText(), "Not in a guild.", "leaving the guild: an open Guild tab shows it at once")
 end
 
+do  -- seeding at login: an alt's new best can't take a record this character never used (Codex, #63)
+    local saved = { scores = { version = 1,
+        ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } },
+    } }
+    loadAddon({ db = saved })                           -- A logs in, and out
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"],
+        "logging in keeps this character's record from the scores")
+    local afterA = GnomesweeperDB
+    afterA.scores["expert:area"].best = { time = 60, at = T, name = "Ann Gear", realm = "Forever" }   -- B (an alt) beats it
+    loadAddon({ db = afterA })                          -- A again
+    WoW.guild = GUILD
+    local r = Gnomesweeper.Social.Ranking("expert:area")
+    eq(r[1] and r[1].cs, 7050, "...so it's still there after an alt took the account's best")
+end
+
+do  -- the Guild tab asking in the first seconds is the login query (Codex, #63)
+    loadAddon()
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(1)
+    Gnomesweeper.Social.QueryIfStale()                   -- the tab, at 1 s
+    eq(#sent("Q"), 1, "(the tab's query)")
+    WoW.advance(5)
+    eq(#sent("Q"), 1, "the login timer doesn't ask again: at most one query a minute")
+end
+
 done("test_social")

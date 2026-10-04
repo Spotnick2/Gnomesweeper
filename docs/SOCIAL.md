@@ -101,7 +101,7 @@ result is checked). A message is fields separated by a tab:
 | `Q` (query) | Once per session at login (the first `PLAYER_ENTERING_WORLD`, after 5 s), and when the Guild tab opens if this guild wasn't queried in the last 5 minutes. **At most one per 60 s.** | none |
 | `B` (bests) | In reply to a `Q` (see replies). Only with at least one eligible best. | this character's bests |
 | `N` (new best) | When a win improves this character's own best in a category. | that one |
-| `R` (reset) | "Reset best times" (added after v1 shipped: older clients ignore it as an unknown type). Each other character of the account sends its own at its next login, or when its guild becomes known, once; a refused one stays pending. | none: **the reset's epoch** (`1	R	<at>`). A receiver drops only that member's records from before it, so a win after the reset survives whatever order the messages arrive in (Codex, #69). |
+| `R` (reset) | "Reset best times" (added after v1 shipped: older clients ignore it as an unknown type). Each other character of the account sends its own at its next login, or when its guild becomes known, once; a refused one stays pending. | none: **the reset's epoch** (`1	R	<at>`). A receiver drops only that member's records from before it, so a win after the reset survives whatever order the messages arrive in (Codex, #69). A sent `R` is always followed by a `B` of the character's current bests, so a refused-then-retried reset still leaves the guild right. |
 
 **Replies are deferred and coalesced, never dropped.** On a `Q`, if no reply is pending, one is
 scheduled for `max(now + 1..6 s, last reply + 60 s + 1..6 s)`. A `Q` that arrives while one is

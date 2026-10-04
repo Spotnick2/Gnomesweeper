@@ -285,6 +285,14 @@ sendReset = function()
         if s.resetSent[key] == at then s.resetSent[key] = was end
     end)
     slog("R (before %d) to %s: %s", at, tostring(guildKey()), ok and "sent" or "refused")
+    -- And this character's current bests right behind it, in the same first-in, first-out
+    -- queue (Codex, #69): an R refused earlier may have let a slower post-reset N through,
+    -- which a guildmate measured against the old best and dropped; the R that finally goes
+    -- is always followed by what's true now, so the guild ends up right.
+    if ok then
+        local records = ownRecords()
+        if #records > 0 then send(Guild.Encode("B", records)) end
+    end
 end
 
 function Social.Reset()

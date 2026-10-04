@@ -113,4 +113,42 @@ do  -- a second batch through a REUSED pipe: v32 recycles an emptied pipe with t
     eq(#WoW.reportedErrors, 0, "...without an error")
 end
 
+do  -- a refused reset, a slower win in the same category, the retry: the guildmate ends up right
+    -- (Codex, #69). The sender runs on the real library; what it actually delivered is then
+    -- replayed, in order, into a second addon instance playing the guildmate.
+    local CTL, pump = loadWithCTL()
+    local S = Gnomesweeper.Social
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)           -- logged in: the retry runs on guild events
+    WoW.advance(5.5)
+    pump(2)
+    WoW.addonSent = {}
+    local reset = T - 100
+    GnomesweeperDB.social = { version = 1, mine = {}, guilds = {}, resetAt = reset, resetSent = {} }   -- a reset still pending
+    WoW.sendResults = { 10 }                                 -- the R refused (NotInGuild), not the throttle
+    S.RecordWin("beginner:area", 20)                         -- a 20 s win, after the reset
+    pump(3)
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")                -- the next chance: the R retried
+    pump(3)
+    local delivered = {}
+    for _, m in ipairs(WoW.addonSent) do
+        if m.prefix == "GSWEEP" and not m.message:match("^1\tQ") then delivered[#delivered + 1] = m.message end
+    end
+    local kinds = {}
+    for _, m in ipairs(delivered) do kinds[#kinds + 1] = m:sub(3, 3) end
+    eq(table.concat(kinds), "BNRB", "delivered: (the R refused) its B and the N, then the retried R and the bests behind it")
+
+    -- The guildmate: Ann, who held Fizzle's old 10 s best from before the reset.
+    loadAddon({ db = { social = { version = 1, mine = {}, guilds = { [GUILD .. "-Forever"] = {
+        ["Fizzle Sprocketwhistle-Forever"] = { seen = T, bests = { ["beginner:area"] = { cs = 1000, at = reset - 100 } } },
+    } } } } })
+    WoW.playerName, WoW.playerSurname = "Ann", "Gear"
+    WoW.guild = GUILD
+    for _, m in ipairs(delivered) do
+        WoW.fire("CHAT_MSG_ADDON", "GSWEEP", m, "GUILD", "Fizzle Sprocketwhistle", "", 0, 0, "", 0)
+    end
+    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Fizzle Sprocketwhistle-Forever"]
+    eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 2000,
+        "the guildmate ends with the 20 s win: the old 10 s gone, the post-reset time not lost")
+end
+
 done("test_ctl")

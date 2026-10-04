@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v0.2.1
 
 - The glass look now comes from **LibGlass**, a small library shared by the Glass addons, included in the download: nothing to install, and nothing changes on screen.
 

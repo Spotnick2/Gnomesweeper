@@ -113,7 +113,9 @@ function Methods.CreateFontString(w, name) return newWidget("FontString", w, nam
 -- against the dump's ModelSceneFrameActor API). A display's bounding box arrives
 -- once the model "streams in": WoW.modelBoxes[display] (or ["unit:player"]) is the six
 -- numbers Forever returns, nil while loading or for a model this client lacks.
--- WoW.modelSetFails[display] makes SetModelByCreatureDisplayID answer false.
+-- WoW.modelSetFails[display] makes SetModelByCreatureDisplayID answer false. With
+-- WoW.modelStale, an actor switched to a model not yet in keeps answering with the
+-- PREVIOUS model's box (what the real client may do) until ClearModel is called.
 function Methods.CreateActor(scene)
     local a = newWidget("ModelSceneActor", scene)
     scene._actors = scene._actors or {}
@@ -121,18 +123,24 @@ function Methods.CreateActor(scene)
     return a
 end
 function Methods.SetModelByCreatureDisplayID(a, id, composite)
+    if a._model ~= nil then a._stale = a._model end
     a._model, a._composite = id, composite
     return not WoW.modelSetFails[id]
 end
-function Methods.SetModelByUnit(a, unit) a._model = "unit:" .. tostring(unit); return true end
+function Methods.SetModelByUnit(a, unit)
+    if a._model ~= nil then a._stale = a._model end
+    a._model = "unit:" .. tostring(unit)
+    return true
+end
+function Methods.ClearModel(a) a._model, a._stale = nil, nil; a._clears = (a._clears or 0) + 1 end
 function Methods.GetActiveBoundingBox(a)
     local b = a._model ~= nil and WoW.modelBoxes[a._model]
+    if not b and WoW.modelStale and a._stale ~= nil then b = WoW.modelBoxes[a._stale] end
     if not b then return nil end
     return b[1], b[2], b[3], b[4], b[5], b[6]
 end
 function Methods.IsLoaded(a) return a._model ~= nil and WoW.modelBoxes[a._model] ~= nil end
 function Methods.SetAnimation(a, id) a._anim = id end
-function Methods.GetAnimation(a) return a._anim or 0 end
 function Methods.SetParticleOverrideScale(a, s) a._particles = s end
 function Methods.SetCameraPosition(scene, x, y, z) scene._camera = { x, y, z } end
 function Methods.SetUnit(m, unit) m._unit = unit end
@@ -288,6 +296,7 @@ function WoW.reset()
     WoW.mouseDown = false
     WoW.fileIDs = {}
     WoW.modelBoxes, WoW.modelSetFails = {}, {}
+    WoW.modelStale = nil
     WoW.sounds, WoW.willPlay, WoW.timers = {}, {}, {}
     WoW.music, WoW.musicStops, WoW.inCombat = nil, 0, false
     WoW.playerSex = 2

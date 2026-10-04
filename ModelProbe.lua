@@ -173,6 +173,11 @@ local function load(scene, c, head, done)
     scene.token = (scene.token or 0) + 1
     local token, t0, actor = scene.token, GetTime(), scene.actor
     local result = {}
+    -- The scene shows nothing until THIS model's box is in: an actor switching models
+    -- could otherwise answer with the previous one's box, or keep drawing it (review).
+    scene:Hide()
+    scene.box = nil
+    pcall(actor.ClearModel, actor)
     local ok, set
     if c.unit then
         ok, set = pcall(actor.SetModelByUnit, actor, c.unit)
@@ -181,6 +186,13 @@ local function load(scene, c, head, done)
     end
     result.set = ok and set ~= false
     if not ok then result.error = tostring(set) end
+    -- Refused: the client says at once it doesn't have it (measured: false for an
+    -- absent display), so there is nothing to wait for.
+    if not result.set then
+        result.absent = ok
+        done(result)
+        return
+    end
     local function poll(tries)
         if scene.token ~= token then return end
         local box = Probe.ReadBox(actor)
@@ -204,6 +216,7 @@ end
 local function summary(r)
     if not r then return "...", C.hint end
     if r.error then return "error", C.boom end
+    if r.absent then return "absent", C.boom end
     if r.box then
         return string.format("%.1fs  h %.2f", r.seconds, r.box.h), C.hint
     end
@@ -322,7 +335,10 @@ function Probe.View(key)
     if not (c and viewer and viewer.body) or c.dressUp then return end
     viewer.c, viewer.anim, viewer.animIndex = c, 0, 1
     viewer.label:SetText(c.name .. "  -  loading")
-    load(viewer.body, c, false, function() showAnim() end)
+    load(viewer.body, c, false, function(r)
+        if viewer.c ~= c then return end
+        if r.box then showAnim() else viewer.label:SetText(c.name .. "  -  " .. (summary(r))) end
+    end)
     load(viewer.headBig, c, true, function() end)
     load(viewer.headFace, c, true, function() end)
     setParticles(viewer.particles)
@@ -404,7 +420,11 @@ local function build()
     -- Closing drops every answer still on its way.
     sheet:SetScript("OnHide", function()
         for _, cell in ipairs(cells) do if cell.scene then cell.scene.token = (cell.scene.token or 0) + 1 end end
-        if viewer then for _, s in ipairs(viewer.scenes or {}) do s.token = (s.token or 0) + 1 end end
+        if viewer then
+            for _, s in ipairs(viewer.scenes or {}) do s.token = (s.token or 0) + 1; s:Hide() end
+            viewer.c = nil
+            viewer.label:SetText("Click a model to view it here.")
+        end
     end)
 
     for i, c in ipairs(Probe.CANDIDATES) do buildCell(i, c) end
@@ -418,10 +438,12 @@ local function survey()
     local probe = record()
     probe.at = time()
     probe.candidates = {}
-    local waiting, loadedN, total = 0, 0, 0
+    -- Counted from 1, released after the loop: a cached model answers at once, inside the
+    -- loop, and must not bring the count to 0 before the rest are started (review).
+    local waiting, loadedN, total = 1, 0, 0
     local function finished()
         waiting = waiting - 1
-        if waiting == 0 then
+        if waiting == 0 and total > 0 then
             Print(string.format("%d of %d models loaded a box. Textured or white is for your eyes; /reload saves the results.",
                 loadedN, total))
         end
@@ -451,7 +473,8 @@ local function survey()
             cell.state:SetText("...")
             cell.state:SetTextColor(unpack(C.hint))
             load(cell.scene, c, false, function(r)
-                entry.set, entry.error, entry.seconds, entry.loaded, entry.timeout = r.set, r.error, r.seconds, r.loaded, r.timeout
+                entry.set, entry.error, entry.seconds, entry.loaded, entry.timeout, entry.absent =
+                    r.set, r.error, r.seconds, r.loaded, r.timeout, r.absent
                 if r.box then
                     entry.box = { l = r.box.l, w = r.box.w, h = r.box.h, shape = r.box.shape }
                     loadedN = loadedN + 1
@@ -464,6 +487,7 @@ local function survey()
         end
     end
     if total == 0 then Print("this client has no ModelScene: nothing to probe.") end
+    finished()
 end
 
 -- /gsweep models: show (or hide) the sheet; each show loads everything afresh.
@@ -482,20 +506,39 @@ end
 -- /gsweep models perf
 ----------------------------------------------------------------------------
 
+-- The two scenes belong to the probe (a frame on UIParent), drawn OVER the face and
+-- the board, never parented to them: a measuring command leaves nothing in the game
+-- window (review). Same strata as the window, levels above the host's, its scale.
 local function perfScenes(face, fx)
-    if perf.scenes then return perf.scenes end
-    local head = newScene(face, FACE_SIZE)
-    local bomb = newScene(fx, 72)
-    if not (head and bomb) then return nil end
-    head:SetPoint("CENTER", face, "CENTER", 0, 0)
-    head:SetFrameLevel(face:GetFrameLevel() + 5)
-    bomb:SetPoint("CENTER", fx, "CENTER", 0, 0)
-    bomb:SetFrameLevel(fx:GetFrameLevel() + 1)
-    perf.scenes = { head = head, bomb = bomb }
+    if not perf.scenes then
+        local head = newScene(perf, FACE_SIZE)
+        local bomb = newScene(perf, 72)
+        if not (head and bomb) then return nil end
+        perf.scenes = { head = head, bomb = bomb }
+    end
+    for name, host in pairs({ head = face, bomb = fx }) do
+        local s = perf.scenes[name]
+        s:SetFrameStrata(host:GetFrameStrata())
+        s:SetFrameLevel(host:GetFrameLevel() + (name == "head" and 5 or 1))
+        s:SetScale(host:GetEffectiveScale() / perf:GetEffectiveScale())
+        s:ClearAllPoints()
+        s:SetPoint("CENTER", host, "CENTER", 0, 0)
+    end
     return perf.scenes
 end
 
--- Frames counted over PERF_SECONDS without, then with, the two scenes.
+local function stopPerf()
+    perf:SetScript("OnUpdate", nil)
+    perf.running = false
+    for _, s in pairs(perf.scenes or {}) do
+        s:Hide()
+        s.token = (s.token or 0) + 1
+    end
+end
+
+-- Frames counted over PERF_SECONDS without, then with, the two scenes. The models
+-- sheet is closed first (its own scenes would count in both), and a run is dropped,
+-- unsaved, if the board goes away (Escape, a fight, Settings) before it ends.
 function Probe.Perf()
     local face, fx = GS.Window.ModelHosts()
     if not (GS.Window.IsShown() and face and fx) then
@@ -506,6 +549,10 @@ function Probe.Perf()
     if perf.running then Print("the frame rate is already being measured."); return end
     local scenes = perfScenes(face, fx)
     if not scenes then Print("this client has no ModelScene: nothing to measure."); return end
+    if Probe.IsShown() then
+        sheet:Hide()
+        Print("closed the models sheet: its models would count too.")
+    end
     scenes.head:Hide(); scenes.bomb:Hide()
     local result = { seconds = PERF_SECONDS }
     local phase, frames, elapsed = "without", 0, 0
@@ -520,6 +567,11 @@ function Probe.Perf()
         if waiting == 0 then phase, frames, elapsed = "with", 0, 0 end
     end
     perf:SetScript("OnUpdate", function(self, dt)
+        if not GS.Window.IsShown() then
+            stopPerf()
+            Print("the board was closed: frame rate run dropped, nothing saved.")
+            return
+        end
         if phase == "loading" then return end
         frames, elapsed = frames + 1, elapsed + dt
         if elapsed < PERF_SECONDS then return end
@@ -533,11 +585,7 @@ function Probe.Perf()
             end)
             return
         end
-        self:SetScript("OnUpdate", nil)
-        self.running = false
-        scenes.head:Hide(); scenes.bomb:Hide()
-        scenes.head.token = (scenes.head.token or 0) + 1
-        scenes.bomb.token = (scenes.bomb.token or 0) + 1
+        stopPerf()
         local w, h = GS.Window.game and GS.Window.game.w, GS.Window.game and GS.Window.game.h
         result.board = w and h and (w .. "x" .. h) or nil
         record().perf = result

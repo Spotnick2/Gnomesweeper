@@ -321,8 +321,11 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   bigger one (the head raises the **camera**: whether an actor's position scales with it is
   unmeasured), `<` `>` through `Probe.ANIMS`, ~20 named animation numbers (stepping every ID was too many to judge),
   particles on or off. **`/gsweep models perf`**: frames over the open board for 5 s, then 5 s with
-  a head on the face and a bomb over the tiles (`Window.ModelHosts()`), counted from when both have
-  loaded. Results go to `GnomesweeperDB.modelProbe` for a `/reload`. English (a probe).
+  a head on the face and a bomb over the tiles (`Window.ModelHosts()`: the scenes are the probe's,
+  drawn over them, never parented to them), counted from when both have loaded; the models sheet
+  is closed first, and a run is dropped if the board closes. A scene is cleared and hidden before
+  each load (an actor switching models may answer with the old box); an absent display (`false`)
+  ends its load at once. Results go to `GnomesweeperDB.modelProbe` for a `/reload`. English (a probe).
 - **`Guild.lua`** (#15, `docs/SOCIAL.md`): the guild's best times as **pure** Lua (every global but
   `tonumber` and a few builtins forbidden in `test_guild.lua`): the v1 wire format (`Encode`/`Parse`, the
   exact grammar, a malformed message dropped whole, the longest legal `B` 205 bytes), the one

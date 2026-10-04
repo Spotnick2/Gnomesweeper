@@ -143,7 +143,8 @@ sheet, boxes read from `GnomesweeperDB.modelProbe`.
   room for their effects; fitted from the box they come out smaller than their frame.
 - **Frame cost** (`/gsweep models perf`, an Expert board): 92.2 fps (10.8 ms) without models,
   89.4 fps (11.2 ms) with Emi Shortfuse's head on the face and a Walking Bomb with particles over
-  the tiles: **about +0.3 ms a frame** for two scenes.
+  the tiles: **about +0.3 ms a frame** for two scenes. (That run may have had the models sheet open,
+  its 25 scenes counting in both halves; the probe now closes it first: to be re-run.)
 - **The head crop** (tuned by the owner on Emi Shortfuse: her face filling the 44-unit square, the
   buns and pigtails cut, the round ring hiding the corners): **35% of the box height, centred 69%
   up**, by raising the camera (the actor stays at the origin). A first guess, the top 40% centred

@@ -228,9 +228,12 @@ do
     local face, fx = Gnomesweeper.Window.ModelHosts()
     local s = T.perf().scenes
     check(not s.head._shown and not s.bomb._shown, "measured without them first")
-    eq(s.head._parent, face, "the head sits on the face")
-    eq(s.bomb._parent, fx, "the bomb on the effects layer over the tiles")
-    check(s.bomb:GetFrameLevel() > fx:GetFrameLevel(), "...above it")
+    eq(s.head._points[1][2], face, "the head is drawn over the face")
+    eq(s.bomb._points[1][2], fx, "the bomb over the effects layer on the tiles")
+    check(s.head._parent ~= face and s.bomb._parent ~= fx, "...but belongs to the probe, not the game window")
+    eq(s.head:GetFrameStrata(), face:GetFrameStrata(), "in the window's strata")
+    check(s.head:GetFrameLevel() > face:GetFrameLevel() and s.bomb:GetFrameLevel() > fx:GetFrameLevel(), "...above its host")
+    check(math.abs(s.head:GetEffectiveScale() - face:GetEffectiveScale()) < 1e-9, "...at the window's scale")
     WoW.slash("/gsweep models perf")
     check(chatHas("already being measured"), "one run at a time")
     WoW.modelBoxes[6977] = nil                             -- the bomb streams in late
@@ -282,6 +285,104 @@ do
         if line:find("/gsweep models", 1, true) then found = line end
     end
     check(found and found:find("(for measuring)", 1, true), "/gsweep models is in the help, as a measuring command")
+end
+
+----------------------------------------------------------------------------
+-- The review's fixes (#74)
+----------------------------------------------------------------------------
+local function count(text)
+    local n = 0
+    for _, line in ipairs(WoW.chat) do if line:find(text, 1, true) then n = n + 1 end end
+    return n
+end
+
+-- Every box already in (cached): the summary once, with the right totals.
+do
+    local P, T = setup()
+    for _, c in ipairs(P.CANDIDATES) do if c.display then WoW.modelBoxes[c.display] = BOMB end end
+    WoW.modelBoxes["unit:player"] = BOMB
+    WoW.modelSetFails[19139] = true
+    WoW.slash("/gsweep models")
+    eq(count("loaded a box"), 1, "the summary is printed once, not per cached model")
+    check(chatHas("23 of 24 models loaded a box"), "...of every model that tried (Boombot, absent, didn't load): "
+        .. tostring(WoW.chat[#WoW.chat]))
+end
+
+-- An absent model says so at once.
+do
+    local P, T = setup()
+    WoW.slash("/gsweep models")
+    local boom = T.cells[indexOf(P, "boombot")]
+    eq(boom.state:GetText(), "...", "(Boombot isn't refused here)")
+    loadAddon()
+    WoW.modelSetFails[19139] = true
+    WoW.slash("/gsweep models")
+    P, T = Gnomesweeper.ModelProbe, Gnomesweeper.ModelProbe._test
+    boom = T.cells[indexOf(P, "boombot")]
+    eq(boom.state:GetText(), "absent", "a refused display says absent, without waiting")
+    local e = GnomesweeperDB.modelProbe.candidates.boombot
+    eq(e.absent, true, "...recorded as absent")
+    eq(e.timeout, nil, "...not as a timeout")
+end
+
+-- The viewer switching models: the old box never frames the new one, the old model
+-- never shows under the new name.
+do
+    local P, T = setup()
+    WoW.modelStale = true                                   -- the client may keep the old box
+    WoW.modelBoxes[6977] = BOMB
+    WoW.slash("/gsweep models")
+    local function click(key) local c = T.cells[indexOf(P, key)]; c._scripts.OnClick(c) end
+    click("walkingBomb")
+    local v = T.viewer()
+    check(v.body._shown, "the bomb is shown")
+    click("tally")                                          -- Tally isn't in yet
+    check(not v.body._shown and not v.headFace._shown, "the bomb is gone while Tally loads")
+    check((v.body.actor._clears or 0) > 0, "the actor was cleared before the new model")
+    eq(v.body.box, nil, "...and nothing was framed by the bomb's box")
+    check(v.label:GetText():find("Tally Berryfizz  -  loading", 1, true) ~= nil, "the label says loading")
+    WoW.modelBoxes[3124] = { -0.4, -0.4, -0.67, 0.4, 0.4, 0.67 }
+    WoW.advance(0.2)
+    check(v.body._shown and math.abs(v.body.box.h - 1.34) < 1e-9, "framed by Tally's own box once it's in")
+
+    WoW.modelSetFails[19139] = true
+    click("boombot")
+    check(not v.body._shown, "an absent model leaves the viewer empty")
+    check(v.label:GetText():find("XE-321 Boombot  -  absent", 1, true) ~= nil, "...and says so: " .. v.label:GetText())
+    click("sheep")                                          -- never loads
+    WoW.advance(3.5)
+    check(v.label:GetText():find("Explosive Sheep  -  no box in 3s", 1, true) ~= nil, "a timeout says so")
+    check(not v.body._shown, "...with nothing drawn")
+
+    -- Closed mid-load, then reopened: the viewer starts clean.
+    WoW.modelBoxes[6271] = nil
+    click("landMine")
+    T.sheet():Hide()
+    WoW.slash("/gsweep models")
+    eq(v.c, nil, "the viewer forgot the model it was loading")
+    eq(v.label:GetText(), "Click a model to view it here.", "...and says to pick one")
+    check(not v.body._shown, "...with nothing drawn")
+end
+
+-- The perf run: closes the sheet first; dropped, unsaved, if the board closes.
+do
+    local P, T = setup()
+    WoW.slash("/gsweep expert")
+    WoW.slash("/gsweep models")
+    WoW.slash("/gsweep models perf")
+    check(not P.IsShown(), "the models sheet is closed for the run")
+    check(chatHas("closed the models sheet"), "...and the chat says why")
+    for _ = 1, 100 do WoW.tick(0.0125) end
+    Gnomesweeper.Window.win:Hide()                          -- Escape, a fight, Settings
+    WoW.tick(0.0125)
+    check(chatHas("frame rate run dropped"), "a run without the board is dropped")
+    eq((GnomesweeperDB.modelProbe or {}).perf, nil, "...nothing saved")
+    eq(T.perf().running, false, "...and it stopped")
+    local s = T.perf().scenes
+    check(not s.head._shown and not s.bomb._shown, "...its scenes hidden")
+    Gnomesweeper.Window.win:Show()
+    WoW.slash("/gsweep models perf")
+    check(T.perf().running, "a new run can start")
 end
 
 done("test_modelprobe")

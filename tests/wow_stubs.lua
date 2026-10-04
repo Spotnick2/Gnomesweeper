@@ -253,6 +253,8 @@ end
 function WoW.reset()
     WoW.frames, WoW.chat = {}, {}
     WoW.widgets = {}
+    WoW.guild, WoW.addonSent, WoW.prefixes = nil, {}, {}
+    WoW.addonSender = "Fizzle Sprocketwhistle-Forever"
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
@@ -299,6 +301,35 @@ function GetLocale() return WoW.locale or "enUS" end
 -- The player, on 70009+: the surname comes back in the second return.
 function UnitName(unit) if unit == "player" then return WoW.playerName, WoW.playerSurname end return nil end
 function GetRealmName() return WoW.realm end
+function GetNormalizedRealmName() return (WoW.realm:gsub("%s", "")) end
+function UnitFullName(unit) if unit == "player" then return WoW.playerName, nil end return nil end
+
+-- Guilds and addon messages (the social plan, #15): WoW.guild is the guild's name (nil:
+-- none). A GUILD message is recorded in WoW.addonSent and, as the server does, echoed
+-- to its sender as CHAT_MSG_ADDON, from WoW.addonSender (unmeasured until phase 0's
+-- probe: set it to what the probe reports).
+function IsInGuild() return WoW.guild ~= nil end
+function GetGuildInfo(unit)
+    if unit == "player" and WoW.guild then return WoW.guild, "Member", 3, nil end
+    return nil
+end
+function Ambiguate(fullName, context)
+    if context == "short" then return (fullName:gsub("%-.*$", "")) end
+    return fullName
+end
+C_ChatInfo = {
+    RegisterAddonMessagePrefix = function(prefix)
+        WoW.prefixes[prefix] = true
+        return 0
+    end,
+    SendAddonMessage = function(prefix, message, chatType, target)
+        table.insert(WoW.addonSent, { prefix = prefix, message = message, chatType = chatType, target = target })
+        if chatType == "GUILD" and WoW.guild then
+            WoW.fire("CHAT_MSG_ADDON", prefix, message, "GUILD", WoW.addonSender, "", 0, 0, "", 0)
+        end
+        return 0
+    end,
+}
 -- Sounds: every PlaySound is recorded in WoW.sounds ({ kit, channel }); it answers
 -- WoW.willPlay[kit] (default true), as the client's willPlay.
 function PlaySound(kit, channel)

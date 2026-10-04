@@ -84,12 +84,12 @@ do
     press(3, "LeftButton")
     -- The overlay: the loss above built it; use it, then a win.
     local o = W._test.ui.overlay
-    o._scripts.OnEnter(o); o._scripts.OnLeave(o)
     o._scripts.OnMouseUp(o)
     o:Show()
     o.button._scripts.OnClick(o.button)
     W._test.SetGame(Gnomesweeper.Board.New(30, 16, 0))
     press(1, "LeftButton")                                -- no mines: one click wins
+    o.bests._scripts.OnClick(o.bests)                     -- the win panel's Best times (#67)
     o.button._scripts.OnClick(o.button)
     W.NewGame("expert")
     W.NewGame("beginner")

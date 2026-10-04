@@ -136,7 +136,7 @@ jobs:
             exit 1
           fi
           stale=$( (cd "$LIBGLASS" && ls Media/*.tga) | while read -r t; do
-            test -e "unpacked/Gnomesweeper/$t" && echo "$t"; done )
+            if [ -e "unpacked/Gnomesweeper/$t" ]; then echo "$t"; fi; done )
           if [ -n "$stale" ]; then
             echo "library textures also in Gnomesweeper/Media/: $stale"; exit 1
           fi

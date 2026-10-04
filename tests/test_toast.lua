@@ -511,7 +511,7 @@ do  -- one priority, and a pending reset first: the sender's order is reset, the
     S.RecordWin("beginner:area", 30)
     seq = {}
     for _, m in ipairs(WoW.addonSent) do seq[#seq + 1] = m.message:sub(3, 3) end
-    eq(table.concat(seq), "RBN", "a pending reset goes before the new win's N (with the bests behind it), never after")
+    eq(table.concat(seq), "RN", "a pending reset goes before the new win's N, never after (no B: no times from before the win)")
 end
 
 do  -- the receiver: a slower post-reset win in the same category survives; a late old B doesn't restore (Codex, #69)

@@ -135,7 +135,7 @@ do  -- a refused reset, a slower win in the same category, the retry: the guildm
     end
     local kinds = {}
     for _, m in ipairs(delivered) do kinds[#kinds + 1] = m:sub(3, 3) end
-    eq(table.concat(kinds), "BNRB", "delivered: (the R refused) its B and the N, then the retried R and the bests behind it")
+    eq(table.concat(kinds), "NRB", "delivered: (the R refused) the N, then the retried R and the bests behind it")
 
     -- The guildmate: Ann, who held Fizzle's old 10 s best from before the reset.
     loadAddon({ db = { social = { version = 1, mine = {}, guilds = { [GUILD .. "-Forever"] = {
@@ -149,6 +149,44 @@ do  -- a refused reset, a slower win in the same category, the retry: the guildm
     local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Fizzle Sprocketwhistle-Forever"]
     eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 2000,
         "the guildmate ends with the 20 s win: the old 10 s gone, the post-reset time not lost")
+end
+
+do  -- a win that publishes a pending reset still toasts on the guildmate (Codex, #69): the reset's
+    -- B carries the bests from before the win, so the win's N is a real improvement there.
+    local CTL, pump = loadWithCTL()
+    local S = Gnomesweeper.Social
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    pump(2)
+    local reset = T - 100
+    GnomesweeperDB.social = { version = 1, guilds = {}, resetAt = reset, resetSent = {},
+        mine = { ["Fizzle Sprocketwhistle-Forever"] = { ["expert:area"] = { cs = 9000, at = reset + 10 } } } }
+    WoW.addonSent = {}
+    S.RecordWin("beginner:area", 20)                         -- the win: it sends the pending R first
+    pump(3)
+    local delivered = {}
+    for _, m in ipairs(WoW.addonSent) do
+        if m.prefix == "GSWEEP" and not m.message:match("^1\tQ") then delivered[#delivered + 1] = m.message end
+    end
+    local kinds = {}
+    for _, m in ipairs(delivered) do kinds[#kinds + 1] = m:sub(3, 3) end
+    eq(table.concat(kinds), "RBN", "delivered: the reset, the bests from before the win, then the win")
+    check(not delivered[2]:find("beginner", 1, true), "...the B doesn't carry the win (it would beat its own N)")
+
+    -- The guildmate, synced, where Bob holds the Beginner guild best at 30 s.
+    loadAddon()
+    WoW.playerName, WoW.playerSurname = "Ann", "Gear"
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    WoW.fire("CHAT_MSG_ADDON", "GSWEEP", "1\tB\tbeginner:area=3000@" .. T, "GUILD", "Bob Cog", "", 0, 0, "", 0)
+    WoW.advance(75)
+    for _, m in ipairs(delivered) do
+        WoW.fire("CHAT_MSG_ADDON", "GSWEEP", m, "GUILD", "Fizzle Sprocketwhistle", "", 0, 0, "", 0)
+    end
+    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Fizzle Sprocketwhistle-Forever"]
+    eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 2000, "the guildmate holds the 20 s win")
+    check(Gnomesweeper.Toast.IsShown(), "...and shows the toast: a new guild best, beating Bob's 30 s")
 end
 
 done("test_ctl")

@@ -256,11 +256,12 @@ function Social.RecordWin(category, seconds)
     local held = m[category]
     if type(held) == "table" and type(held.cs) == "number" and held.cs <= cs then return false end
     local at = time()
+    -- A reset still pending goes first, with the bests from BEFORE this win (Codex, #69): in its
+    -- trailing B, this win would reach a guildmate before its own N, and the N would then be a
+    -- tie with itself, and toast nothing.
+    if guildKey() then sendReset() end
     m[category] = { cs = cs, at = at }
-    if guildKey() then
-        sendReset()                                       -- a reset still pending goes first
-        send(Guild.Encode("N", { { cat = category, cs = cs, at = at } }))
-    end
+    if guildKey() then send(Guild.Encode("N", { { cat = category, cs = cs, at = at } })) end
     return true
 end
 

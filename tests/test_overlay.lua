@@ -221,4 +221,36 @@ do   -- on Expert the overlay is its full width
     check(o.time:GetText():find("^Time %d%d:%d%d$"), "...and shows a clock time")
 end
 
+do  -- #67: a Best times button on the win panel, beside See the field
+    loadAddon({ db = { seenFaceTip = true } })
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    local function play(layout, tiles)
+        W._test.SetGame(Gnomesweeper.Board._test.FromLayout(layout), "beginner:area")
+        local t = Gnomesweeper.Grid._test.tiles
+        for _, i in ipairs(tiles) do t[i]._scripts.OnMouseDown(t[i], "LeftButton"); t[i]._scripts.OnMouseUp(t[i], "LeftButton", true) end
+    end
+    play({ "*.." }, { 2, 3 })
+    local o = W._test.ui.overlay
+    eq(W.game:State(), "won", "(a win)")
+    check(o.bests:IsShown(), "a win: a Best times button")
+    eq(o.bests.label:GetText(), "Best times", "...in the trophy's own words")
+    eq(o.view._points[1][1], "BOTTOMRIGHT", "...See the field beside it, so the panel doesn't grow")
+    eq(o.bests._points[1][1], "BOTTOMLEFT", "...side by side")
+    check(o.view:GetWidth() + o.bests:GetWidth() + 6 <= o:GetWidth() - 20, "...both inside the panel")
+    o.bests._scripts.OnClick(o.bests)
+    check(W._test.ui.bests and W._test.ui.bests:IsShown(), "it opens the best times")
+    check(W._test.ui.bests:GetFrameLevel() > o:GetFrameLevel(), "...above the result")
+    W._test.ui.bests:Hide()
+
+    play({ "*.." }, { 1 })
+    eq(W.game:State(), "lost", "(a wipe)")
+    check(not o.bests:IsShown(), "a wipe: no Best times button")
+    eq(o.view._points[1][1], "BOTTOM", "...See the field alone, centred")
+    eq(o.view:GetWidth(), 136, "...at its full width")
+
+    play({ "*.." }, { 2, 3 })
+    check(o.bests:IsShown(), "a win again: the button is back")
+end
+
 done("test_overlay")

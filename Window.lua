@@ -588,11 +588,17 @@ local function buildOverlay()
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
     o.button:SetScript("OnClick", function() playerNewGame() end)
     -- The way to look at the finished board: a visible control, not only a click on the panel.
-    o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 11 })
+    o.view = Widgets.GlassButton(o, 136, 22, { fontSize = 10 })   -- 10: it shares the row with Best times on a win
     o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
     -- "See the field", not "View board": the owner read "board" as the scoreboard (#7).
     o.view.label:SetText(L["See the field"])
     o.view:SetScript("OnClick", function() Window.DismissEnd() end)
+    -- After a win, the best times beside it (#67, owner): the trophy's own words, never "board".
+    o.bests = Widgets.GlassButton(o, 87, 22, { fontSize = 10 })
+    o.bests.label:SetText(L["Best times"])
+    o.bests:setAccent(unpack(C.gold))
+    o.bests:SetScript("OnClick", function() Window.ShowBests(true) end)
+    o.bests:Hide()
 
     -- And a click on the panel itself does the same.
     o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
@@ -607,7 +613,23 @@ function Window.ShowEnd()
     if not ui.overlay then buildOverlay() end
     local o = ui.overlay
     local title, color, sub, button, rim = endTexts()
-    o:SetWidth(math.min(OVERLAY_W, Window.size.gridW - 12))
+    local w = math.min(OVERLAY_W, Window.size.gridW - 12)
+    o:SetWidth(w)
+    -- A win: "See the field" and "Best times" side by side (#67); a wipe: "See the field" alone.
+    local won = game:State() == "won"
+    local half = math.floor((w - 26) / 2)
+    o.view:ClearAllPoints()
+    o.bests:ClearAllPoints()
+    if won then
+        o.view:SetSize(half, 22)
+        o.view:SetPoint("BOTTOMRIGHT", o, "BOTTOM", -3, 14)
+        o.bests:SetSize(half, 22)
+        o.bests:SetPoint("BOTTOMLEFT", o, "BOTTOM", 3, 14)
+    else
+        o.view:SetSize(136, 22)
+        o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
+    end
+    o.bests:SetShown(won)
     o.title:SetTextColor(color[1], color[2], color[3])
     o.title:SetText(title)
     o.button.label:SetText(button)

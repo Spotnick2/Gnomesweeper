@@ -244,6 +244,15 @@ do
     hoverAll("the Guild tab")
     tabs.you._scripts.OnClick(tabs.you)
 
+    -- A guild-best toast (#17): synced, then a guildmate's faster time.
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    WoW.fire("CHAT_MSG_ADDON", "GSWEEP", "1	B	expert:area=9000@1790000000", "GUILD", "Ann Gear", "", 0, 0, "", 0)
+    WoW.advance(70)
+    WoW.fire("CHAT_MSG_ADDON", "GSWEEP", "1	N	expert:area=8000@1790000000", "GUILD", "Ann Gear", "", 0, 0, "", 0)
+    check(GS.Toast.IsShown(), "(a toast on screen)")
+    sweep("a guild-best toast")
+
     -- The settings and About.
     WoW.fire("PLAYER_LOGIN")
     local page = GS.Options._test.page

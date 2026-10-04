@@ -1255,6 +1255,7 @@ end
 
 function Window.SettingsChanged()
     Grid.SetTheme(db().theme)              -- the board's look (#14); Grid keeps it until it has tiles
+    GS.Social.SettingsChanged()            -- the guild-best toasts (#17)
     if not win then return end
     Window.Refresh()
     GS.Sounds.UpdateMusic()

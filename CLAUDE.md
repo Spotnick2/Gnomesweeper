@@ -36,7 +36,7 @@ holds the decided design, so update it when the design changes.
 TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
-`Sounds.lua` → `Assets.lua` → `Social.lua` → `Gnomesweeper.lua`.
+`Sounds.lua` → `Assets.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -318,6 +318,15 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   `Merge` (the better per category; a missing category deletes nothing), `Prune`, `Ranking` (ours
   merged in), `Key`/`Display`. **Numbers go out with `%.0f`, never `%d`**: Lua 5.1's `%d` is 32-bit and
   an epoch past 2038 overflows it (measured: 9999999999 printed as -2147483648).
+- **`Toast.lua`** (#17): the guild-best card: a `GlassPanel` on `UIParent` at DIALOG strata near the
+  top of the screen (the board open or not), her laughing face and a line, `Toast.SHOW` (6) seconds, a
+  click puts it away; built on first use. `Toast.Show(text, onDone)`, `Toast.Hide()` (no `onDone`).
+  `Social.lua` decides when: a guildmate's `N` strictly faster than every time known in that category
+  (the guild's and ours), decided before it's merged and rechecked when shown, once **synced** (a `B`
+  heard this session and `SYNC_WINDOW`, 70 s, since our first query: silence never counts); at most 3
+  waiting; never in combat (`PLAYER_REGEN_DISABLED` hides one showing and puts it back first); a guild
+  change clears them; the "Guild best toasts" setting (`guildToasts`, on) turned off clears them
+  (`Social.SettingsChanged`, from `Window.SettingsChanged`).
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**
   (`GnomesweeperDB.social.mine[memberKey]`, beside the account's `scores`, seeded once from the records
   this character set, name AND realm); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the

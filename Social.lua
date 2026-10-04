@@ -8,6 +8,13 @@
 --   Social.GuildName()                   the guild's name, or nil
 --   Social.QueryIfStale()                the Guild tab opening: ask, if not asked lately
 --   Social.Reset()                       Reset best times: this account's own bests go
+--   Social.SettingsChanged()             the toasts' setting: off clears the queue
+--
+-- The guild-best toast (#17): a guildmate's N that is strictly faster than every time
+-- this client knows for that category, once it has heard the guild since login (a B
+-- arrived, and the replies' whole window has passed since our query). Queued (at most
+-- 3), rechecked when shown, never in combat (one showing hides, and comes back after),
+-- cleared by a guild change or the setting turned off. Toast.lua draws it.
 --
 -- And phase 0's measuring probe, /gsweep guildprobe: what this character is called (every
 -- API's answer), a "P" message (a type no v1 client knows) to the guild, and the server's
@@ -28,6 +35,8 @@ Social.STALE = 300               -- the Guild tab asks again after 5 minutes
 Social.REPLY_GAP = 60            -- at most one reply a minute, deferred, never dropped
 Social.JITTER_MIN, Social.JITTER_MAX = 1, 6
 Social.FORGET = 30 * 86400       -- a member silent this long is forgotten
+Social.SYNC_WINDOW = 70          -- after our query, the replies' whole window (deferral + jitter)
+Social.TOAST_QUEUE = 3           -- toasts waiting, at most (the oldest go)
 
 local registered                 -- the prefix's registration result, once asked
 local lastQuery                  -- GetTime() of our last Q
@@ -37,6 +46,10 @@ local pending                    -- the reply waiting to go: { guild = key }, or
 local currentGuild               -- the guild key last seen (a change cancels what's pending)
 local loggedIn                   -- the login query is once a session
 local loginDue                   -- the login query couldn't go yet (the guild not known yet)
+local firstQuery = {}            -- [guildKey] = GetTime() of this session's first query to it
+local heardB = {}                -- [guildKey] = a B arrived this session (the guild is being heard)
+local queue = {}                 -- toasts waiting: { guild, key, cat, cs }
+local current                    -- the toast on screen
 
 local function db() return GnomesweeperDB end
 local function realm() return GetNormalizedRealmName() or "" end
@@ -162,9 +175,12 @@ local function query(force)
     if not force and lastQuery and now - lastQuery < Social.QUERY_GAP then return false end
     local wasQuery, wasGuild = lastQuery, queriedGuild
     lastQuery, queriedGuild = now, gk
+    local wasFirst = firstQuery[gk]
+    firstQuery[gk] = firstQuery[gk] or now
     local mineQ = now
     return send(Guild.Encode("Q"), "BULK", function()
         if lastQuery == mineQ then lastQuery, queriedGuild = wasQuery, wasGuild end
+        if firstQuery[gk] == mineQ then firstQuery[gk] = wasFirst end
     end)
 end
 
@@ -252,6 +268,79 @@ end
 function Social.Ranking(category) return Social.View().ranking(category) end
 
 ------------------------------------------------------------
+-- The guild-best toast (#17)
+------------------------------------------------------------
+
+-- Heard the guild since login: a B arrived, and the replies' whole window has passed since
+-- our first query (a reply can take ~66 s). Silence never counts (docs/SOCIAL.md).
+local function synced(gk)
+    return heardB[gk] and firstQuery[gk] and GetTime() - firstQuery[gk] >= Social.SYNC_WINDOW or false
+end
+
+-- The fastest time this client knows in a category: the guild's (but `skip`'s) and ours.
+local function fastestKnown(gk, cat, skip)
+    local best
+    local s = social(false)
+    local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
+    for key, entry in pairs(type(bucket) == "table" and bucket or {}) do
+        local b = key ~= skip and type(entry) == "table" and type(entry.bests) == "table" and entry.bests[cat]
+        if type(b) == "table" and type(b.cs) == "number" and (not best or b.cs < best) then best = b.cs end
+    end
+    local m = mine(false)
+    local own = m and m[cat]
+    if type(own) == "table" and type(own.cs) == "number" and (not best or own.cs < best) then best = own.cs end
+    return best
+end
+
+local function difficultyLabel(cat)
+    local d = cat:match("^(%a+)") or cat
+    return GS.L[(d:gsub("^%l", string.upper))]
+end
+
+local function toastText(t)
+    local time = GS.Layout.FormatTenths(t.cs / 100, GS.Board.DisplaySeconds(math.huge), GS.LOCALE.decimal)
+    return string.format(GS.L["%s cleared %s in %s, a new guild best!"], Guild.Display(t.key, realm()), difficultyLabel(t.cat), time)
+end
+
+local showNext
+showNext = function()
+    if current or GS.Toast.IsShown() then return end
+    if UnitAffectingCombat("player") then return end           -- after the fight
+    while #queue > 0 do
+        local t = table.remove(queue, 1)
+        -- Rechecked: still this guild, and still strictly the fastest (nothing better
+        -- arrived meanwhile, the sender's own later best included).
+        if guildKey() == t.guild then
+            local known = fastestKnown(t.guild, t.cat, t.key)
+            local s = social(false)
+            local held = s and s.guilds[t.guild] and s.guilds[t.guild][t.key]
+            local theirs = held and held.bests and held.bests[t.cat]
+            if (not known or t.cs < known) and not (theirs and theirs.cs < t.cs) then
+                current = t
+                GS.Toast.Show(toastText(t), function()
+                    current = nil
+                    showNext()
+                end)
+                return
+            end
+        end
+    end
+end
+
+local function enqueue(t)
+    queue[#queue + 1] = t
+    while #queue > Social.TOAST_QUEUE do table.remove(queue, 1) end
+    showNext()
+end
+
+function Social.SettingsChanged()
+    if db().guildToasts == false then
+        queue, current = {}, nil
+        GS.Toast.Hide()
+    end
+end
+
+------------------------------------------------------------
 -- Receiving
 ------------------------------------------------------------
 
@@ -267,9 +356,18 @@ local function receive(text, channel, sender)
         scheduleReply(gk)
         return
     end
+    if msg.type == "B" then heardB[gk] = true end
+    -- A guild best? Decided before it's merged in (it would be compared with itself).
+    local toast
+    if msg.type == "N" and synced(gk) and db().guildToasts ~= false then
+        local r = msg.records[1]
+        local known = fastestKnown(gk, r.cat, nil)
+        if not known or r.cs < known then toast = { guild = gk, key = key, cat = r.cat, cs = r.cs } end
+    end
     local s = social(true)
     if type(s.guilds[gk]) ~= "table" then s.guilds[gk] = {} end
     s.guilds[gk][key] = Guild.Merge(s.guilds[gk][key], msg.records, time())
+    if toast then enqueue(toast) end
     if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end
 end
 
@@ -338,6 +436,8 @@ local frame = CreateFrame("Frame")
 frame:RegisterEvent("CHAT_MSG_ADDON")
 frame:RegisterEvent("PLAYER_ENTERING_WORLD")
 frame:RegisterEvent("PLAYER_GUILD_UPDATE")
+frame:RegisterEvent("PLAYER_REGEN_DISABLED")
+frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "CHAT_MSG_ADDON" then
         local prefix, text, channel, sender, target, zone, localID, name, instance = ...
@@ -372,12 +472,23 @@ frame:SetScript("OnEvent", function(_, event, ...)
             -- the first time the guild is known, just after login, isn't one, and must not
             -- cancel a reply a guildmate is owed.)
             pending, lastQuery, queriedGuild = nil, nil, nil
+            queue, current = {}, nil                      -- the old guild's toasts go too
+            GS.Toast.Hide()
         end
         if gk then currentGuild = gk end
         if gk == nil and IsInGuild() == false then currentGuild = nil end
         -- The login query, if the guild wasn't known yet when it was due (a slow login).
         if gk and loginDue and queriedGuild ~= gk and query(true) then loginDue = false end
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
+    elseif event == "PLAYER_REGEN_DISABLED" then
+        -- A fight: a toast on screen goes, and comes back after (docs/SOCIAL.md).
+        if current then
+            table.insert(queue, 1, current)
+            current = nil
+        end
+        GS.Toast.Hide()
+    elseif event == "PLAYER_REGEN_ENABLED" then
+        showNext()
     end
 end)
 
@@ -387,5 +498,8 @@ Social._test = {
     guildKey = guildKey,
     pending = function() return pending end,
     currentGuild = function() return currentGuild end,
+    queue = function() return queue end,
+    current = function() return current end,
+    synced = synced,
     reset = function() registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false end,
 }

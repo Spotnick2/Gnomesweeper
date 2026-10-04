@@ -57,6 +57,8 @@ Options.ITEMS = {
       note = L["While the board is open; never in combat. Also the note in the title bar."] },
     { key = "hideInCombat", kind = "toggle", label = L["Hide in combat"],
       note = L["A fight puts the window away, paused; it comes back when the fight ends."] },
+    { key = "guildToasts", kind = "toggle", label = L["Guild best toasts"],
+      note = L["When a guildmate with Gnomesweeper sets a new guild best. Never in combat."] },
     { key = "fireworks", kind = "toggle", label = L["Fireworks"],
       note = L["Over the board when you beat your best time."] },
     { key = "scale", kind = "scale", label = L["Window size"],

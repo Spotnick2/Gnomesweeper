@@ -33,5 +33,6 @@ Options.lua
 Minimap.lua
 Sounds.lua
 Assets.lua
+Toast.lua
 Social.lua
 Gnomesweeper.lua

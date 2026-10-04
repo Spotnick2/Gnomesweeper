@@ -30,7 +30,7 @@ Measured there on this client:
 
 ## Phases
 
-**Status:** phase 0 measured (#62); phase 1 built (#15), to measure with a guildmate.
+**Status:** phase 0 measured (#62); phase 1 shipped (#63); phase 2 built (#17); both to measure with a guildmate.
 
 0. **Measure** (`/gsweep guildprobe`, one character in a guild is enough: the server echoes a
    guild addon message to its sender). What the `GUILD` sender looks like (name, surname, realm),
@@ -177,7 +177,8 @@ wasn't queried in 5 minutes. Localized (#36).
 
 ## The toast (phase 2, #17)
 
-- **Synced first:** a guild counts as heard once, since login, **a valid `B` has arrived and 70 s
+- **Synced first:** a guild counts as heard once, since login, **a valid `B` (or, since the review of
+  #66, an `N`: in a guild where nobody has a time yet, nobody sends a `B`) has arrived and 70 s
   have passed since our `Q`** (the replies' whole window: a reply can take up to ~66 s, deferred
   past a cool-down). Silence never counts: a guildmate with the addon but no best sends no `B`, so
   silence proves nothing. Before that, no toasts: a client that just logged in knows too little to

@@ -369,14 +369,21 @@ function WoW.advance(seconds)
 end
 C_AddOns = { GetAddOnMetadata = function(name, key) return WoW.metadata[key] end }
 
--- LibStub with fake LibDataBroker-1.1 and LibDBIcon-1.0 (the real Libs\ are not
--- loaded in tests; GlassMiniMapBar's way). The fakes record what they are given:
+-- Fake LibDataBroker-1.1 and LibDBIcon-1.0 (the vendored Libs\ are not loaded
+-- in tests; GlassMiniMapBar's way). The fakes record what they are given:
 -- WoW.ldb.objects, WoW.ldbi.registered / .buttons, and Show/Hide on the button.
-LibStub = setmetatable({}, { __call = function(_, major)
+-- LibStub itself is the REAL one the embedded LibGlass-1.0 brings (the harness
+-- loads it fresh with the library, #71); WoW.fakeLibs then answers these two
+-- names with the fakes, and every other name from the real LibStub.
+local function fakeLib(major)
     if major == "LibDataBroker-1.1" then WoW.ldb = WoW.ldb or WoW.newLDB(); return WoW.ldb end
     if major == "LibDBIcon-1.0" then WoW.ldbi = WoW.ldbi or WoW.newLDBI(); return WoW.ldbi end
-    error("LibStub: no stub for " .. tostring(major))
-end })
+end
+function WoW.fakeLibs(stub)
+    setmetatable(stub, { __call = function(self, major, silent)
+        return fakeLib(major) or self:GetLibrary(major, silent)
+    end })
+end
 function WoW.newLDB()
     local lib = { objects = {} }
     function lib:NewDataObject(name, obj) self.objects[name] = obj; return obj end
@@ -466,11 +473,16 @@ C_ChatInfo.SendChatMessage = function() end
 C_ChatInfo.SendAddonMessageLogged = function() return 0 end
 C_BattleNet = { SendGameData = function() return 0 end }
 
+-- Client string alias (in the dump's _G walk); LibStub's version check uses it.
+strmatch = string.match
+
 WoW.reset()
 
 -- Strict globals: any read of a global not defined above is an error, except
 -- the addon's own, which are legitimately nil before their first assignment.
-local allowNil = { Gnomesweeper = true, GnomesweeperDB = true,
+-- LibStub: read by its own loader before it exists (the harness clears it for
+-- each load, so the embedded LibGlass-1.0 starts fresh).
+local allowNil = { Gnomesweeper = true, GnomesweeperDB = true, LibStub = true,
                    ChatThrottleLib = true }   -- read before it exists: by the library itself, and Social (rawget)
 setmetatable(_G, { __index = function(_, k)
     if allowNil[k] then return nil end

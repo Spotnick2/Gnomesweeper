@@ -3,8 +3,8 @@
     python Tools/make_ui.py                  # write Media/icon_*.tga, ui_*.tga, face_*.tga
     python Tools/make_ui.py --preview x.png  # also a magnified contact sheet (not committed)
 
-The glass material's generator (make_textures.py) is a copy that belongs to
-GlassUnitFrames, so it stays untouched; this one only IMPORTS its helpers. The
+The drawing helpers are texture_kit.py's (kept from the glass material's
+generator, which now lives in LibGlass-1.0). The
 board tiles are Tools/make_tiles.py. The mascot's face is not drawn here: it is
 cut from the logo (see Media/README.md).
 
@@ -36,7 +36,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_textures import coverage, rounded_rect_sdf, write_tga  # noqa: E402
+from texture_kit import coverage, rounded_rect_sdf, write_tga  # noqa: E402
 
 SS = 4                                  # supersampling for the drawn icons
 

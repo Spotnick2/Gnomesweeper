@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The glass look now comes from **LibGlass**, a small library shared by the Glass addons, included in the download: nothing to install, and nothing changes on screen.
+
 ## v0.2.0
 
 Your guild joins the game, and Gnomesweeper speaks French.

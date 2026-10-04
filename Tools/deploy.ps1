@@ -4,6 +4,12 @@
     The repo keeps "## Version: @project-version@" for the packager; the deployed
     copy gets "dev". The repo copy is never modified.
 
+    The glass material is the embedded LibGlass-1.0 (#71). The packager fetches it
+    into Libs\LibGlass-1.0 (.pkgmeta externals); for a dev copy this script hands
+    that job to the LibGlass checkout's own deploy.ps1, which checks the checkout,
+    copies only the shipped files and prints its commit. The checkout is
+    $env:LIBGLASS, else ..\LibGlass.
+
     Usage:
         pwsh Tools/deploy.ps1
         pwsh Tools/deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
@@ -16,6 +22,34 @@ param(
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path $AddOnsPath)) { Write-Error "AddOns path not found: $AddOnsPath"; exit 1 }
+
+$LibGlass = if ($env:LIBGLASS) { $env:LIBGLASS } else { Join-Path (Split-Path -Parent $RepoRoot) "LibGlass" }
+if (-not (Test-Path -LiteralPath (Join-Path $LibGlass "Tools\deploy.ps1"))) {
+    Write-Error "LibGlass checkout not found at $LibGlass (clone github.com/Spotnick2/LibGlass there, or set `$env:LIBGLASS)"
+    exit 1
+}
+
+# The tag .pkgmeta pins is what the packager will ship. A dev checkout elsewhere
+# is legitimate (trying a library change before a pin bump), but an in-game check
+# then tests something the release won't carry: say so.
+$pin = (Get-Content -LiteralPath (Join-Path $RepoRoot ".pkgmeta")) |
+    Where-Object { $_ -match '^\s+(commit|tag):\s*(\S+)\s*$' } | ForEach-Object { $Matches[2] } | Select-Object -First 1
+$want = $null; $head = $null; $dirty = $null
+try {
+    $want = (git -C $LibGlass rev-parse --verify --quiet "$pin^{commit}" 2>$null)
+    $head = (git -C $LibGlass rev-parse HEAD 2>$null)
+    $dirty = (git -C $LibGlass status --porcelain 2>$null)
+} catch { }
+if (-not $pin -or -not $want -or $want -ne $head -or $dirty) {
+    Write-Host "WARNING: the LibGlass checkout is not at the .pkgmeta pin ($pin)$(if ($dirty) { ', or has uncommitted changes' }):" -ForegroundColor Yellow
+    Write-Host "this deploy tests a library the release won't ship." -ForegroundColor Yellow
+}
+
+# The library first: its deploy checks the checkout and may refuse, and a refusal
+# must leave the deployed addon as it was (a new TOC naming a library that never
+# arrived would load no glass at all).
+& pwsh -NoProfile -File (Join-Path $LibGlass "Tools\deploy.ps1") -Addon Gnomesweeper -AddOnsPath $AddOnsPath
+if ($LASTEXITCODE -ne 0) { Write-Error "LibGlass deploy refused; Gnomesweeper was not touched"; exit 1 }
 
 $dest = Join-Path $AddOnsPath "Gnomesweeper"
 Write-Host "Deploying Gnomesweeper -> $dest" -ForegroundColor Cyan
@@ -45,14 +79,21 @@ Get-ChildItem -LiteralPath $dest -File | Where-Object { $files -notcontains $_.N
     Remove-Item -LiteralPath $_.FullName -Force
 }
 
-# Libs: the embedded libraries (#40), mirrored exactly, so a library dropped from
-# the repo doesn't linger where the client would still load it.
+# Libs: the vendored libraries (#40), mirrored exactly, so a library dropped from
+# the repo doesn't linger where the client would still load it. Libs\LibGlass-1.0
+# is LibGlass's deploy's (above), never touched here.
 $libsSrc = Join-Path $RepoRoot "Libs"
 $libsDest = Join-Path $dest "Libs"
-if (Test-Path -LiteralPath $libsDest) { Remove-Item -LiteralPath $libsDest -Recurse -Force }
+$glassLib = "LibGlass-1.0"
+if (Test-Path -LiteralPath $libsDest) {
+    Get-ChildItem -LiteralPath $libsDest | Where-Object { $_.Name -ne $glassLib } |
+        ForEach-Object { Remove-Item -LiteralPath $_.FullName -Recurse -Force }
+}
 if (Test-Path -LiteralPath $libsSrc) {
-    Copy-Item -LiteralPath $libsSrc -Destination $libsDest -Recurse -Force
-    Write-Host "  Libs\  ($((Get-ChildItem -LiteralPath $libsDest -Recurse -File).Count) files)"
+    New-Item -ItemType Directory -Force -Path $libsDest | Out-Null
+    $vendored = Get-ChildItem -LiteralPath $libsSrc | Where-Object { $_.Name -ne $glassLib }
+    foreach ($lib in $vendored) { Copy-Item -LiteralPath $lib.FullName -Destination $libsDest -Recurse -Force }
+    Write-Host "  Libs\  ($(($vendored | Get-ChildItem -Recurse -File).Count) vendored files, and LibGlass-1.0)"
 }
 
 # Locales (#36): the language files, mirrored exactly like Libs (a new one is a new
@@ -79,7 +120,8 @@ foreach ($t in $art) {
 }
 Write-Host "  Media\  ($($art.Count) files)"
 # Media removed from the repo must not linger either: a stale texture would
-# hide a missing-asset bug in game. Only the types copied above are pruned.
+# hide a missing-asset bug in game. Only the types copied above are pruned. This
+# also clears the material's old copies (#71: they ship in Libs\LibGlass-1.0 now).
 $names = $art | Select-Object -ExpandProperty Name
 Get-ChildItem -LiteralPath $media -File | Where-Object { $_.Extension -in ".tga", ".blp", ".ogg" -and $names -notcontains $_.Name } | ForEach-Object {
     Write-Host "  removing stale Media\$($_.Name)" -ForegroundColor DarkYellow

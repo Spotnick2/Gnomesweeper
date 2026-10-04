@@ -23,7 +23,7 @@ from PIL import Image, ImageOps
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "Tools"))
-import make_textures  # noqa: E402  (the one TGA writer: no footer, exactly header + pixels)
+import texture_kit  # noqa: E402  (the one TGA writer: no footer, exactly header + pixels)
 SOURCE = ROOT / "Media" / "Source"
 GENERATED = SOURCE / "Generated"
 MEDIA = ROOT / "Media"
@@ -76,8 +76,8 @@ def main():
         if opts is None:
             # Not Pillow's TGA writer: it appends a 26-byte footer that tests/test_media.lua rejects.
             sized = im.resize(tsize, Image.Resampling.LANCZOS)
-            make_textures.OUT = str(out)
-            make_textures.write_tga(outname, np.asarray(sized).astype(float) / 255.0)
+            texture_kit.OUT = str(out)
+            texture_kit.write_tga(outname, np.asarray(sized).astype(float) / 255.0)
         else:
             subprocess.run([sys.executable, str(ROOT / "Tools" / "png_to_tga.py"), str(SOURCE / (name + ".png")),
                             outname, "--size", str(tsize), "--out", str(out)] + opts, cwd=ROOT, check=True)

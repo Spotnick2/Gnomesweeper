@@ -31,7 +31,7 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import make_textures  # noqa: E402  (the lifted generator: only its TGA writer is used)
+import texture_kit  # noqa: E402  (only its TGA writer is used)
 
 
 def square(im, margin):
@@ -114,8 +114,8 @@ def main():
     px = convert(args.src, args.size, args.trim, args.margin, args.circle, args.round_frac, crop)
     if args.out:
         os.makedirs(args.out, exist_ok=True)
-        make_textures.OUT = args.out
-    make_textures.write_tga(args.name, px)
+        texture_kit.OUT = args.out
+    texture_kit.write_tga(args.name, px)
     if args.preview:
         preview(px, args.preview)
 

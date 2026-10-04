@@ -376,6 +376,9 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 - `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\GlassUnitFrames\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
+- `docs/SOCIAL.md` — **the social plan** (#15 guild best times, #17 guild-best toasts, #16 friends):
+  the v1 wire format, identity, the per-character bests, the cache, the toast's rules. Twice reviewed
+  adversarially; phase 0 (measure the guild sender) comes before any code.
 - `docs/SOUNDS.md` — Gnomeregan sound kits and music (`PlaySound(kit)`, `PlayMusic(fileID)`;
   never `PlaySoundFile` with a game path).
 - `docs/MODELS.md` — rendering creature models, from AltStable's measured pet work

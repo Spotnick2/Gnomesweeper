@@ -28,9 +28,9 @@ do  -- in a guild: the identity, the send, the echo, Ambiguate, the saved lines
     eq(m.chatType, "GUILD", "...to the guild")
     check(m.message:match("^1\tP\t%d+$") ~= nil, "...a v1 'P' (probe) message: a type no v1 client knows, so they ignore it")
     check(chatHas("SendAddonMessage(GUILD) = 0"), "...and the send's result code is reported")
-    check(chatHas('CHAT_MSG_ADDON channel="GUILD" sender="Fizzle Sprocketwhistle-Forever"'), "the echo is reported: the channel and the sender, exactly")
+    check(chatHas('CHAT_MSG_ADDON channel="GUILD" sender="Fizzle Sprocketwhistle"'), "the echo is reported: the channel and the sender, exactly")
     check(chatHas('Ambiguate(sender, "none")'), "...and what Ambiguate makes of the sender, in each context")
-    check(chatHas('Ambiguate(sender, "short") = "Fizzle Sprocketwhistle"'), "...(short drops the realm)")
+    check(chatHas('Ambiguate(sender, "short") = "Fizzle Sprocketwhistle"'), "...(measured a no-op on a guild sender)")
     check(savedHas("CHAT_MSG_ADDON"), "the lines are kept in GnomesweeperDB.guildProbe, for a /reload to save")
     check(#GnomesweeperDB.guildProbe <= Gnomesweeper.Social.PROBE_KEEP, "...at most PROBE_KEEP of them")
 

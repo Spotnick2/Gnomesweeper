@@ -25,8 +25,8 @@ Measured there on this client:
 - **An addon whisper to an offline character prints a visible system error line.** Whispers don't
   cross factions. Battle.net game data does, arrives **unordered**, and has been measured between
   two accounts under one Battle.net account.
-- The whisper sender of `CHAT_MSG_ADDON` carries the surname (porting guide). **The guild form,
-  and what `Ambiguate` returns here, are unmeasured:** phase 0.
+- The sender of `CHAT_MSG_ADDON` carries the surname, for a whisper (porting guide) and for the
+  guild (phase 0, below: no realm, and `Ambiguate` changes nothing).
 
 ## Phases
 
@@ -114,11 +114,29 @@ phases 1 and 2). Our own echo is recognised by identity and dropped.
 
 ## Identity
 
-- **The member key** is the transport sender, normalised to always carry a realm: as measured in
-  phase 0, plus our realm when the sender omits it. Our own key is built the same way (phase 0
-  shows how), so our echo and our alts match.
-- **The display name** is separate: the sender without the realm when it's ours. No casefolding
-  (names are UTF-8; Lua's `lower` is byte-wise), and names are never split on spaces.
+**Measured (phase 0, 70205, 2026-10-03; `/gsweep guildprobe` on Kaleid Sumner in Parse Partout):**
+
+| Asked | Answer |
+|---|---|
+| `RegisterAddonMessagePrefix("GSWEEP")`, `SendAddonMessage(..., "GUILD")` | `0`, `0` (success) |
+| The echo's `CHAT_MSG_ADDON` sender (and target) | `"Kaleid Sumner"`: the full name, surname included, **no realm** |
+| `Ambiguate(sender, "none" / "short" / "guild" / "mail")` | `"Kaleid Sumner"` every time: a no-op here |
+| `UnitName("player")`, `UnitFullName("player")` | `"Kaleid", "Sumner"` both: the second answer is the **surname**, not a realm |
+| `GetRealmName()`, `GetNormalizedRealmName()` | `"Classic Beta PvE"`, `"ClassicBetaPvE"` |
+| `GetGuildInfo("player")` | `"Parse Partout", "Veteran", 4, "ClassicBetaPvE2"`: the 4th is the **guild's realm, not ours** |
+
+So:
+
+- **The member key** is the sender as received, with `"-" .. GetNormalizedRealmName()` added when
+  it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that already carries a `-Realm`
+  (a guildmate from another realm, presumably: **unmeasured**, only one character tested) is kept
+  as it is. `Ambiguate` is not used (a no-op here).
+- **Our own key** is built the same way from `API.PlayerFullName()` and `GetNormalizedRealmName()`,
+  so our echo matches it and is dropped, and our alts in the guild match their own keys.
+- **The guild key** is the guild's name and **its own** realm (`GetGuildInfo`'s 4th answer, ours
+  when it's nil): `"Parse Partout-ClassicBetaPvE2"`.
+- **The display name** is the key without its realm when that realm is ours. No casefolding (names
+  are UTF-8; Lua's `lower` is byte-wise), and names are never split on spaces (the surname).
 
 ## The cache (`GnomesweeperDB.social`, a new field: the saved-data contract)
 

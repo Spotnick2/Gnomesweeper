@@ -313,8 +313,11 @@ LibDBIcon-1.0) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` �
 - **`Social.lua`** (the social plan, `docs/SOCIAL.md`): for now phase 0, **`/gsweep guildprobe`** (for
   measuring): every way the client names this character, then a v1 `P` message to the guild (a type no
   v1 client knows); the server echoes it, and every `CHAT_MSG_ADDON` argument and `Ambiguate`'s answers
-  are logged and kept in `GnomesweeperDB.guildProbe` for a `/reload`. The stub's `C_ChatInfo` echoes a
-  GUILD message from `WoW.addonSender` (set it to what the probe measures).
+  are logged and kept in `GnomesweeperDB.guildProbe` for a `/reload`. **Measured (70205):** the guild
+  sender is the full name with the surname and **no realm** (`"Kaleid Sumner"`), `Ambiguate` is a no-op,
+  `UnitFullName`'s second answer is the surname, and `GetGuildInfo`'s 4th is the guild's own realm
+  (`docs/SOCIAL.md`, "Identity"). The stub's `C_ChatInfo` echoes a GUILD message from `WoW.addonSender`,
+  `"Fizzle Sprocketwhistle"` as measured.
 - **`Scores.lua`** (#7): personal bests, **pure** (every global forbidden in its test); the window
   hands it the saved table and the record. **`GnomesweeperDB.scores` is a contract once released**
   (the leaderboards, #15, build on it): `{ version = 1, [category] = { best = record, played = n,

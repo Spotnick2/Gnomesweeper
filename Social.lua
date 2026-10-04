@@ -35,7 +35,8 @@ Social.STALE = 300               -- the Guild tab asks again after 5 minutes
 Social.REPLY_GAP = 60            -- at most one reply a minute, deferred, never dropped
 Social.JITTER_MIN, Social.JITTER_MAX = 1, 6
 Social.FORGET = 30 * 86400       -- a member silent this long is forgotten
-Social.SYNC_WINDOW = 70          -- after our query, the replies' whole window (deferral + jitter)
+-- After our query, the replies' whole window: a reply deferred past the minute, its jitter, and slack.
+Social.SYNC_WINDOW = Social.REPLY_GAP + Social.JITTER_MAX + 4
 Social.TOAST_QUEUE = 3           -- toasts waiting, at most (the oldest go)
 
 local registered                 -- the prefix's registration result, once asked
@@ -47,7 +48,8 @@ local currentGuild               -- the guild key last seen (a change cancels wh
 local loggedIn                   -- the login query is once a session
 local loginDue                   -- the login query couldn't go yet (the guild not known yet)
 local firstQuery = {}            -- [guildKey] = GetTime() of this session's first query to it
-local heardB = {}                -- [guildKey] = a B arrived this session (the guild is being heard)
+local heard = {}                 -- [guildKey] = a B or an N arrived this session (the guild is heard)
+local inCombat                   -- from the REGEN events, as Sounds.lua (the API can lag behind them)
 local queue = {}                 -- toasts waiting: { guild, key, cat, cs }
 local current                    -- the toast on screen
 
@@ -271,10 +273,12 @@ function Social.Ranking(category) return Social.View().ranking(category) end
 -- The guild-best toast (#17)
 ------------------------------------------------------------
 
--- Heard the guild since login: a B arrived, and the replies' whole window has passed since
--- our first query (a reply can take ~66 s). Silence never counts (docs/SOCIAL.md).
+-- Heard the guild since login: a B or an N arrived, and the replies' whole window has passed
+-- since our first query (a reply can take ~66 s). Silence never counts. An N counts too (review
+-- of #66): in a guild where nobody has a time yet nobody sends a B, and by the window's end
+-- anyone with a time would have replied.
 local function synced(gk)
-    return heardB[gk] and firstQuery[gk] and GetTime() - firstQuery[gk] >= Social.SYNC_WINDOW or false
+    return heard[gk] and firstQuery[gk] and GetTime() - firstQuery[gk] >= Social.SYNC_WINDOW or false
 end
 
 -- The fastest time this client knows in a category: the guild's (but `skip`'s) and ours.
@@ -292,20 +296,24 @@ local function fastestKnown(gk, cat, skip)
     return best
 end
 
+-- The difficulty, and the first-click rule when it's the single safe tile (review of #66: each
+-- rule keeps its own bests, so "Beginner" alone could contradict a faster time under the other).
 local function difficultyLabel(cat)
-    local d = cat:match("^(%a+)") or cat
-    return GS.L[(d:gsub("^%l", string.upper))]
+    local d, rule = cat:match("^(%a+):(%a+)$")
+    local name = (GS.Window.LABELS or {})[d] or d or cat
+    if rule == "cell" then name = string.format(GS.L["%s (one safe tile)"], name) end
+    return name
 end
 
 local function toastText(t)
-    local time = GS.Layout.FormatTenths(t.cs / 100, GS.Board.DisplaySeconds(math.huge), GS.LOCALE.decimal)
-    return string.format(GS.L["%s cleared %s in %s, a new guild best!"], Guild.Display(t.key, realm()), difficultyLabel(t.cat), time)
+    return string.format(GS.L["%s cleared %s in %s, a new guild best!"], Guild.Display(t.key, realm()),
+        difficultyLabel(t.cat), GS.Window.GuildTime(t.cs))
 end
 
 local showNext
 showNext = function()
     if current or GS.Toast.IsShown() then return end
-    if UnitAffectingCombat("player") then return end           -- after the fight
+    if inCombat then return end                                -- after the fight
     while #queue > 0 do
         local t = table.remove(queue, 1)
         -- Rechecked: still this guild, and still strictly the fastest (nothing better
@@ -313,8 +321,9 @@ showNext = function()
         if guildKey() == t.guild then
             local known = fastestKnown(t.guild, t.cat, t.key)
             local s = social(false)
-            local held = s and s.guilds[t.guild] and s.guilds[t.guild][t.key]
-            local theirs = held and held.bests and held.bests[t.cat]
+            local bucket = s and type(s.guilds) == "table" and s.guilds[t.guild]
+            local held = type(bucket) == "table" and bucket[t.key]
+            local theirs = type(held) == "table" and type(held.bests) == "table" and held.bests[t.cat]
             if (not known or t.cs < known) and not (theirs and theirs.cs < t.cs) then
                 current = t
                 GS.Toast.Show(toastText(t), function()
@@ -327,9 +336,18 @@ showNext = function()
     end
 end
 
+-- At most TOAST_QUEUE wait: the oldest unseen goes first, never one a fight interrupted.
+local function trim()
+    while #queue > Social.TOAST_QUEUE do
+        local drop = 1
+        for i, t in ipairs(queue) do if not t.interrupted then drop = i; break end end
+        table.remove(queue, drop)
+    end
+end
+
 local function enqueue(t)
     queue[#queue + 1] = t
-    while #queue > Social.TOAST_QUEUE do table.remove(queue, 1) end
+    trim()
     showNext()
 end
 
@@ -356,7 +374,7 @@ local function receive(text, channel, sender)
         scheduleReply(gk)
         return
     end
-    if msg.type == "B" then heardB[gk] = true end
+    heard[gk] = true
     -- A guild best? Decided before it's merged in (it would be compared with itself).
     local toast
     if msg.type == "N" and synced(gk) and db().guildToasts ~= false then
@@ -448,6 +466,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if loggedIn then return end                    -- once a session, not on every loading screen
         loggedIn = true
         register()
+        inCombat = UnitAffectingCombat("player") and true or false
         -- This character's records from the account's scores, kept now (Codex, #63): left
         -- until a win or the Guild tab, an alt's new best could take them from the scores first.
         mine(false)
@@ -467,6 +486,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
         end)
     elseif event == "PLAYER_GUILD_UPDATE" then
         local gk = guildKey()
+        -- In a guild but its name not loaded for a moment (a zone change): not a change (review of #66).
+        if gk == nil and IsInGuild() then gk = currentGuild end
         if currentGuild ~= nil and gk ~= currentGuild then
             -- Another guild (or none): what was pending for the old one goes. (Only a change:
             -- the first time the guild is known, just after login, isn't one, and must not
@@ -481,13 +502,17 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if gk and loginDue and queriedGuild ~= gk and query(true) then loginDue = false end
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
     elseif event == "PLAYER_REGEN_DISABLED" then
+        inCombat = true
         -- A fight: a toast on screen goes, and comes back after (docs/SOCIAL.md).
         if current then
+            current.interrupted = true
             table.insert(queue, 1, current)
             current = nil
+            trim()
         end
         GS.Toast.Hide()
     elseif event == "PLAYER_REGEN_ENABLED" then
+        inCombat = false
         showNext()
     end
 end)
@@ -501,5 +526,8 @@ Social._test = {
     queue = function() return queue end,
     current = function() return current end,
     synced = synced,
-    reset = function() registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false end,
+    reset = function()
+        registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false
+        firstQuery, heard, queue, current, inCombat = {}, {}, {}, nil, nil
+    end,
 }

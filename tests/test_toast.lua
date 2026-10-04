@@ -34,13 +34,24 @@ do  -- not synced yet: no toast
     eq(shown(), nil, "a B heard, but within the replies' window: still no toast")
 end
 
-do  -- silence never counts
+do  -- silence never counts; but in a guild where nobody has a time yet, the first N does (review of #66)
     loadAddon()
     WoW.guild = GUILD
     WoW.fire("PLAYER_ENTERING_WORLD", true, false)
     WoW.advance(200)
+    eq(Gnomesweeper.Social._test.synced(GUILD .. "-Forever"), false, "silence, however long: not synced")
     from("Bob Cog", N("expert:area", 8000))
-    eq(shown(), nil, "no B ever heard: never synced, however long (silence proves nothing)")
+    eq(shown(), "Bob Cog cleared Expert in 01:20.0, a new guild best!",
+        "a guild where nobody had a time (no B): the first N, after the window, is a guild best")
+end
+
+do  -- ...but not within the window
+    loadAddon()
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(30)
+    from("Bob Cog", N("expert:area", 8000))
+    eq(shown(), nil, "an N within the replies' window: not yet (replies may still come)")
 end
 
 do  -- synced: a strictly faster N toasts
@@ -49,7 +60,8 @@ do  -- synced: a strictly faster N toasts
     eq(shown(), "Bob Cog cleared Expert in 01:24.1, a new guild best!", "a guildmate's new guild best: a toast")
     local c = card()
     eq(c:GetParent(), UIParent, "...on UIParent: whether the board is open or not")
-    eq(c._strata, "DIALOG", "...over the game's own frames")
+    eq(c._strata, "FULLSCREEN_DIALOG", "...in the board's strata (review of #66: under it, it hid behind the board)")
+    check(c:GetFrameLevel() >= 200, "...and above it")
     eq(c.face._texture, Gnomesweeper.Skin.TEXTURES.faceWon, "...with her laughing face")
     WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
     eq(shown(), nil, "it goes after " .. Gnomesweeper.Toast.SHOW .. " s")
@@ -165,6 +177,83 @@ do  -- in French
     WoW.advance(70)
     from("Bob Cog", N("expert:area", 8412))
     eq(shown(), "Bob Cog\194\160: Expert en 01:24,1, nouveau record de guilde\194\160!", "in French: the decimal comma and French spacing")
+end
+
+----------------------------------------------------------------------------
+-- The review of #66
+----------------------------------------------------------------------------
+do  -- above the open board
+    local S = synced({ seenFaceTip = true })
+    WoW.slash("/gsweep")
+    from("Bob Cog", N("expert:area", 8000))
+    local w = Gnomesweeper.Window.win
+    eq(card()._strata, w._strata, "with the board open: the same strata as the board")
+    check(card():GetFrameLevel() > w:GetFrameLevel() + 31, "...above everything in it (the list is at +30, the pointer +31)")
+end
+
+do  -- the first-click rule is named when it's the single safe tile
+    local S = synced()
+    from("Bob Cog", N("beginner:cell", 2000))
+    eq(shown(), "Bob Cog cleared Beginner (one safe tile) in 00:20.0, a new guild best!",
+        "a best under the single-safe-tile rule says so (each rule keeps its own bests)")
+end
+
+do  -- a guild known only for a moment isn't a guild change
+    local S = synced()
+    from("Bob Cog", N("expert:area", 8000))
+    from("Cal Bolt", N("expert:area", 7000))
+    WoW.guildLoading = true                              -- in the guild, name not loaded (a zone change)
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    WoW.guildLoading = nil
+    check(shown() ~= nil, "a moment without the guild's name doesn't put the toast away")
+    eq(#S._test.queue(), 1, "...nor the waiting one")
+end
+
+do  -- combat from the events: the API lagging behind the end of a fight doesn't strand toasts
+    local S = synced()
+    WoW.inCombat = true
+    WoW.fire("PLAYER_REGEN_DISABLED")
+    from("Bob Cog", N("expert:area", 8000))
+    WoW.fire("PLAYER_REGEN_ENABLED")                     -- the fight's over, the API still says combat
+    check(shown() ~= nil, "the fight's end shows it, whatever the API says a moment later")
+    WoW.inCombat = false
+end
+
+do  -- the cap holds when a fight interrupts one, and the interrupted one is kept
+    local S = synced()
+    from("A A", N("expert:area", 8900))                 -- on screen
+    from("B B", N("intermediate:area", 8900))
+    from("C C", N("intermediate:area", 8800))
+    from("D D", N("intermediate:area", 8700))
+    WoW.fire("PLAYER_REGEN_DISABLED")                    -- A goes back to the queue
+    eq(#S._test.queue(), Gnomesweeper.Social.TOAST_QUEUE, "a fight putting one back: still at most " .. Gnomesweeper.Social.TOAST_QUEUE)
+    eq(S._test.queue()[1].key, "A A-Forever", "...the interrupted one kept, an unseen one dropped")
+    from("E E", N("beginner:area", 900))
+    eq(S._test.queue()[1].key, "A A-Forever", "...and still kept when another arrives in the fight")
+    WoW.fire("PLAYER_REGEN_ENABLED")
+end
+
+do  -- damaged saved data: no error
+    local S = synced()
+    from("Bob Cog", N("expert:area", 8000))
+    from("Cal Bolt", N("expert:area", 7000))             -- waiting
+    GnomesweeperDB.social.guilds = 42                    -- a number: indexing it errors (a string would not)
+    local ok = pcall(function() WoW.advance(Gnomesweeper.Toast.SHOW + 0.1) end)
+    check(ok, "a damaged cache when the next toast is rechecked: no Lua error")
+end
+
+do  -- the sync window follows the reply timings
+    local S = Gnomesweeper.Social
+    check(S.SYNC_WINDOW > S.REPLY_GAP + S.JITTER_MAX, "the sync window covers a reply's longest deferral")
+end
+
+do  -- the test seam's reset clears the toasts' state
+    local S = synced()
+    from("Bob Cog", N("expert:area", 8000))
+    from("Cal Bolt", N("expert:area", 7000))
+    S._test.reset()
+    eq(#S._test.queue(), 0, "reset: no queue")
+    eq(S._test.synced(GUILD .. "-Forever"), false, "...and not synced")
 end
 
 done("test_toast")

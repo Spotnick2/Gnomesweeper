@@ -23,6 +23,7 @@ local PAD = Layout.PAD
 local T, C = Skin.TEXTURES, Skin.COLORS
 
 local LABELS = { beginner = L["Beginner"], intermediate = L["Intermediate"], expert = L["Expert"] }
+Window.LABELS = LABELS                    -- the difficulties' names, for the toast too (#17)
 local WIN_NAME = "GnomesweeperWindow"
 local MULT, DOT = "\195\151", "\194\183"          -- the multiplication sign and the middle dot, as UTF-8
 -- The title lettering: 28 high (the tagline then ends clear of the difficulty button
@@ -677,6 +678,7 @@ end
 local function csTime(cs)
     return Layout.FormatTenths(cs / 100, Board.DisplaySeconds(math.huge), GS.LOCALE.decimal)
 end
+Window.GuildTime = csTime                 -- the toast's too (#17): one format
 
 -- The Guild tab (#15): per difficulty, the guild's best and where you stand.
 local function fillGuild(p)

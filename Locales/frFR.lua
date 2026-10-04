@@ -104,6 +104,7 @@ local T = {
     ["%d with a time"] = "%d avec un temps",
     ["Not in a guild."] = "Pas de guilde.",
     ["%s cleared %s in %s, a new guild best!"] = "%s : %s en %s, nouveau record de guilde !",
+    ["%s (one safe tile)"] = "%s (une seule case sûre)",
     ["Guild best toasts"] = "Annonces des records de guilde",
     ["When a guildmate with Gnomesweeper sets a new guild best. Never in combat."] =
         "Quand un membre de la guilde qui a Gnomesweeper bat le record de la guilde. Jamais en combat.",

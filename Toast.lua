@@ -24,7 +24,10 @@ local card, token = nil, 0    -- token: a new show (or a hide) cancels the last 
 
 local function build()
     card = Widgets.GlassPanel(UIParent)
-    card:SetFrameStrata("DIALOG")
+    -- The board's own strata, and above it (review of #66: under DIALOG, the card hid behind the
+    -- board, exactly while the player is looking at Gnomesweeper).
+    card:SetFrameStrata("FULLSCREEN_DIALOG")
+    card:SetFrameLevel(200)
     card:SetSize(Toast.W, Toast.H)
     card:SetPoint("TOP", UIParent, "TOP", 0, Toast.TOP)
     card:EnableMouse(true)

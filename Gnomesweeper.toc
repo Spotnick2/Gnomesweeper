@@ -31,4 +31,5 @@ Options.lua
 Minimap.lua
 Sounds.lua
 Assets.lua
+Social.lua
 Gnomesweeper.lua

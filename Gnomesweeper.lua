@@ -53,6 +53,7 @@ local HELP = {
     "/gsweep sounds - play every candidate sound and the music, one after another (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
+    "/gsweep guildprobe - how the guild sees this character's addon messages (for measuring), kept for /reload to save",
 }
 
 local function Slash(msg)
@@ -110,6 +111,8 @@ local function Slash(msg)
         GS.Assets.Toggle()
     elseif msg == "perf" then
         for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
+    elseif msg == "guildprobe" then
+        GS.Social.Probe()
     elseif msg == "input" then
         GS.Grid.SetLogging(not GS.Grid.Logging())
         Print("tile input logging " .. (GS.Grid.Logging()

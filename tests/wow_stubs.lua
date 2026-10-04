@@ -254,6 +254,7 @@ function WoW.reset()
     WoW.frames, WoW.chat = {}, {}
     WoW.widgets = {}
     WoW.guild, WoW.addonSent, WoW.prefixes, WoW.guildLoading, WoW.addonResult = nil, {}, {}, nil, nil
+    WoW.sendResults, WoW.reportedErrors = {}, {}
     WoW.addonSender = "Fizzle Sprocketwhistle"     -- as measured (70205): the full name, no realm
     WoW.now = 0
     WoW.mouseDown = false
@@ -322,7 +323,9 @@ C_ChatInfo = {
         return 0
     end,
     SendAddonMessage = function(prefix, message, chatType, target)
-        if WoW.addonResult and WoW.addonResult ~= 0 then return WoW.addonResult end   -- a refused send (a test sets it)
+        -- A refused send: the next queued result (WoW.sendResults, AltStable's), else WoW.addonResult.
+        local result = table.remove(WoW.sendResults, 1) or WoW.addonResult or 0
+        if result ~= 0 then return result end
         table.insert(WoW.addonSent, { prefix = prefix, message = message, chatType = chatType, target = target })
         if chatType == "GUILD" and WoW.guild then
             WoW.fire("CHAT_MSG_ADDON", prefix, message, "GUILD", WoW.addonSender, WoW.addonSender, 0, 0, "", 0)
@@ -418,13 +421,57 @@ function GetBuildInfo() return "1.60.1", "70205", "Oct  2 2026", 16001 end
 function IsMouseButtonDown(button) return WoW.mouseDown == true or WoW.mouseDown == button end
 function debugprofilestop() return os.clock() * 1000 end
 function CreateColor(r, g, b, a) return { r = r, g = g, b = b, a = a } end
-Enum = { UITextureSliceMode = { Stretched = 0, Tiled = 1 } }
+Enum = {
+    UITextureSliceMode = { Stretched = 0, Tiled = 1 },
+    -- What C_ChatInfo.SendAddonMessage returns on this client (AltStable measured; the dump's type).
+    SendAddonMessageResult = { Success = 0, InvalidPrefix = 1, InvalidMessage = 2, AddonMessageThrottle = 3,
+        InvalidChatType = 4, NotInGroup = 5, TargetRequired = 6, InvalidChannel = 7, ChannelThrottle = 8,
+        GeneralError = 9, NotInGuild = 10, AddOnMessageLockdown = 11, TargetOffline = 12 },
+}
+
+-- What the REAL ChatThrottleLib (v32) needs, as AltStable's stubs model it (tests/test_ctl.lua
+-- loads it): the client's secure post-hook, its error handler and securecallfunction, an xpcall
+-- that passes extra arguments (WoW's does; Lua 5.1's doesn't), table.wipe, the frame rate, and the
+-- send functions it hooks. Nothing else loads the library: Libs\ is skipped in the other tests.
+function hooksecurefunc(a, b, c)
+    local t, name, hook = a, b, c
+    if type(a) == "string" then t, name, hook = _G, a, b end
+    local orig = rawget(t, name)
+    rawset(t, name, function(...)
+        local r = { orig(...) }
+        hook(...)
+        return unpack(r)
+    end)
+end
+WoW.reportedErrors = {}
+function geterrorhandler() return function(e) table.insert(WoW.reportedErrors, e) end end
+function securecallfunction(fn, ...)
+    local r = { pcall(fn, ...) }
+    if not r[1] then geterrorhandler()(r[2]); return end
+    return unpack(r, 2)
+end
+do
+    local rawXpcall = xpcall
+    function xpcall(fn, handler, ...)
+        local args, n = { ... }, select("#", ...)
+        return rawXpcall(function() return fn(unpack(args, 1, n)) end, handler)
+    end
+end
+function table.wipe(t) for k in pairs(t) do t[k] = nil end return t end
+wipe = table.wipe
+function GetFramerate() return 60 end
+-- In the dump (FrameScript): Retail's secret values. Nothing here is one.
+function issecretvalue(v) return false end
+C_ChatInfo.SendChatMessage = function() end
+C_ChatInfo.SendAddonMessageLogged = function() return 0 end
+C_BattleNet = { SendGameData = function() return 0 end }
 
 WoW.reset()
 
 -- Strict globals: any read of a global not defined above is an error, except
 -- the addon's own, which are legitimately nil before their first assignment.
-local allowNil = { Gnomesweeper = true, GnomesweeperDB = true }
+local allowNil = { Gnomesweeper = true, GnomesweeperDB = true,
+                   ChatThrottleLib = true }   -- read before it exists: by the library itself, and Social (rawget)
 setmetatable(_G, { __index = function(_, k)
     if allowNil[k] then return nil end
     error("read of undefined global '" .. tostring(k) .. "' (not stubbed: is it in the API dump?)", 2)

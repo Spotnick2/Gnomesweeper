@@ -494,6 +494,16 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 - **`test_effects.lua`** is the celebrations: the burst and the smoke following the game, the face while
   a tile is held (one button, two, a window closing mid-press, a finished game, the real art), and a new
   best's fanfare, cheer and fireworks (on the board, staggered, off by the setting).
+- **`test_guild.lua`** is the guild's model, pure (the wire grammar's every malformed case, the 205-byte
+  bound, merging, pruning, ranking, keys); **`test_social.lua`** is the live half through the stub (the
+  login query, deferred and coalesced replies, per-character bests and seeding, receiving, guild
+  changes, refused sends, the Guild tab) and phase 0's probe; **`test_ctl.lua`** loads the **real**
+  ChatThrottleLib (ported from AltStable's, #138 there) and sends Gnomesweeper's own messages through
+  it: a throttled send (result 3) retried and delivered once, a burst in order, a non-throttle refusal
+  reported through its callback, a reused pipe. The stub models what v32 needs: `hooksecurefunc`,
+  `securecallfunction`, `geterrorhandler` (reports land in `WoW.reportedErrors`), an `xpcall` passing
+  extra arguments, `table.wipe`, `GetFramerate`, `issecretvalue`, `Enum.SendAddonMessageResult`, and
+  `WoW.sendResults` (the next sends' results, in order).
 - **`test_sounds.lua`** is the sounds and music on the stub's recorded `PlaySound`/`PlayMusic`/
   `StopMusic` and its clock (`WoW.advance` runs `C_Timer`s): every effect, the delayed gnome and its
   cancelling, the music's one check (window, combat, setting, a login in combat), the note button,

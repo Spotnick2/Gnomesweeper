@@ -30,6 +30,8 @@ Measured there on this client:
 
 ## Phases
 
+**Status:** phase 0 measured (#62); phase 1 built (#15), to measure with a guildmate.
+
 0. **Measure** (`/gsweep guildprobe`, one character in a guild is enough: the server echoes a
    guild addon message to its sender). What the `GUILD` sender looks like (name, surname, realm),
    what `Ambiguate(sender, "none")` returns for it, and the send's result code. This fixes the
@@ -161,8 +163,9 @@ GnomesweeperDB.social = {
 - A member not heard from in **30 days** is dropped at login. Buckets for guilds this character
   isn't in are kept (it may come back) but never shown.
 - **What the tab shows is the guildmates heard recently**, not a verified roster.
-- Reading never creates the table (as `Scores`): opening Best times without a guild leaves the
-  SavedVariables alone.
+- Reading never creates the table (as `Scores`), with one exception: a record of this character's,
+  seeded from the scores, is kept as soon as it's seen (left as a preview, an alt beating the
+  account's best before this character's next win would lose it; review of #63).
 
 ## The Guild tab (phase 1)
 

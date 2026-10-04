@@ -34,7 +34,7 @@ holds the decided design, so update it when the design changes.
 ## Layout
 
 TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
-LibDBIcon-1.0) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Skin.lua` →
+LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
 `Sounds.lua` → `Assets.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
@@ -242,6 +242,7 @@ LibDBIcon-1.0) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` �
   time and closes them with the window. A screen or UI-scale change refreshes the page (the size note
   says when the window is shown smaller to fit).
 - **`Libs\`** (#40): LibStub, CallbackHandler-1.0, LibDataBroker-1.1 and LibDBIcon-1.0 (MINOR 56),
+  and ChatThrottleLib v32 (#15, public domain, copied from AltStable: paces the guild's messages),
   **copied from `..\GlassMiniMapBar\Libs`** (owner's decision: the standard minimap button, which every
   collector picks up). Never edited here. **Not loaded in tests**: `tocFiles()` skips `Libs\` (pass
   `true` for all), and the stub's `LibStub` hands out recording fakes (`WoW.ldb`, `WoW.ldbi`).
@@ -310,7 +311,30 @@ LibDBIcon-1.0) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` �
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
   by eye (getters echo nonsense IDs). What `GetFileIDFromPath` answers for our own files is recorded
   too. Results go to `GnomesweeperDB.assetProbe` for a `/reload` to write to disk.
-- **`Social.lua`** (the social plan, `docs/SOCIAL.md`): for now phase 0, **`/gsweep guildprobe`** (for
+- **`Guild.lua`** (#15, `docs/SOCIAL.md`): the guild's best times as **pure** Lua (every global but
+  `tonumber` and a few builtins forbidden in `test_guild.lua`): the v1 wire format (`Encode`/`Parse`, the
+  exact grammar, a malformed message dropped whole, the longest legal `B` 205 bytes), the one
+  eligibility rule (`Cs`: whole centiseconds, 1 s to ~27 h), the one order (`Better`: cs, at, key),
+  `Merge` (the better per category; a missing category deletes nothing), `Prune`, `Ranking` (ours
+  merged in), `Key`/`Display`. **Numbers go out with `%.0f`, never `%d`**: Lua 5.1's `%d` is 32-bit and
+  an epoch past 2038 overflows it (measured: 9999999999 printed as -2147483648).
+- **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**
+  (`GnomesweeperDB.social.mine[memberKey]`, beside the account's `scores`, seeded once from the records
+  this character set, name AND realm); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the
+  seeding would read the win it's recording) updates it and sends an `N`. A `Q` once a session at login
+  (5 s after the first `PLAYER_ENTERING_WORLD`) and from the Guild tab when stale, at most one a minute;
+  a received `Q` schedules ONE `B`, deferred 1-6 s and past a minute after our last reply, coalesced,
+  never dropped. Received `B`/`N` (GUILD only, our own echo dropped) merge into
+  `GnomesweeperDB.social.guilds[guildKey][memberKey]`; members silent 30 days are pruned at login; a guild
+  change cancels the pending reply (the guild first known at login is not a change), and the login
+  query waits for the guild to be known (a slow login). Sends go through **ChatThrottleLib** when
+  loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
+  `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
+  can never cost the account's best. Reading never creates the table, except a record of this
+  character's seeded from the scores, kept at once (a preview could be lost to an alt's new best). Reset best times clears `mine`. **The Guild tab** (Window's Best times: You |
+  Guild): per difficulty the guild's best to the tenth, who and when, "you: 2 of 5", the top 5 in a
+  row's tooltip, the guild's name at the bottom; it refreshes when a time arrives
+  (`Window.SocialChanged`). And phase 0's **`/gsweep guildprobe`** (for
   measuring): every way the client names this character, then a v1 `P` message to the guild (a type no
   v1 client knows); the server echoes it, and every `CHAT_MSG_ADDON` argument and `Ambiguate`'s answers
   are logged and kept in `GnomesweeperDB.guildProbe` for a `/reload`. **Measured (70205):** the guild

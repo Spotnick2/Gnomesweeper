@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Your guild's best times**: Best times has a **Guild** tab. Guildmates with Gnomesweeper share their times (hidden, never in chat), and you see the guild's best at each difficulty, who set it, and where you stand. Hover a difficulty for the top five.
 - **En français !** Gnomesweeper speaks French on a French client: every window, tooltip, setting and chat message, with French decimals (00:42,6) and dates. Spotted a word that sounds off? Report it on GitHub.
 
 ## v0.1.0-beta

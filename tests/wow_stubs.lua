@@ -253,7 +253,7 @@ end
 function WoW.reset()
     WoW.frames, WoW.chat = {}, {}
     WoW.widgets = {}
-    WoW.guild, WoW.addonSent, WoW.prefixes = nil, {}, {}
+    WoW.guild, WoW.addonSent, WoW.prefixes, WoW.guildLoading, WoW.addonResult = nil, {}, {}, nil, nil
     WoW.addonSender = "Fizzle Sprocketwhistle"     -- as measured (70205): the full name, no realm
     WoW.now = 0
     WoW.mouseDown = false
@@ -310,8 +310,9 @@ function UnitFullName(unit) if unit == "player" then return WoW.playerName, WoW.
 -- to its sender as CHAT_MSG_ADDON, from WoW.addonSender. Measured (70205, phase 0): the
 -- sender is the full name with the surname and no realm; Ambiguate changes nothing.
 function IsInGuild() return WoW.guild ~= nil end
+-- WoW.guildLoading: in a guild, but the client doesn't know which yet (just after login).
 function GetGuildInfo(unit)
-    if unit == "player" and WoW.guild then return WoW.guild, "Member", 3, nil end
+    if unit == "player" and WoW.guild and not WoW.guildLoading then return WoW.guild, "Member", 3, nil end
     return nil
 end
 function Ambiguate(fullName, context) return fullName end      -- measured a no-op on a guild sender (70205)
@@ -321,6 +322,7 @@ C_ChatInfo = {
         return 0
     end,
     SendAddonMessage = function(prefix, message, chatType, target)
+        if WoW.addonResult and WoW.addonResult ~= 0 then return WoW.addonResult end   -- a refused send (a test sets it)
         table.insert(WoW.addonSent, { prefix = prefix, message = message, chatType = chatType, target = target })
         if chatType == "GUILD" and WoW.guild then
             WoW.fire("CHAT_MSG_ADDON", prefix, message, "GUILD", WoW.addonSender, WoW.addonSender, 0, 0, "", 0)

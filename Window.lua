@@ -171,6 +171,9 @@ local function recordScores(was, state)
     if not category then return end
     if was == "ready" and state ~= "ready" then Scores.Started(scores(), category) end
     if state == "won" and was ~= "won" then
+        -- This character's own best first (#15): its seeding reads the account's scores, which
+        -- must not yet hold this win, or the win would count as already held and send nothing.
+        pcall(GS.Social.RecordWin, category, game:Elapsed(GetTime()))   -- never at the scores' expense
         local isNew, previous = Scores.Won(scores(), category, {
             time = game:Elapsed(GetTime()),
             at = time(),
@@ -661,16 +664,51 @@ end
 ------------------------------------------------------------
 
 local BESTS_W, BESTS_ROW = 264, 44
+local bestsMode = "you"     -- the best times panel's tab: "you" (the account's) or "guild" (#15)
+local GUILD_TOP = 5         -- a guild row's tooltip lists this many
+local TABS_H, TAB_W = 26, 72   -- the tabs' row under the title
 
 local function bestsRuleText()
     return rule == "cell" and L["First click: one safe tile (Windows XP's rule)."]
         or L["First click: always opens an area."]
 end
 
+-- A guild time, to the tenth: guildmates are ranked to the hundredth (Guild.lua).
+local function csTime(cs)
+    return Layout.FormatTenths(cs / 100, Board.DisplaySeconds(math.huge), GS.LOCALE.decimal)
+end
+
+-- The Guild tab (#15): per difficulty, the guild's best and where you stand.
+local function fillGuild(p)
+    local view = GS.Social.View()
+    local gname = view.name
+    for _, key in ipairs(Board.PRESET_ORDER) do
+        local row = p.rows[key]
+        local list = view.ranking(Scores.Category(key, rule))
+        row.ranking = list
+        local first = list[1]
+        if first then
+            row.time:SetText(csTime(first.cs))
+            row.who:SetText(first.name .. "  " .. DOT .. "  " .. GS.FormatDate(first.at))
+        else
+            row.time:SetText("-")
+            row.who:SetText(gname and L["No time shared yet"] or "")
+        end
+        local rank
+        for i, r in ipairs(list) do if r.mine then rank = i end end
+        row.record:SetText(rank and string.format(L["you: %d of %d"], rank, #list)
+            or (#list > 0 and string.format(L["%d with a time"], #list) or ""))
+    end
+    local ruleWord = rule == "cell" and L["One safe tile"] or L["Opens an area"]
+    p.rule:SetText(gname and (gname .. "  " .. DOT .. "  " .. ruleWord) or L["Not in a guild."])
+end
+
 -- Fills the panel from the saved scores. Reads only: never creates them.
 function fillBests()
     local p = ui.bests
     if not p then return end
+    for _, tab in pairs(p.tabs) do tab:setAccent(unpack(tab.mode == bestsMode and C.gold or C.menuText)) end
+    if bestsMode == "guild" then fillGuild(p); return end
     for _, key in ipairs(Board.PRESET_ORDER) do
         local row = p.rows[key]
         local best, played, won = statsFor(key)
@@ -691,7 +729,7 @@ end
 local function buildBests()
     local p = Widgets.GlassPanel(win)
     p:SetFrameLevel(win:GetFrameLevel() + 30)           -- over the board and the end overlay, like the list
-    p:SetSize(BESTS_W, 50 + #Board.PRESET_ORDER * BESTS_ROW + 26)
+    p:SetSize(BESTS_W, 50 + TABS_H + #Board.PRESET_ORDER * BESTS_ROW + 26)
     p:SetPoint("TOP", ui.hud, "TOP", 0, 0)
     p:EnableMouse(true)                                  -- the board under it takes no clicks
 
@@ -704,12 +742,30 @@ local function buildBests()
     p.close:setAccent(unpack(C.closeAccent))
     p.close:SetScript("OnClick", function() p:Hide() end)
 
+    -- The tabs (#15): yours (the account's bests) and the guild's, on their own row under
+    -- the title (beside it, a longer title, French « Meilleurs temps », ran into them).
+    p.tabs = {}
+    local prev
+    for _, t in ipairs({ { "you", L["You"] }, { "guild", L["Guild"] } }) do
+        local tab = Widgets.GlassButton(p, TAB_W, 20, { fontSize = 11 })
+        if prev then tab:SetPoint("LEFT", prev, "RIGHT", 6, 0) else tab:SetPoint("TOPLEFT", p, "TOPLEFT", 12, -38) end
+        tab.mode = t[1]
+        tab.label:SetText(t[2])
+        tab:SetScript("OnClick", function()
+            bestsMode = tab.mode
+            if bestsMode == "guild" then GS.Social.QueryIfStale() end
+            fillBests()
+        end)
+        p.tabs[t[1]] = tab
+        prev = tab
+    end
+
     p.rows = {}
     for i, key in ipairs(Board.PRESET_ORDER) do
         local col = Skin.DifficultyColor(key)
         local row = CreateFrame("Frame", nil, p)
         row:SetSize(BESTS_W - 20, BESTS_ROW - 4)
-        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -44 - (i - 1) * BESTS_ROW)
+        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -44 - TABS_H - (i - 1) * BESTS_ROW)
         row.bg = row:CreateTexture(nil, "BACKGROUND")
         row.bg:SetAllPoints(row)
         row.bg:SetColorTexture(1, 1, 1, 0.05)        -- neutral: rare blue on a blue tint was hard to read
@@ -731,16 +787,37 @@ local function buildBests()
         row.record = Glass.Font(row, 10, "RIGHT")
         row.record:SetPoint("TOPRIGHT", row.time, "BOTTOMRIGHT", 0, -2)
         row.record:SetTextColor(unpack(C.hint))
+        -- On the Guild tab, the top of the guild in this difficulty.
+        row:EnableMouse(true)
+        row:SetScript("OnEnter", function(self)
+            if bestsMode ~= "guild" or not self.ranking or #self.ranking == 0 then return end
+            GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+            GameTooltip:SetText(LABELS[key])
+            for i = 1, math.min(GUILD_TOP, #self.ranking) do
+                local r = self.ranking[i]
+                GameTooltip:AddLine(string.format("%d. %s  %s", i, r.name, csTime(r.cs)), 0.75, 0.78, 0.85)
+            end
+            GameTooltip:Show()
+        end)
+        row:SetScript("OnLeave", function() GameTooltip:Hide() end)
         p.rows[key] = row
     end
     p.rule = Glass.Font(p, 10, "LEFT")
     p.rule:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
     p.rule:SetTextColor(unpack(C.hint))
 
-    p:SetScript("OnShow", function() fillBests() end)
+    p:SetScript("OnShow", function()
+        if bestsMode == "guild" then GS.Social.QueryIfStale() end   -- reopened on the Guild tab
+        fillBests()
+    end)
     Window.Floating(p)
     p:Hide()
     ui.bests = p
+end
+
+-- Something arrived from the guild (Social.lua): the Guild tab shows it.
+function Window.SocialChanged()
+    if ui.bests and ui.bests:IsShown() and bestsMode == "guild" then fillBests() end
 end
 
 -- Show (or, with no argument, toggle) the best times panel. Opens the window.

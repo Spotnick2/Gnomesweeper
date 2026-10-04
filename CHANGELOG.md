@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Best times from a win**: the result panel of a cleared field has a Best times button, beside See the field.
 - **A new guild best gets a toast**: when a guildmate with Gnomesweeper beats the guild's best time, a small card shows it (never in combat). Turn it off in the settings.
 - **Your guild's best times**: Best times has a **Guild** tab. Guildmates with Gnomesweeper share their times (hidden, never in chat), and you see the guild's best at each difficulty, who set it, and where you stand. Hover a difficulty for the top five.
 - **En français !** Gnomesweeper speaks French on a French client: every window, tooltip, setting and chat message, with French decimals (00:42,6) and dates. Spotted a word that sounds off? Report it on GitHub.

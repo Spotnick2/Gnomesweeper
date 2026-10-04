@@ -130,9 +130,20 @@ phases 1 and 2). Our own echo is recognised by identity and dropped.
 So:
 
 - **The member key** is the sender as received, with `"-" .. GetNormalizedRealmName()` added when
-  it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that already carries a `-Realm`
-  (a guildmate from another realm, presumably: **unmeasured**, only one character tested) is kept
-  as it is. `Ambiguate` is not used (a no-op here).
+  it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that carries a `-Realm` is kept as
+  it is. `Ambiguate` is not used (a no-op here).
+- **Measured across connected realms (2026-10-04, two accounts):** Karuzo Macphisto, on ClassicBetaPvP
+  in a guild on ClassicBetaPvP2, reached a guildmate on ClassicBetaPvP2 as `"Karuzo Macphisto"`,
+  **with no realm**. So the receiver keys him `"Karuzo Macphisto-ClassicBetaPvP2"` (its own realm)
+  while he calls himself `-ClassicBetaPvP`. Harmless: a key is only compared on one client (names are
+  shown without the realm; a client recognises its own echo by its own key). The accepted risk: two
+  characters with the same name **and** surname on two connected realms, in one guild, would share an
+  entry.
+- **The beta's realms are pooled ("realmless"), which is why names travel without realms** (owner,
+  2026-10-04; AltStable goes through Battle.net to bypass it, which a guild can't). **Re-measure on the
+  live client** (`/gsweep guildprobe`): if senders gain a `-Realm` there, a guildmate's key changes once,
+  and the old entry shows beside the new one until it's forgotten (30 days silent). A one-time cosmetic
+  duplicate, not worth machinery now.
 - **Our own key** is built the same way from `API.PlayerFullName()` and `GetNormalizedRealmName()`,
   so our echo matches it and is dropped, and our alts in the guild match their own keys.
 - **The guild key** is the guild's name and **its own** realm (`GetGuildInfo`'s 4th answer, ours
@@ -202,6 +213,11 @@ The guild key is captured when a reply or a toast is scheduled; when it fires, a
 "synced" state.
 
 ## Friends (phase 3, #16, sketch only)
+
+**Battle.net first** (owner, 2026-10-04: AltStable's route): `C_BattleNet.SendGameData` crosses realms
+and factions and reaches the owner's other account; AltStable measured it end to end
+(`..\AltStable\docs\SYNC-DISCOVERY.md`). ChatThrottleLib with **a queue per destination** (AltStable's
+#138: one queue per prefix let one peer hold up the rest). WoW-friend whispers later, if at all.
 
 The same messages by **whisper** to WoW friends and by **`C_BattleNet.SendGameData`** to Battle.net
 friends (and same-account licences, measured by AltStable) playing Forever. Discovery without spam:

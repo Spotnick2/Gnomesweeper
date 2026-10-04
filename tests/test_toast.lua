@@ -9,6 +9,8 @@ local function N(cat, cs) return "1\tN\t" .. cat .. "=" .. cs .. "@" .. T end
 local function B(cat, cs) return "1\tB\t" .. cat .. "=" .. cs .. "@" .. T end
 local function card() return Gnomesweeper.Toast._test.card() end
 local function shown() return Gnomesweeper.Toast.IsShown() and card().text:GetText() or nil end
+-- The toast stays until it's clicked (owner): this is the click.
+local function dismiss() card()._scripts.OnMouseUp(card()) end
 
 -- Logged in, queried, heard the guild, and past the replies' window: toasts can show.
 local function synced(db)
@@ -63,8 +65,10 @@ do  -- synced: a strictly faster N toasts
     eq(c._strata, "FULLSCREEN_DIALOG", "...in the board's strata (review of #66: under it, it hid behind the board)")
     check(c:GetFrameLevel() >= 200, "...and above it")
     eq(c.face._texture, Gnomesweeper.Skin.TEXTURES.faceWon, "...with her laughing face")
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
-    eq(shown(), nil, "it goes after " .. Gnomesweeper.Toast.SHOW .. " s")
+    WoW.advance(600)
+    check(shown() ~= nil, "it stays, however long (owner: no timeout)")
+    dismiss()
+    eq(shown(), nil, "...until it's clicked")
     eq(Gnomesweeper.Window.win, nil, "(the game window was never built)")
 end
 
@@ -95,9 +99,9 @@ do  -- the queue: one at a time, the next after; a click puts one away
     from("Bob Cog", N("expert:area", 8000))
     from("Cal Bolt", N("expert:area", 7000))
     check(shown():find("Bob Cog", 1, true) ~= nil, "two arrive: the first shows")
-    card()._scripts.OnMouseUp(card())
+    dismiss()
     check(shown() and shown():find("Cal Bolt", 1, true) ~= nil, "a click puts it away, and the next shows")
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    dismiss()
     eq(shown(), nil, "...then nothing")
 end
 
@@ -106,7 +110,7 @@ do  -- rechecked when shown: one overtaken while it waited is dropped
     from("Bob Cog", N("expert:area", 8000))              -- on screen
     from("Cal Bolt", N("expert:area", 7000))             -- waits
     from("Dee Nut", N("expert:area", 6000))              -- waits, and beats Cal
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    dismiss()
     check(shown() and shown():find("Dee Nut", 1, true) ~= nil, "Cal's, overtaken by Dee's while it waited, is dropped: Dee's shows")
 end
 
@@ -238,7 +242,7 @@ do  -- damaged saved data: no error
     from("Bob Cog", N("expert:area", 8000))
     from("Cal Bolt", N("expert:area", 7000))             -- waiting
     GnomesweeperDB.social.guilds = 42                    -- a number: indexing it errors (a string would not)
-    local ok = pcall(function() WoW.advance(Gnomesweeper.Toast.SHOW + 0.1) end)
+    local ok = pcall(dismiss)                             -- the click: the next is rechecked
     check(ok, "a damaged cache when the next toast is rechecked: no Lua error")
 end
 
@@ -272,7 +276,7 @@ do  -- a real guild change restarts the sync, and asks the new guild (Codex, #66
     from("Dee Nut", N("expert:area", 6000))
     check(shown() ~= nil, "...then it toasts")
     -- Back to the first guild: heard afresh, not synced from before.
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    dismiss()
     WoW.guild = GUILD
     WoW.fire("PLAYER_GUILD_UPDATE", "player")
     eq(S._test.synced(GUILD .. "-Forever"), false, "rejoining a guild: not synced from before")
@@ -285,7 +289,7 @@ do  -- the guild's name gone for a moment when a toast ends: the queue waits, an
     from("Bob Cog", N("expert:area", 8000))              -- on screen
     from("Cal Bolt", N("expert:area", 7000))             -- waiting
     WoW.guildLoading = true                              -- the name gone for a moment
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)           -- Bob's ends
+    dismiss()           -- Bob's ends
     eq(shown(), nil, "(nothing shows while the guild isn't known)")
     eq(#S._test.queue(), 1, "...and the waiting one is kept")
     WoW.guildLoading = nil
@@ -314,7 +318,7 @@ do  -- leaving, then joining: the new guild is asked and synced (Codex, #66 foll
     from("Cal Bolt", N("expert:area", 7000))
     check(shown() ~= nil, "...and once heard and past its window, it toasts")
     -- Leaving and rejoining the same guild works the same way.
-    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    dismiss()
     WoW.guild = nil
     WoW.fire("PLAYER_GUILD_UPDATE", "player")
     WoW.addonSent = {}
@@ -324,6 +328,220 @@ do  -- leaving, then joining: the new guild is asked and synced (Codex, #66 foll
     for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = asked + 1 end end
     eq(asked, 1, "leaving and rejoining the same guild: asked again")
     eq(S._test.synced("Another Guild-Forever"), false, "...and heard afresh, not synced from before")
+end
+
+do  -- a slow /reload with no guild event after it: the login query retries (the owner's missing toast)
+    loadAddon()
+    WoW.guild, WoW.guildLoading = GUILD, true
+    WoW.fire("PLAYER_ENTERING_WORLD", false, true)       -- a /reload
+    WoW.advance(5.5)
+    local q = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then q = q + 1 end end
+    eq(q, 0, "(the guild not known yet 5 s after the reload: no query)")
+    WoW.guildLoading = nil                               -- known now, and no PLAYER_GUILD_UPDATE follows
+    WoW.advance(5.5)
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then q = q + 1 end end
+    eq(q, 1, "the login query retries until the guild is known, without waiting for an event")
+    from("Ann Gear", B("expert:area", 9000))
+    WoW.advance(75)
+    from("Bob Cog", N("expert:area", 8000))
+    check(shown() ~= nil, "...so the sync opens and a guild best toasts")
+end
+
+do  -- the retries stop: out of a guild, or after a minute
+    loadAddon()
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(120)
+    eq(#WoW.addonSent, 0, "not in a guild: nothing sent, and no endless retries")
+    local tries = 0
+    for _, line in ipairs(GnomesweeperDB.socialLog or {}) do if line:find("login query due", 1, true) then tries = tries + 1 end end
+    eq(tries, 1, "...one attempt, then it stops (not in a guild)")
+end
+
+do  -- the social log: every decision, with its reason
+    loadAddon()
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    from("Bob Cog", N("expert:area", 8000))              -- not synced yet
+    from("Ann Gear", B("expert:area", 9000))
+    WoW.advance(75)
+    from("Cal Bolt", N("expert:area", 9500))             -- synced, not faster
+    from("Dee Nut", N("expert:area", 7000))              -- a guild best
+    local log = table.concat(GnomesweeperDB.socialLog, "\n")
+    check(log:find("login (initial true", 1, true) ~= nil, "the log has the login")
+    check(log:find("Q to " .. GUILD .. "-Forever (forced): sent", 1, true) ~= nil, "...the query and its result")
+    check(log:find("no toast: not synced (heard true, first query", 1, true) ~= nil, "...why an early N didn't toast")
+    check(log:find("no toast: expert:area 9500 cs isn't faster than the best known, 8000 cs", 1, true) ~= nil, "...why a slow one didn't")
+    check(log:find("toast queued: expert:area 7000 cs", 1, true) ~= nil, "...and the one that did")
+    check(#GnomesweeperDB.socialLog <= Gnomesweeper.Social.LOG_KEEP, "at most LOG_KEEP lines")
+    WoW.chat = {}
+    WoW.slash("/gsweep guildprobe")
+    local said = false
+    for _, line in ipairs(WoW.chat) do if line:find("toasts: guild", 1, true) and line:find("synced true", 1, true) then said = true end end
+    check(said, "/gsweep guildprobe reports the toasts' state")
+end
+
+do  -- Reset best times tells the guild: online guildmates forget our times (the owner's reset)
+    local S = synced()
+    S.RecordWin("expert:area", 84)
+    WoW.addonSent = {}
+    local page                                           -- the button's path: Options.ResetClick twice
+    WoW.fire("PLAYER_LOGIN")
+    page = Gnomesweeper.Options._test.page
+    page:Show()
+    page.reset._scripts.OnClick(page.reset)
+    page.reset._scripts.OnClick(page.reset)
+    local r = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
+    eq(r, 1, "Reset best times sends one R to the guild")
+    eq(next(GnomesweeperDB.social.mine), nil, "...and our own times are gone")
+end
+
+do  -- receiving an R: that guildmate's times, and any toast of theirs waiting, go
+    local S = synced()
+    from("Bob Cog", N("expert:area", 8000))              -- on screen
+    from("Cal Bolt", N("intermediate:area", 9000))       -- waiting
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- a reset after those times
+    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(cal and next(cal.bests), nil, "an R drops that guildmate's times")
+    eq(#S._test.queue(), 0, "...and their waiting toast")
+    check(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Bob Cog-Forever"] ~= nil, "...nobody else's")
+    local log = table.concat(GnomesweeperDB.socialLog, "\n")
+    check(log:find("R from Cal Bolt-Forever", 1, true) ~= nil, "...logged")
+end
+
+do  -- the account's other characters send their own R at their next login, once
+    local S = synced()
+    Gnomesweeper.Social.Reset()                          -- on Fizzle
+    local saved = GnomesweeperDB
+    WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"   -- another character of the account
+    loadAddon({ db = saved })
+    WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    local r = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
+    eq(r, 1, "another character of the reset account sends its own R at login")
+    loadAddon({ db = GnomesweeperDB })                   -- and again, later
+    WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    r = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
+    eq(r, 0, "...once: not at every login")
+end
+
+----------------------------------------------------------------------------
+-- The review of #69 (the reset message)
+----------------------------------------------------------------------------
+local function rCount()
+    local n = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then n = n + 1 end end
+    return n
+end
+
+do  -- a win after the reset survives the R, whatever order they arrive in
+    local S = synced()
+    from("Cal Bolt", N("expert:area", 7000))             -- (at T) a time from before Cal's reset
+    from("Cal Bolt", "1\tN\tbeginner:area=900@" .. (T + 120))   -- a win after it...
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- ...and the reset, arriving after
+    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(e and e.bests["expert:area"], nil, "the R drops the time from before the reset")
+    eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 900, "...and keeps the win after it, though the R came later")
+end
+
+do  -- a refused reset stays pending: sent again at the next chance (Codex, #69)
+    local S = synced()
+    WoW.sendResults = { 10 }                             -- the R refused (NotInGuild)
+    S.Reset()
+    eq(rCount(), 0, "(the R refused)")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")            -- the next chance
+    eq(rCount(), 1, "a refused reset isn't counted as sent: it goes at the next chance")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "...once")
+end
+
+do  -- ...and refused later, through ChatThrottleLib's callback
+    local S = synced()
+    local queued = {}
+    ChatThrottleLib = { SendAddonMessage = function(self, prio, prefix, msg, ct, target, q, cb, arg)
+        queued[#queued + 1] = { msg = msg, cb = cb, arg = arg }
+    end }
+    S.Reset()
+    local r
+    for _, q in ipairs(queued) do if q.msg:match("^1\tR\t") then r = q end end
+    check(r ~= nil, "(the R queued in ChatThrottleLib)")
+    if r then r.cb(r.arg, false, 10) end                 -- it left, and was refused
+    ChatThrottleLib = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "refused through the callback: still pending, sent at the next chance")
+end
+
+do  -- a guild found after the login retries still gets the pending reset (Codex, #69)
+    local S = synced()
+    S.Reset()                                            -- sent on this character
+    local saved = GnomesweeperDB
+    loadAddon({ db = saved })                            -- another character of the account
+    WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"
+    WoW.guild, WoW.guildLoading = GUILD, true            -- its guild unknown for over a minute
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(70)
+    eq(rCount(), 0, "(no reset sent while the guild isn't known)")
+    WoW.guildLoading = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "the guild found through the event: the pending reset goes")
+end
+
+do  -- one priority, and a pending reset first: the sender's order is reset, then newer times (Codex, #69)
+    local S = synced()
+    S.RecordWin("beginner:area", 10)                     -- a 10 s best, before the reset
+    S.Reset()
+    WoW.addonSent = {}
+    S.RecordWin("beginner:area", 20)                     -- a slower win after it
+    local seq = {}
+    for _, m in ipairs(WoW.addonSent) do seq[#seq + 1] = m.message:sub(3, 3) end
+    eq(table.concat(seq), "N", "(the R already went with the reset; the new win's N follows)")
+    S.Reset()                                            -- a second reset, not sent: refused
+    local s = GnomesweeperDB.social
+    s.resetSent = {}                                     -- (as if this character's R were still pending)
+    WoW.addonSent = {}
+    S.RecordWin("beginner:area", 30)
+    seq = {}
+    for _, m in ipairs(WoW.addonSent) do seq[#seq + 1] = m.message:sub(3, 3) end
+    eq(table.concat(seq), "RN", "a pending reset goes before the new win's N, never after (no B: no times from before the win)")
+end
+
+do  -- the receiver: a slower post-reset win in the same category survives; a late old B doesn't restore (Codex, #69)
+    local S = synced()
+    from("Cal Bolt", B("beginner:area", 1000))           -- Cal's 10 s, at T
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- Cal resets
+    from("Cal Bolt", "1\tN\tbeginner:area=2000@" .. (T + 120))   -- a slower win after it
+    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(cal.bests["beginner:area"].cs, 2000, "the slower win after the reset is kept (the old best is gone first)")
+    from("Cal Bolt", B("beginner:area", 1000))           -- a late B from before the reset
+    eq(cal.bests["beginner:area"].cs, 2000, "a late message from before the reset doesn't bring the old best back")
+    from("Dee Nut", "1\tR\t" .. (T + 60))                -- an R before anything is cached
+    from("Dee Nut", B("expert:area", 5000))              -- then an older B
+    local dee = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Dee Nut-Forever"]
+    eq(dee and dee.bests["expert:area"], nil, "an R arriving first still refuses an older message after it")
+end
+
+do  -- every send at one priority (ChatThrottleLib keeps one priority in order)
+    local S = synced()
+    local prios = {}
+    ChatThrottleLib = { SendAddonMessage = function(self, prio) prios[prio] = true end }
+    WoW.advance(301)                                     -- (so the query is stale: it really goes)
+    check(S.QueryIfStale(), "(the query sent)")
+    S.RecordWin("expert:area", 50); S.Reset()
+    from("Ann Gear", "1\tQ")
+    WoW.advance(70)
+    ChatThrottleLib = nil
+    local n = 0
+    for p in pairs(prios) do n = n + 1 end
+    eq(n, 1, "Q, N, R and B all go at one priority")
 end
 
 done("test_toast")

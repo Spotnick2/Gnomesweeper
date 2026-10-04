@@ -5,7 +5,15 @@
 --
 -- A message is fields separated by a tab:  1\t<type>[\t<record>...]
 --   Q  a query: no records         B  my bests: 1 to 6 records, a category once
---   N  a new best: exactly one
+--   N  a new best: exactly one      R  forget my times from before <at>: one epoch, no records
+-- R came after v1 shipped with Q, B and N: a client from then ignores it as an unknown type,
+-- which is the rule this format was built on, so it needs no version bump. It carries the
+-- reset's time so a record earned after it survives, whatever order the messages arrive in
+-- (Codex, #69): ordering across ChatThrottleLib's priorities isn't guaranteed.
+--
+--   Guild.Encode("R", nil, at)        -> "1\tR\t<at>"
+--   Guild.Forget(entry, at)            -> the entry, its records from before at dropped, and at kept
+--                                         as its cutoff: Merge refuses anything older (a late message)
 -- A record is <category>=<cs>@<at>: one of the six categories, the time in whole
 -- centiseconds (100..9999999, digits only, no leading zero), the win's epoch
 -- (1000000000..9999999999). Anything else is malformed, and a malformed message is
@@ -34,7 +42,7 @@ for _, c in ipairs(Guild.CATEGORIES) do KNOWN[c] = true end
 Guild.MIN_CS, Guild.MAX_CS = 100, 9999999            -- 1 s to about 27 h
 Guild.MIN_AT, Guild.MAX_AT = 1000000000, 9999999999   -- 2001 to 2286
 Guild.MAX_BYTES = 255
-Guild.TYPES = { Q = true, B = true, N = true }
+Guild.TYPES = { Q = true, B = true, N = true, R = true }
 
 -- The one eligibility rule (docs/SOCIAL.md): what is sent, ranked and compared.
 -- A first click that clears the board at 0 s is a best for the "You" tab, not for a guild.
@@ -54,11 +62,16 @@ local function validRecord(r)
         and validNumber(r.at, Guild.MIN_AT, Guild.MAX_AT)
 end
 
-function Guild.Encode(kind, records)
+function Guild.Encode(kind, records, at)
     records = records or {}
     if not Guild.TYPES[kind] then return nil, "type" end
+    if kind == "R" then
+        if #records ~= 0 then return nil, "count" end
+        if not validNumber(at, Guild.MIN_AT, Guild.MAX_AT) then return nil, "record" end
+        return string.format("%s\tR\t%.0f", Guild.VERSION, at)
+    end
     local n = #records
-    if (kind == "Q" and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
+    if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "count"
     end
     local parts, seen = { Guild.VERSION, kind }, {}
@@ -99,7 +112,12 @@ function Guild.Parse(msg)
     local kind = f[2]
     if not Guild.TYPES[kind] then return nil, "type" end
     local n = #f - 2
-    if (kind == "Q" and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
+    if kind == "R" then
+        local at = n == 1 and integer(f[3], Guild.MIN_AT, Guild.MAX_AT)
+        if not at then return nil, "malformed" end
+        return { type = "R", records = {}, at = at }
+    end
+    if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "malformed"
     end
     local records, seen = {}, {}
@@ -126,14 +144,30 @@ end
 function Guild.Merge(entry, records, seen)
     entry = type(entry) == "table" and entry or {}
     if type(entry.bests) ~= "table" then entry.bests = {} end
+    -- The member's reset (Forget): a record from before it is refused, however late it arrives.
+    local cutoff = type(entry.resetAt) == "number" and entry.resetAt or 0
     for _, r in ipairs(records) do
         local held = entry.bests[r.cat]
-        if type(held) ~= "table" or not validNumber(held.cs, Guild.MIN_CS, Guild.MAX_CS)
-            or not validNumber(held.at, Guild.MIN_AT, Guild.MAX_AT) or Guild.Better(r, held) then
+        if r.at >= cutoff and (type(held) ~= "table" or not validNumber(held.cs, Guild.MIN_CS, Guild.MAX_CS)
+            or not validNumber(held.at, Guild.MIN_AT, Guild.MAX_AT) or Guild.Better(r, held)) then
             entry.bests[r.cat] = { cs = r.cs, at = r.at }
         end
     end
     entry.seen = seen
+    return entry
+end
+
+-- A reset (R): a member's records from before `at` go; a record earned after it stays.
+-- nil when nothing is left (the member is then forgotten).
+-- The entry is kept, even with nothing left, so its cutoff holds against a late message from
+-- before the reset (Codex, #69: a throttled B can arrive after the R). Prune forgets it in time.
+function Guild.Forget(entry, at)
+    entry = type(entry) == "table" and entry or {}
+    if type(entry.bests) ~= "table" then entry.bests = {} end
+    for cat, b in pairs(entry.bests) do
+        if type(b) ~= "table" or type(b.at) ~= "number" or b.at < at then entry.bests[cat] = nil end
+    end
+    if type(entry.resetAt) ~= "number" or at > entry.resetAt then entry.resetAt = at end
     return entry
 end
 

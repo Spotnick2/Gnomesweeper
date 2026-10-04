@@ -1,9 +1,9 @@
 -- Toast.lua: the guild-best card (#17, docs/SOCIAL.md). A small glass panel near the
 -- top of the screen, on UIParent (the board open or not), with the mascot's face and a
--- line of text; a click puts it away. Built the first time it's needed. Social.lua
--- decides when one shows (the rules, the queue, combat); this only draws one.
+-- line of text. It stays until it's clicked (owner: no timeout). Built the first time it's
+-- needed. Social.lua decides when one shows (the rules, the queue, combat); this only draws one.
 --
---   Toast.Show(text, onDone)   shows it for Toast.SHOW seconds; onDone() when it goes
+--   Toast.Show(text, onDone)   shows it until a click; onDone() then
 --   Toast.Hide()               puts it away now (combat starting), without onDone
 --   Toast.IsShown()
 
@@ -16,11 +16,10 @@ GS.Toast = Toast
 local Skin, Glass, Widgets = GS.Skin, GS.Glass, GS.Widgets
 local T, C = Skin.TEXTURES, Skin.COLORS
 
-Toast.SHOW = 6                -- seconds on screen
 Toast.W, Toast.H = 320, 58
 Toast.TOP = -110              -- below the top of the screen, clear of the minimap and buffs' row
 
-local card, token = nil, 0    -- token: a new show (or a hide) cancels the last one's timer
+local card
 
 local function build()
     card = Widgets.GlassPanel(UIParent)
@@ -51,21 +50,12 @@ end
 
 function Toast.Show(text, onDone)
     if not card then build() end
-    token = token + 1
-    local mine = token
     card.text:SetText(text)
     card.onDone = onDone
     card:Show()
-    C_Timer.After(Toast.SHOW, function()
-        if token ~= mine then return end
-        card:Hide()
-        card.onDone = nil
-        if onDone then onDone() end
-    end)
 end
 
 function Toast.Hide()
-    token = token + 1
     if card then
         card:Hide()
         card.onDone = nil

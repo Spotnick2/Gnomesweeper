@@ -150,4 +150,32 @@ eq(G.Display("Kaleid Sumner-ClassicBetaPvE", "ClassicBetaPvE"), "Kaleid Sumner",
 eq(G.Display("Kaleid Sumner-OtherRealm", "ClassicBetaPvE"), "Kaleid Sumner-OtherRealm", "another realm is")
 eq(G.Display("Zoë Écrou-R", "R"), "Zoë Écrou", "UTF-8 names are kept as they are")
 
+-- R: forget my times from before <at> (a reset); after Q, B, N shipped, so older clients ignore it
+eq(G.Encode("R", nil, T), "1\tR\t" .. T, "R: the reset's time, no records")
+eq(G.Encode("R", { rec("expert:area", 8412) }, T), nil, "R carries no records")
+eq(G.Encode("R", nil, 123), nil, "...and a real epoch")
+local pr = G.Parse("1\tR\t" .. T)
+eq(pr and pr.type, "R", "R parses")
+eq(pr and pr.at, T, "...with its time")
+eq(G.Parse("1\tR"), nil, "an R without its time is malformed")
+eq(G.Parse("1\tR\t0000000000"), nil, "...or with a bad one")
+eq(G.Parse("1\tR\texpert:area=8412@" .. T), nil, "...or with a record")
+-- Forget: the records from before the reset go, a newer one stays
+local fe = { seen = 1, bests = { ["expert:area"] = { cs = 8000, at = T - 10 }, ["beginner:area"] = { cs = 900, at = T + 10 } } }
+fe = G.Forget(fe, T)
+eq(fe.bests["expert:area"], nil, "Forget drops a record from before the reset")
+eq(fe.bests["beginner:area"].cs, 900, "...and keeps one earned after it (whatever order they arrived in)")
+local emptied = G.Forget({ bests = { ["expert:area"] = { cs = 8000, at = T - 10 } } }, T)
+eq(next(emptied.bests), nil, "nothing left: no records")
+eq(emptied.resetAt, T, "...but the entry stays, with the reset as its cutoff")
+G.Merge(emptied, { rec("expert:area", 5000, T - 5) }, 9)
+eq(emptied.bests["expert:area"], nil, "a record from before the reset, arriving late, is refused")
+G.Merge(emptied, { rec("expert:area", 9000, T + 5) }, 9)
+eq(emptied.bests["expert:area"].cs, 9000, "...one from after it is kept")
+local fresh = G.Forget(nil, T)
+eq(fresh.resetAt, T, "an R before anything cached: an entry with just the cutoff")
+G.Merge(fresh, { rec("beginner:area", 500, T - 1) }, 9)
+eq(fresh.bests["beginner:area"], nil, "...so an older message arriving after it is refused too")
+eq(#G.Ranking({ ["X-R"] = emptied, ["Y-R"] = fresh }, "beginner:area"), 0, "an emptied entry ranks nothing")
+
 done("test_guild")

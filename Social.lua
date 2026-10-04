@@ -7,7 +7,8 @@
 --   Social.Ranking(category)             the guild's times for the Guild tab, best first
 --   Social.GuildName()                   the guild's name, or nil
 --   Social.QueryIfStale()                the Guild tab opening: ask, if not asked lately
---   Social.Reset()                       Reset best times: this account's own bests go
+--   Social.Reset()                       Reset best times: this account's own bests go, and
+--                                        the guild is told to forget them (R)
 --   Social.SettingsChanged()             the toasts' setting: off clears the queue
 --
 -- The guild-best toast (#17): a guildmate's N that is strictly faster than every time
@@ -38,6 +39,9 @@ Social.FORGET = 30 * 86400       -- a member silent this long is forgotten
 -- After our query, the replies' whole window: a reply deferred past the minute, its jitter, and slack.
 Social.SYNC_WINDOW = Social.REPLY_GAP + Social.JITTER_MAX + 4
 Social.TOAST_QUEUE = 3           -- toasts waiting, at most (the oldest go)
+Social.LOGIN_RETRIES = 12        -- the guild not known yet at login: retry every LOGIN_DELAY, up to a minute
+Social.LOG_KEEP = 60             -- lines kept in GnomesweeperDB.socialLog
+Social.PRIO = "NORMAL"           -- every message's ChatThrottleLib priority: one, so they stay in order
 
 local registered                 -- the prefix's registration result, once asked
 local lastQuery                  -- GetTime() of our last Q
@@ -54,6 +58,18 @@ local queue = {}                 -- toasts waiting: { guild, key, cat, cs }
 local current                    -- the toast on screen
 
 local function db() return GnomesweeperDB end
+
+-- The social log (the owner's toast that didn't show, 2026-10-04): what the guild key was,
+-- every query and its result, every message, every toast decision and its reason. The last
+-- LOG_KEEP lines, in GnomesweeperDB.socialLog, for a /reload to write to disk and be read.
+local function slog(fmt, ...)
+    local d = db()
+    if type(d) ~= "table" then return end
+    if type(d.socialLog) ~= "table" then d.socialLog = {} end
+    local ok, line = pcall(string.format, fmt, ...)
+    table.insert(d.socialLog, string.format("%s t=%.1f  %s", date("%H:%M:%S"), GetTime(), ok and line or fmt))
+    while #d.socialLog > Social.LOG_KEEP do table.remove(d.socialLog, 1) end
+end
 local function realm() return GetNormalizedRealmName() or "" end
 local function ownKey() return Guild.Key(GS.API.PlayerFullName(), realm()) end
 
@@ -145,20 +161,24 @@ local function register()
     return registered
 end
 
--- ChatThrottleLib (Libs\, as AltStable) paces it when it's there; else a direct send.
+-- ChatThrottleLib (Libs\, as AltStable) paces it when it's there; else a direct send. Every
+-- message goes at ONE priority (Social.PRIO): the library keeps a pipe first-in, first-out
+-- but not across priorities, and a reset must reach a guildmate before any newer time
+-- (Codex, #69: a throttled BULK B arrived after a NORMAL R).
 -- The result is read (docs/SOCIAL.md): a failure calls onFail (with ChatThrottleLib, when the
 -- message actually leaves, which can be later) and is kept in Social.lastFailure, which
 -- /gsweep guildprobe reports. Returns false when it failed at once.
 local function failed(result, onFail)
     Social.lastFailure = tostring(result) .. " at " .. date("%H:%M:%S")
+    slog("send FAILED: %s", tostring(result))
     if onFail then onFail() end
 end
-local function send(msg, prio, onFail)
+local function send(msg, onFail)
     if not (msg and IsInGuild()) then return false end
     register()
     local ctl = rawget(_G, "ChatThrottleLib")
     if ctl and ctl.SendAddonMessage then
-        local ok, err = pcall(ctl.SendAddonMessage, ctl, prio or "BULK", Social.PREFIX, msg, "GUILD", nil, nil,
+        local ok, err = pcall(ctl.SendAddonMessage, ctl, Social.PRIO, Social.PREFIX, msg, "GUILD", nil, nil,
             function(_, didSend, result) if not didSend then failed(result, onFail) end end)
         if not ok then failed(err, onFail) end
         return ok
@@ -170,6 +190,8 @@ local function send(msg, prio, onFail)
 end
 
 -- A query: counted only if it isn't refused (a failed one would block the tab's for 5 minutes).
+local sendReset                  -- a pending reset (defined with Reset), sent before any newer time
+
 local function query(force)
     local gk = guildKey()
     if not gk then return false end
@@ -180,10 +202,12 @@ local function query(force)
     local wasFirst = firstQuery[gk]
     firstQuery[gk] = firstQuery[gk] or now
     local mineQ = now
-    return send(Guild.Encode("Q"), "BULK", function()
+    local ok = send(Guild.Encode("Q"), function()
         if lastQuery == mineQ then lastQuery, queriedGuild = wasQuery, wasGuild end
         if firstQuery[gk] == mineQ then firstQuery[gk] = wasFirst end
     end)
+    slog("Q to %s (%s): %s", gk, force and "forced" or "rate-limited", ok and "sent" or "refused")
+    return ok
 end
 
 function Social.QueryIfStale()
@@ -213,7 +237,8 @@ local function scheduleReply(gk)
         local wasReply = lastReply
         lastReply = GetTime()
         local mineR = lastReply
-        send(Guild.Encode("B", records), "BULK", function()
+        sendReset()                                       -- a reset still pending goes first
+        send(Guild.Encode("B", records), function()
             if lastReply == mineR then lastReply = wasReply end   -- a failed reply doesn't hold back the next
         end)
     end)
@@ -231,14 +256,51 @@ function Social.RecordWin(category, seconds)
     local held = m[category]
     if type(held) == "table" and type(held.cs) == "number" and held.cs <= cs then return false end
     local at = time()
+    -- A reset still pending goes first, with the bests from BEFORE this win (Codex, #69): in its
+    -- trailing B, this win would reach a guildmate before its own N, and the N would then be a
+    -- tie with itself, and toast nothing.
+    if guildKey() then sendReset() end
     m[category] = { cs = cs, at = at }
-    if guildKey() then send(Guild.Encode("N", { { cat = category, cs = cs, at = at } }), "NORMAL") end
+    if guildKey() then send(Guild.Encode("N", { { cat = category, cs = cs, at = at } })) end
     return true
 end
 
-function Social.Reset()
+-- Reset best times: this account's characters' own bests go, and the guild is told (an R:
+-- every online guildmate drops the entry). The reset is account-wide but a character can
+-- only speak for itself, so its time is kept: each other character of the account sends its
+-- own R the next time it logs in, once (the owner's reset that didn't reach the guild).
+-- Pending until it goes: marked sent now, and put back if the send is refused (at once, or
+-- later through ChatThrottleLib's callback), as queries and replies are (Codex, #69). It
+-- carries the reset's time: a guildmate drops only the records from before it, so a win
+-- earned after the reset survives whatever order the messages arrive in.
+sendReset = function()
     local s = social(false)
-    if s then s.mine = {} end
+    local key = ownKey()
+    if not (s and key and type(s.resetAt) == "number" and guildKey()) then return end
+    if type(s.resetSent) ~= "table" then s.resetSent = {} end
+    if (s.resetSent[key] or 0) >= s.resetAt then return end
+    local was, at = s.resetSent[key], s.resetAt
+    s.resetSent[key] = at
+    -- (A refusal, at once or later, calls this back: send() does for both.)
+    local ok = send(Guild.Encode("R", nil, at), function()
+        if s.resetSent[key] == at then s.resetSent[key] = was end
+    end)
+    slog("R (before %d) to %s: %s", at, tostring(guildKey()), ok and "sent" or "refused")
+    -- And this character's current bests right behind it, in the same first-in, first-out
+    -- queue (Codex, #69): an R refused earlier may have let a slower post-reset N through,
+    -- which a guildmate measured against the old best and dropped; the R that finally goes
+    -- is always followed by what's true now, so the guild ends up right.
+    if ok then
+        local records = ownRecords()
+        if #records > 0 then send(Guild.Encode("B", records)) end
+    end
+end
+
+function Social.Reset()
+    local s = social(true)
+    s.mine = {}
+    s.resetAt = time()
+    sendReset()
 end
 
 ------------------------------------------------------------
@@ -377,13 +439,41 @@ local function receive(text, channel, sender)
         scheduleReply(gk)
         return
     end
+    if msg.type == "R" then
+        local s = social(false)
+        local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
+        if type(bucket) ~= "table" then
+            s = social(true)
+            s.guilds[gk] = s.guilds[gk] or {}
+            bucket = s.guilds[gk]
+        end
+        bucket[key] = Guild.Forget(bucket[key], msg.at)   -- kept with its cutoff, even empty
+        bucket[key].seen = time()
+        for i = #queue, 1, -1 do
+            if queue[i].key == key and (queue[i].at or 0) < msg.at then table.remove(queue, i) end
+        end
+        slog("R from %s: their times from before %d forgotten", key, msg.at)
+        if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end
+        return
+    end
     heard[gk] = true
+    slog("%s from %s (%d record(s))", msg.type, key, #msg.records)
     -- A guild best? Decided before it's merged in (it would be compared with itself).
     local toast
-    if msg.type == "N" and synced(gk) and db().guildToasts ~= false then
+    if msg.type == "N" then
         local r = msg.records[1]
         local known = fastestKnown(gk, r.cat, nil)
-        if not known or r.cs < known then toast = { guild = gk, key = key, cat = r.cat, cs = r.cs } end
+        if db().guildToasts == false then
+            slog("  no toast: the setting is off")
+        elseif not synced(gk) then
+            slog("  no toast: not synced (heard %s, first query %s)", tostring(heard[gk]),
+                firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never")
+        elseif known and r.cs >= known then
+            slog("  no toast: %s %d cs isn't faster than the best known, %d cs", r.cat, r.cs, known)
+        else
+            toast = { guild = gk, key = key, cat = r.cat, cs = r.cs, at = r.at }
+            slog("  toast queued: %s %d cs (best known %s)", r.cat, r.cs, tostring(known))
+        end
     end
     local s = social(true)
     if type(s.guilds[gk]) ~= "table" then s.guilds[gk] = {} end
@@ -446,6 +536,11 @@ function Social.Probe()
     local ok, result = pcall(C_ChatInfo.SendAddonMessage, Social.PREFIX, message, "GUILD")
     log("SendAddonMessage(GUILD) = %s", ok and show(result) or ("error " .. tostring(result)))
     log("last guild send failure: %s", show(Social.lastFailure))
+    local gk = guildKey()
+    log("toasts: guild %s, synced %s, heard %s, first query %s, waiting %d, setting %s", show(gk),
+        show(gk and synced(gk)), show(gk and heard[gk]),
+        gk and firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never",
+        #queue, show(db().guildToasts))
     log("waiting for the echo (it should arrive within a second or two); then /reload to save")
 end
 
@@ -468,6 +563,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" then
         if loggedIn then return end                    -- once a session, not on every loading screen
         loggedIn = true
+        local initial, reloading = ...
+        slog("login (initial %s, reload %s), guild now %s", tostring(initial), tostring(reloading), tostring(guildKey()))
         register()
         inCombat = UnitAffectingCombat("player") and true or false
         -- This character's records from the account's scores, kept now (Codex, #63): left
@@ -478,17 +575,29 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if s and type(s.guilds) == "table" then
             for _, bucket in pairs(s.guilds) do Guild.Prune(bucket, time(), Social.FORGET) end
         end
-        C_Timer.After(Social.LOGIN_DELAY, function()
+        -- The login query. The guild may not be known yet (after a /reload on this beta, its
+        -- name can come late and PLAYER_GUILD_UPDATE may not follow): retry every LOGIN_DELAY,
+        -- up to LOGIN_RETRIES times, rather than wait for an event that may never come.
+        local tries = 0
+        local function loginQuery()
+            tries = tries + 1
             loginDue = true
             local gk = guildKey()
+            slog("login query due (try %d): guild %s, in a guild %s", tries, tostring(gk), tostring(IsInGuild()))
             if gk and currentGuild == nil then currentGuild = gk end
             -- Already asked this guild (the Guild tab, in the first seconds): that was the login
             -- query; the once-a-minute limit holds (Codex, #63).
             if gk and queriedGuild == gk then loginDue = false end
             if gk and loginDue and query(true) then loginDue = false end
-        end)
+            if gk then sendReset() end                       -- a reset made on another character
+            if loginDue and IsInGuild() and tries < Social.LOGIN_RETRIES then
+                C_Timer.After(Social.LOGIN_DELAY, loginQuery)
+            end
+        end
+        C_Timer.After(Social.LOGIN_DELAY, loginQuery)
     elseif event == "PLAYER_GUILD_UPDATE" then
         local gk = guildKey()
+        slog("PLAYER_GUILD_UPDATE: guild %s (was %s), in a guild %s", tostring(gk), tostring(currentGuild), tostring(IsInGuild()))
         -- In a guild but its name not loaded for a moment (a zone change): not a change (review of #66).
         if gk == nil and IsInGuild() then gk = currentGuild end
         if currentGuild ~= nil and gk ~= currentGuild then
@@ -509,6 +618,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         -- query made sets queriedGuild, so the roster's frequent updates don't repeat it.
         local known = guildKey()
         if loggedIn and known and queriedGuild ~= known and query(false) then loginDue = false end
+        if loggedIn and known then sendReset() end              -- a reset still pending (Codex, #69)
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
         showNext()                                        -- toasts that waited for the guild's name
     elseif event == "PLAYER_REGEN_DISABLED" then
@@ -536,6 +646,8 @@ Social._test = {
     queue = function() return queue end,
     current = function() return current end,
     synced = synced,
+    firstQuery = function() return firstQuery end,
+    heard = function() return heard end,
     reset = function()
         registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false
         firstQuery, heard, queue, current, inCombat = {}, {}, {}, nil, nil

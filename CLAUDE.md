@@ -320,8 +320,8 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   an epoch past 2038 overflows it (measured: 9999999999 printed as -2147483648).
 - **`Toast.lua`** (#17): the guild-best card: a `GlassPanel` on `UIParent` at the board's strata
   (FULLSCREEN_DIALOG) and above it (level 200), near the
-  top of the screen (the board open or not), her laughing face and a line, `Toast.SHOW` (6) seconds, a
-  click puts it away; built on first use. `Toast.Show(text, onDone)`, `Toast.Hide()` (no `onDone`).
+  top of the screen (the board open or not), her laughing face and a line; it **stays until it's clicked**
+  (owner: no timeout), and the click shows the next; built on first use. `Toast.Show(text, onDone)`, `Toast.Hide()` (no `onDone`).
   `Social.lua` decides when: a guildmate's `N` strictly faster than every time known in that category
   (the guild's and ours), decided before it's merged and rechecked when shown, once **synced** (a `B`
   or an `N` heard this session and `SYNC_WINDOW` since our first query, derived from the replies'
@@ -330,6 +330,21 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   Sounds: `PLAYER_REGEN_DISABLED` hides one showing and puts it back first); a guild change clears them
   (a moment without the guild's name isn't one); the "Guild best toasts" setting (`guildToasts`, on) turned off clears them
   (`Social.SettingsChanged`, from `Window.SettingsChanged`).
+- **The `R` message (a reset), `1	R	<at>`:** "Reset best times" clears this account's own bests and
+  sends `R` with the reset's time; every online guildmate drops that character's records **from before
+  it** (`Guild.Forget`: a win after the reset survives any message order) and its toasts from before it.
+  A refused `R` stays pending (restored by `send()`'s failure path, at once or through ChatThrottleLib's
+  callback), and it also goes when the guild becomes known through `PLAYER_GUILD_UPDATE`. **Order:**
+  every message goes at ONE ChatThrottleLib priority (`Social.PRIO`; the library is first-in, first-out
+  within a priority, not across), and a pending `R` is sent before any new `N` or `B`, so a guildmate
+  gets the reset before any post-reset time. **A sent `R` is always followed by a `B`** of this
+  character's current bests: a refused `R` may have let a slower post-reset `N` through (dropped against
+  the old best), and the retried `R` + `B` puts it right (real ChatThrottleLib, replayed into a second
+  instance: `test_ctl`). **The receiver keeps the reset as the member's cutoff**
+  (`entry.resetAt`, kept even when the entry is emptied): `Guild.Merge` refuses any record from before
+  it, so a late message can't bring an old best back. The reset is account-wide,
+  so each other character of the account sends its own `R` at its next login, once
+  (`social.resetAt` / `resetSent`). Older clients ignore `R` as an unknown type.
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**
   (`GnomesweeperDB.social.mine[memberKey]`, beside the account's `scores`, seeded once from the records
   this character set, name AND realm); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the
@@ -339,7 +354,10 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   never dropped. Received `B`/`N` (GUILD only, our own echo dropped) merge into
   `GnomesweeperDB.social.guilds[guildKey][memberKey]`; members silent 30 days are pruned at login; a guild
   change cancels the pending reply (the guild first known at login is not a change), and the login
-  query waits for the guild to be known (a slow login). Sends go through **ChatThrottleLib** when
+  query **retries every 5 s for up to a minute** while the guild isn't known (after a `/reload` on this
+  beta its name can come late, with no `PLAYER_GUILD_UPDATE` after). **`GnomesweeperDB.socialLog`**
+  (the last 60 lines) records the login, each query and its result, guild events, every message, and
+  each toast decision with its reason; `/gsweep guildprobe` also reports the toasts' state. Sends go through **ChatThrottleLib** when
   loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
   `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
   can never cost the account's best. Reading never creates the table, except a record of this

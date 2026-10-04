@@ -101,14 +101,16 @@ result is checked). A message is fields separated by a tab:
 | `Q` (query) | Once per session at login (the first `PLAYER_ENTERING_WORLD`, after 5 s), and when the Guild tab opens if this guild wasn't queried in the last 5 minutes. **At most one per 60 s.** | none |
 | `B` (bests) | In reply to a `Q` (see replies). Only with at least one eligible best. | this character's bests |
 | `N` (new best) | When a win improves this character's own best in a category. | that one |
+| `R` (reset) | "Reset best times" (added after v1 shipped: older clients ignore it as an unknown type). Each other character of the account sends its own at its next login, or when its guild becomes known, once; a refused one stays pending. | none: **the reset's epoch** (`1	R	<at>`). A receiver drops only that member's records from before it, so a win after the reset survives whatever order the messages arrive in (Codex, #69). A sent `R` is always followed by a `B` of the character's current bests, so a refused-then-retried reset still leaves the guild right. |
 
 **Replies are deferred and coalesced, never dropped.** On a `Q`, if no reply is pending, one is
 scheduled for `max(now + 1..6 s, last reply + 60 s + 1..6 s)`. A `Q` that arrives while one is
 pending changes nothing (no new timer, the deadline doesn't move). So a late joiner always gets
 an answer, at worst a minute later, and 50 queries cost one reply each, not one per query.
 
-**Sending** goes through ChatThrottleLib (copied from AltStable's `Libs\`, credited), `BULK` for
-`Q` and `B`, `NORMAL` for `N`, else a direct `SendAddonMessage`. Never when not in a guild. The
+**Sending** goes through ChatThrottleLib (copied from AltStable's `Libs\`, credited), every message at
+**one** priority (`NORMAL`: the library keeps a priority first-in, first-out but not across them, and
+a reset must arrive before any newer time: Codex, #69), else a direct `SendAddonMessage`. Never when not in a guild. The
 result code is read (a throttled or failed send is logged, not assumed delivered).
 
 **Receiving:** `CHAT_MSG_ADDON`, prefix `GSWEEP`, channel `GUILD` (anything else is ignored in
@@ -199,8 +201,9 @@ wasn't queried in 5 minutes. Localized (#36).
   ranks, but a tie never toasts. Only `N`: `B` (sync) never toasts. Our own win never toasts us (the
   overlay celebrates it).
 - **Rechecked when shown:** a queued toast that something better has overtaken is dropped.
-- **What:** a glass card near the top of the screen for 6 s, on `UIParent` (board open or not):
-  the mascot's face and « Fizzle cleared Expert in 01:24, a new guild best! ». A click dismisses it.
+- **What:** a glass card near the top of the screen, on `UIParent` (board open or not): the mascot's
+  face and « Fizzle cleared Expert in 01:24, a new guild best! ». **It stays until it's clicked** (owner,
+  2026-10-04: no timeout); the click shows the next one waiting. Measured live between two accounts.
 - **Never in combat:** one arriving in combat waits; **one showing when a fight starts is hidden
   at once** and comes back after. Several queue, at most 3 (older ones dropped).
 - **A setting**, "Guild best toasts", on by default. Turning it off, or a guild change, clears the

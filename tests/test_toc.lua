@@ -1,4 +1,4 @@
--- The manifest, the slash commands, and the lifted glass material.
+-- The manifest, the slash commands, and the embedded glass material.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
@@ -12,6 +12,9 @@ for _, f in ipairs(files) do
     check(not seen[f], "TOC lists each file once: " .. f)
     seen[f] = true
 end
+-- The embedded material loads before anything: Glass.lua calls
+-- LibStub("LibGlass-1.0") at file scope (#71).
+eq(tocLines()[1], LIBGLASS_XML, "LibGlass-1.0 loads first")
 eq(files[1], "Compat.lua", "Compat loads first (after the libraries)")
 local all = tocFiles(true)
 for i, lib in ipairs({ "LibStub/LibStub", "CallbackHandler-1.0/CallbackHandler-1.0",
@@ -59,21 +62,28 @@ do
     end
 end
 
--- Every texture the material names exists in Media/.
+-- Every texture the material names ships with the library (Libs\LibGlass-1.0\Media
+-- in the package; the checkout's Media/ here), and none is left in ours.
+local root = libGlassRoot()
 for size, S in pairs(Gnomesweeper.Glass.SIZES) do
     for _, key in ipairs({ "mask", "rim", "dark", "shadow" }) do
-        local f = "Media/" .. S[key] .. ".tga"
-        check(io.open(f, "rb") ~= nil, size .. " texture exists: " .. f)
+        check(io.open(root .. "/Media/" .. S[key] .. ".tga", "rb") ~= nil, size .. " texture exists: " .. S[key])
+        check(io.open("Media/" .. S[key] .. ".tga", "rb") == nil, "no stale copy in our Media/: " .. S[key])
     end
 end
 for _, t in ipairs({ "bar_mask", "bar_fill", "gloss", "bar_edge", "grain", "sheen2", "track_fade" }) do
-    check(io.open("Media/" .. t .. ".tga", "rb") ~= nil, "texture exists: " .. t)
+    check(io.open(root .. "/Media/" .. t .. ".tga", "rb") ~= nil, "texture exists: " .. t)
+    check(io.open("Media/" .. t .. ".tga", "rb") == nil, "no stale copy in our Media/: " .. t)
 end
+-- Glass.MEDIA points into the embedded copy, where the packager puts it; our
+-- own art has its own path (a skin texture under Glass.MEDIA draws nothing).
+eq(Gnomesweeper.Glass.MEDIA, "Interface\\AddOns\\Gnomesweeper\\Libs\\LibGlass-1.0\\Media\\", "MEDIA is the embedded copy's")
+eq(Gnomesweeper.Skin.MEDIA, "Interface\\AddOns\\Gnomesweeper\\Media\\", "our art is in our Media/")
 
 -- Every texture the skin names under Media/ exists (a missing one is a green
 -- square in game, and nothing else would notice).
 do
-    local media = Gnomesweeper.Glass.MEDIA
+    local media = Gnomesweeper.Skin.MEDIA
     local n = 0
     for key, value in pairs(Gnomesweeper.Skin.TEXTURES) do
         if type(value) == "string" and value:sub(1, #media) == media then
@@ -106,55 +116,6 @@ do
         end
     end
     check(n > 30 or listed == "", "(the text files were read: " .. n .. ")")
-end
-
--- Glass.lua is a copy of GlassUnitFrames' material on its MAIN branch: only
--- the header and the namespace lines may differ. Read through git, not the
--- working tree, whose branch another session may have switched.
--- Skipped ONLY when the sibling checkout is absent (as on CI). When it's
--- there, a git failure is a failure: an unreadable main must not pass
--- silently (Codex, plan review).
-local NULL = package.config:sub(1, 1) == "\\" and "nul" or "/dev/null"
-local function git(args)
-    local p = io.popen("git " .. args .. " 2>" .. NULL)
-    local out = p and p:read("*a") or ""
-    if p then p:close() end
-    return out
-end
-local sibling = io.open("../GlassUnitFrames/Glass.lua", "r")
-if sibling then sibling:close() end
-local theirs = sibling and git("-C ../GlassUnitFrames show main:Glass.lua") or ""
-if sibling then
-    check(theirs ~= "", "git can read GlassUnitFrames main:Glass.lua (the sibling exists, so this must work)")
-end
-if theirs ~= "" then
-    local function body(s)
-        s = s:gsub("\r", "")
-        s = s:gsub("^.-\nlocal ADDON = %.%.%.\n", "")
-        s = s:gsub("GlassUF", "Gnomesweeper")
-        return s
-    end
-    check(body(io.open("Glass.lua"):read("*a")) == body(theirs),
-        "Glass.lua matches GlassUnitFrames main:Glass.lua (copy it back)")
-    local g = git("-C ../GlassUnitFrames show main:Tools/make_textures.py")
-    check(g:gsub("\r", "") == io.open("Tools/make_textures.py", "rb"):read("*a"):gsub("\r", ""),
-        "Tools/make_textures.py matches GlassUnitFrames main (copy it back)")
-    -- The textures too, byte for byte. Compared as git blob hashes: text, so
-    -- no binary data passes through a text-mode pipe.
-    -- Named, not guessed: these are the copied material. Everything else in Media/ is
-    -- ours (tile_*, icon_*, ui_*, face_*: Tools/make_tiles.py, make_ui.py, png_to_tga.py)
-    -- and is checked by test_media instead.
-    local MATERIAL = { "body_mask", "body_mask_small", "rim5", "rim5_small", "rim_dark5", "rim_dark5_small",
-                       "shadow", "shadow_small", "bar_mask", "bar_fill", "gloss", "bar_edge", "grain",
-                       "sheen2", "track_fade" }
-    for _, name in ipairs(MATERIAL) do
-        local f = name .. ".tga"
-        local ours = git('hash-object "Media/' .. f .. '"'):gsub("%s", "")
-        local up = git("-C ../GlassUnitFrames rev-parse main:Media/" .. f):gsub("%s", "")
-        check(ours ~= "" and ours == up, "Media/" .. f .. " matches GlassUnitFrames main (copy it back)")
-    end
-elseif not sibling then
-    io.write("  (upstream material check skipped: no ../GlassUnitFrames checkout)\n")
 end
 
 done("test_toc")

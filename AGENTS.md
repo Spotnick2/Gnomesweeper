@@ -12,8 +12,9 @@ Quick facts, in case you read only this:
 - WoW: Forever addon, Interface `16001`, **Lua 5.1**, Retail API on Vanilla content.
 - Validate: `pwsh tests\run.ps1` (luac -p on every TOC file + all `tests\test_*.lua`).
 - `Board.lua` is pure Lua with no WoW API — keep it that way.
-- `Glass.lua`, `Tools/make_textures.py` and `Media/*.tga` are copies of `..\GlassUnitFrames` `main`;
-  don't edit them here.
+- The glass material is the embedded LibGlass-1.0 (`Libs\LibGlass-1.0\`, from `.pkgmeta`
+  externals, gitignored); material changes are LibGlass PRs. The tests need a LibGlass checkout
+  (`..\LibGlass` or `$LIBGLASS`). Our own art is `Skin.MEDIA`, never `Glass.MEDIA`.
 - Never commit a literal version over `## Version: @project-version@`.
 - Review context: `C:\Projects\References\PORTING-TBC-TO-FOREVER.md` (measured client facts) and
   `C:\Projects\References\forever-api-1.60.1.70205.md` (API dump). Single-owner addon: don't

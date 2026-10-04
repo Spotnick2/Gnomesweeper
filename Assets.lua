@@ -34,7 +34,7 @@ local cells = {}
 function Assets.Kind(value)
     if type(value) == "number" then return "fileID" end
     if type(value) == "string" then
-        if value:sub(1, #Glass.MEDIA) == Glass.MEDIA then return "media" end
+        if value:sub(1, #Skin.MEDIA) == Skin.MEDIA then return "media" end
         return "path"
     end
     return "unknown"

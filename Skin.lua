@@ -17,7 +17,10 @@ Gnomesweeper.Skin = Skin
 
 Skin.TITLE = "|cff7fd4ffGnome|rsweeper"
 
-local MEDIA = Gnomesweeper.Glass.MEDIA
+-- Our own art. Not Glass.MEDIA: that is the embedded LibGlass-1.0's folder
+-- (Libs\LibGlass-1.0\Media\), which holds only the material's textures.
+Skin.MEDIA = "Interface\\AddOns\\" .. ADDON .. "\\Media\\"
+local MEDIA = Skin.MEDIA
 
 Skin.TEXTURES = {
     -- the mascot: the green-haired gnome from the logo; her face for each game state

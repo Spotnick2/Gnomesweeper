@@ -3,8 +3,8 @@
     python Tools/make_tiles.py                 # write Media/tile_*.tga
     python Tools/make_tiles.py --preview x.png # also a magnified contact sheet (not committed)
 
-The glass material's generator (make_textures.py) is a copy that belongs to
-GlassUnitFrames, so it stays untouched; this one only IMPORTS its helpers.
+The drawing helpers are texture_kit.py's (kept from the glass material's
+generator, which now lives in LibGlass-1.0).
 
 Why baked textures and not Glass.Apply per tile: that makes 6 textures, a mask
 and a frame per host (480 tiles at Expert), and its sliced mask is measured to
@@ -26,7 +26,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_textures import coverage, normals, rounded_rect_sdf, write_tga  # noqa: E402
+from texture_kit import coverage, normals, rounded_rect_sdf, write_tga  # noqa: E402
 
 S = 32                      # texture size
 INSET = 1.0                 # transparent margin, px

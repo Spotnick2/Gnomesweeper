@@ -7,8 +7,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Gnomesweeper — Minesweeper Forever** is a Minesweeper clone for **World of Warcraft: Forever
 1.60.1** (Interface `16001`), written in **Lua 5.1**. It's a single-owner project (Spotnick), on the
-same stack and conventions as the sibling Forever addons `..\GlassUnitFrames` (owner of the glass
-material), `..\GlassRaidFrames`, `..\GlassXp` (GlassPanel) and `..\AltStable`. When this file
+same stack and conventions as the sibling Forever addons `..\GlassUnitFrames` (the glass
+material's pilot; the material itself is `..\LibGlass`), `..\GlassRaidFrames`, `..\GlassXp` (GlassPanel) and `..\AltStable`. When this file
 doesn't cover something, check how those handle it before you invent a new idiom.
 
 - **Name in the AddOns list / logo:** Gnomesweeper. Namespace, TOC, deployed folder: `Gnomesweeper`.
@@ -33,7 +33,8 @@ holds the decided design, so update it when the design changes.
 
 ## Layout
 
-TOC load order (planned files in brackets): `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
+TOC load order (planned files in brackets): `Libs\LibGlass-1.0\LibGlass-1.0.xml` (first: the
+material, #71) → `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
 `Sounds.lua` → `Assets.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
@@ -55,13 +56,10 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   bracketing every translated string is run through every screen: any visible text left unbracketed
   bypassed `L` and fails. New text: wrap it in `L[...]`, add its French, and the test tells you if
   you forgot either.
-- **`Glass.lua`**: the material, **copied** from GlassUnitFrames' **`main`** branch
-  (`git -C ..\GlassUnitFrames show main:Glass.lua`), with only the header and namespace lines
-  changed. `tests/test_toc.lua` fails when the two drift; it reads `main` through git because other
-  sessions switch that repo's working tree. Change the material there first (with its
-  `docs/GLASS-MATERIAL.md`) and copy it back. `Tools/make_textures.py` and `Media/*.tga` are copies
-  too. API: `Glass.Apply(host, "large"|"small")`, `Glass.Font`, `Glass.Bar`, `Glass.Sheen`,
-  `Glass.ContentLevel`, `Glass.Inset`.
+- **`Glass.lua`** (#71): one line, `Gnomesweeper.Glass = LibStub("LibGlass-1.0"):New()`, this
+  addon's instance of **LibGlass-1.0**, the embedded material (see "The glass material" below).
+  API, dot-called: `Glass.Apply(host, "large"|"small")`, `Glass.Font`, `Glass.Bar`, `Glass.Sheen`,
+  `Glass.Mask`, `Glass.ContentLevel`, `Glass.Inset`.
 - **`Board.lua`** (#2, done): **the game, pure Lua, no WoW API at all** — and `tests/test_board.lua`
   loads it with every global but a few builtins forbidden, so it stays that way. Everything else is
   a view on it. The header comment is the API; in short:
@@ -245,7 +243,9 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   and ChatThrottleLib v32 (#15, public domain, copied from AltStable: paces the guild's messages),
   **copied from `..\GlassMiniMapBar\Libs`** (owner's decision: the standard minimap button, which every
   collector picks up). Never edited here. **Not loaded in tests**: `tocFiles()` skips `Libs\` (pass
-  `true` for all), and the stub's `LibStub` hands out recording fakes (`WoW.ldb`, `WoW.ldbi`).
+  `true` for all), and the stub's `WoW.fakeLibs` makes the real LibStub (the one LibGlass brings)
+  answer these two names with recording fakes (`WoW.ldb`, `WoW.ldbi`). **`Libs\LibGlass-1.0\` is not
+  one of them**: it is gitignored, fetched by the packager (below).
 - **`Minimap.lua`** (#40): the minimap button, a LibDataBroker launcher (the mascot's face) shown by
   LibDBIcon, registered at `PLAYER_LOGIN`. **Left-click opens or closes the board, right-click opens
   the settings.** Its position and shown state are LibDBIcon's own table, `GnomesweeperDB.minimap`
@@ -425,6 +425,37 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 - Every action returns the changed cells as **one table of unique row-major indices** (`{}` for a
   no-op), including auto-flags and everything a loss reveals. The view repaints exactly those.
 
+## The glass material
+
+The material is **LibGlass-1.0** (#71), an embedded LibStub library (`..\LibGlass`,
+github.com/Spotnick2/LibGlass, public, MIT) that every glass addon embeds. Its repo owns the code,
+the 15 textures, their generator (`Tools/make_textures.py`) and the write-up
+(`docs/GLASS-MATERIAL.md`), and its `CLAUDE.md` holds the contract (the API, region fields and
+texture names only grow; instances; upgrade rules). The migration guide is
+`C:\Projects\References\LIBGLASS-MIGRATION.md`.
+
+- **Material changes are LibGlass PRs**, never edits here (nor in `..\LibGlass` from this
+  repo's session): a bug or a need found here goes on a LibGlass issue.
+- **How it's embedded:** `.pkgmeta` externals put it in `Libs\LibGlass-1.0\` (the only supported
+  path: `MEDIA` is derived from it), and the TOC loads its XML first. `Libs/LibGlass-1.0/` is
+  gitignored (the other `Libs\` stay vendored); a dev copy comes from the LibGlass checkout
+  (`$env:LIBGLASS`, default `..\LibGlass`) through its own `Tools\deploy.ps1`, which
+  `Tools\deploy.ps1` here calls first. The tests load the same checkout (`libGlassScripts()` in the
+  harness, a fresh LibStub and library per `loadAddon`), and fail loudly without it.
+- **The pin:** `.pkgmeta` pins a tag (`tag: r1`), **never `tag: latest`**. Bump it only in a release
+  made anyway: players get library fixes earlier through whichever glass addon ships the newest
+  copy (LibStub runs that one). `tests\run.ps1` and the deploy warn when the checkout isn't at the
+  pin. CI reads the pin (`tests/fetch_libglass.sh`), tests against it, and asserts the zip's
+  `Libs/LibGlass-1.0/` is exactly that commit's shipped files.
+- **`Gnomesweeper.Glass` is an instance**: `STYLE` and the setters are this addon's own.
+  **`Glass.MEDIA` is the library's folder, for its textures only** (`Glass.Mask(p, "body_mask_small", 8)`
+  is fine). **Our own art is `Skin.MEDIA`** (`Interface\AddOns\Gnomesweeper\Media\`): a skin
+  texture built from `Glass.MEDIA` draws nothing (`test_toc` checks every one exists).
+- **Colours passed to a glass bar's `SetStatusBarColor` must be plain** (the library's hook
+  compares them).
+- **`Tools/texture_kit.py`** keeps the generator's helpers our own art tools import (`write_tga`,
+  `rounded_rect_sdf`, `coverage`, `normals`), writing into our `Media/`.
+
 ## References: read these before touching an unfamiliar API
 
 - `C:\Projects\References\PORTING-TBC-TO-FOREVER.md` — canonical, addon-agnostic field notes
@@ -437,7 +468,7 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
   **widget methods** and the `_G` walk. Proves a name exists, not that it works.
 - `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
-- `..\GlassUnitFrames\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
+- `..\LibGlass\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
 - `docs/SOCIAL.md` — **the social plan** (#15 guild best times, #17 guild-best toasts, #16 friends):
   the v1 wire format, identity, the per-character bests, the cache, the toast's rules. Twice reviewed
   adversarially; phase 0 (measure the guild sender) comes before any code.
@@ -478,7 +509,7 @@ No build system. Lua 5.1 lives at `C:\Program Files (x86)\Lua\5.1\` (`lua.exe`, 
 it, not a newer Lua on `PATH`.
 
 ```powershell
-pwsh tests\run.ps1                                                  # luac -p on every TOC file + every tests\test_*.lua
+pwsh tests\run.ps1                                                  # luac -p on every TOC .lua + every tests\test_*.lua (needs ..\LibGlass or $env:LIBGLASS)
 & 'C:\Program Files (x86)\Lua\5.1\lua.exe' tests\test_toc.lua      # one test, from the repo root
 pwsh Tools\deploy.ps1                                               # -> AddOns\Gnomesweeper
 pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"

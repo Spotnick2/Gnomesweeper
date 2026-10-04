@@ -17,3 +17,8 @@ __pycache__/
 # the prompt and conversion for each, so they're reproducible, not lost.
 Media/**/*.png
 Media/Source/
+
+# The embedded LibGlass-1.0: fetched by the packager (.pkgmeta externals),
+# copied from ..\LibGlass by Tools/deploy.ps1. Never commit a copy. The other
+# Libs\ are vendored and stay committed.
+Libs/LibGlass-1.0/

@@ -10,7 +10,7 @@ local function chatHas(text)
 end
 
 loadAddon()
-local A, Skin, Glass = Gnomesweeper.Assets, Gnomesweeper.Skin, Gnomesweeper.Glass
+local A, Skin = Gnomesweeper.Assets, Gnomesweeper.Skin
 local T = Skin.TEXTURES
 
 ----------------------------------------------------------------------------
@@ -20,7 +20,7 @@ eq(A.Kind(T.flag), "media", "our own file in Media/ is media")
 eq(A.Kind(T.gear), "path", "a client texture path is a path")
 eq(A.Kind(T.mine), "fileID", "a number is a client file ID")
 eq(A.Kind(nil), "unknown", "anything else is unknown")
-eq(A.Kind(Glass.MEDIA .. "x"), "media", "anything under our Media/ is ours")
+eq(A.Kind(Skin.MEDIA .. "x"), "media", "anything under our Media/ is ours")
 
 ----------------------------------------------------------------------------
 -- The survey

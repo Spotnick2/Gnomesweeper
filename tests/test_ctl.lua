@@ -89,16 +89,27 @@ do  -- a refusal that isn't the throttle: not retried, and our callback reads it
     eq(#sent("Q"), 1, "...the next one goes")
 end
 
-do  -- a second batch through a reused pipe (v32 recycles them with table.wipe)
+do  -- a second batch through a REUSED pipe: v32 recycles an emptied pipe with table.wipe,
+    -- bound once when it loads. Both batches are forced to queue (a throttle first), so the
+    -- second takes the first's pipe from the bin (Codex, #64: an immediate send never queues).
+    local realWipe, wipes = table.wipe, 0
+    table.wipe = function(t) wipes = wipes + 1; return realWipe(t) end
+    collectgarbage("stop")                       -- the bin is weak-keyed: no collection mid-scenario
     local CTL, pump = loadWithCTL()
+    table.wipe = realWipe
     local S = Gnomesweeper.Social
+    WoW.sendResults = { 3 }                      -- the first batch queues: a pipe is made
     S.RecordWin("expert:area", 90)
     pump(2)
-    WoW.sendResults = { 3 }
+    eq(#sent("N"), 1, "(the first batch, through a pipe, delivered: the pipe goes to the bin)")
+    eq(wipes, 0, "(nothing recycled yet)")
+    WoW.sendResults = { 3 }                      -- the second queues too: it takes the binned pipe
     S.RecordWin("expert:area", 80)
     S.RecordWin("expert:area", 70)
     pump(3)
-    eq(#sent("N"), 3, "a later batch, through a reused pipe, is delivered too")
+    collectgarbage("restart")
+    check(wipes >= 1, "the second batch reused the first's pipe (table.wipe ran " .. wipes .. " time(s))")
+    eq(#sent("N"), 3, "...and is delivered through it")
     eq(#WoW.reportedErrors, 0, "...without an error")
 end
 

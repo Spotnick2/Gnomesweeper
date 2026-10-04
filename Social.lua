@@ -314,6 +314,9 @@ local showNext
 showNext = function()
     if current or GS.Toast.IsShown() then return end
     if inCombat then return end                                -- after the fight
+    -- In the guild but its name not loaded for a moment: wait, taking nothing from the queue
+    -- (Codex, #66); PLAYER_GUILD_UPDATE resumes it once the guild is known again.
+    if guildKey() == nil and IsInGuild() then return end
     while #queue > 0 do
         local t = table.remove(queue, 1)
         -- Rechecked: still this guild, and still strictly the fastest (nothing better
@@ -495,12 +498,17 @@ frame:SetScript("OnEvent", function(_, event, ...)
             pending, lastQuery, queriedGuild = nil, nil, nil
             queue, current = {}, nil                      -- the old guild's toasts go too
             GS.Toast.Hide()
+            -- The sync starts over (Codex, #66): a new guild must be asked and heard before it
+            -- toasts, and a guild rejoined must be heard afresh.
+            firstQuery, heard = {}, {}
+            if guildKey() then query(true) end
         end
         if gk then currentGuild = gk end
         if gk == nil and IsInGuild() == false then currentGuild = nil end
         -- The login query, if the guild wasn't known yet when it was due (a slow login).
         if gk and loginDue and queriedGuild ~= gk and query(true) then loginDue = false end
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
+        showNext()                                        -- toasts that waited for the guild's name
     elseif event == "PLAYER_REGEN_DISABLED" then
         inCombat = true
         -- A fight: a toast on screen goes, and comes back after (docs/SOCIAL.md).

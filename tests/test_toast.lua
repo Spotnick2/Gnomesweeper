@@ -256,4 +256,41 @@ do  -- the test seam's reset clears the toasts' state
     eq(S._test.synced(GUILD .. "-Forever"), false, "...and not synced")
 end
 
+do  -- a real guild change restarts the sync, and asks the new guild (Codex, #66)
+    local S = synced()
+    WoW.addonSent = {}
+    WoW.guild = "Another Guild"
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    local asked = false
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = true end end
+    check(asked, "joining another guild: it's asked at once")
+    from("Bob Cog", B("expert:area", 9000))
+    WoW.advance(10)
+    from("Cal Bolt", N("expert:area", 7000))
+    eq(shown(), nil, "...and not synced until the replies' window has passed for it")
+    WoW.advance(70)
+    from("Dee Nut", N("expert:area", 6000))
+    check(shown() ~= nil, "...then it toasts")
+    -- Back to the first guild: heard afresh, not synced from before.
+    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(S._test.synced(GUILD .. "-Forever"), false, "rejoining a guild: not synced from before")
+    from("Eve Spring", N("expert:area", 5000))
+    eq(shown(), nil, "...so no toast until it's heard again")
+end
+
+do  -- the guild's name gone for a moment when a toast ends: the queue waits, and resumes (Codex, #66)
+    local S = synced()
+    from("Bob Cog", N("expert:area", 8000))              -- on screen
+    from("Cal Bolt", N("expert:area", 7000))             -- waiting
+    WoW.guildLoading = true                              -- the name gone for a moment
+    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)           -- Bob's ends
+    eq(shown(), nil, "(nothing shows while the guild isn't known)")
+    eq(#S._test.queue(), 1, "...and the waiting one is kept")
+    WoW.guildLoading = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    check(shown() and shown():find("Cal Bolt", 1, true) ~= nil, "the guild known again: it shows")
+end
+
 done("test_toast")

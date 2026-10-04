@@ -150,4 +150,10 @@ eq(G.Display("Kaleid Sumner-ClassicBetaPvE", "ClassicBetaPvE"), "Kaleid Sumner",
 eq(G.Display("Kaleid Sumner-OtherRealm", "ClassicBetaPvE"), "Kaleid Sumner-OtherRealm", "another realm is")
 eq(G.Display("Zoë Écrou-R", "R"), "Zoë Écrou", "UTF-8 names are kept as they are")
 
+-- R: forget my times (a reset), no records; after Q, B, N shipped, so older clients ignore it
+eq(G.Encode("R"), "1\tR", "R: no records")
+eq(G.Encode("R", { rec("expert:area", 8412) }), nil, "R carries none")
+eq(G.Parse("1\tR").type, "R", "R parses")
+eq(G.Parse("1\tR\texpert:area=8412@" .. T), nil, "an R with records is malformed")
+
 done("test_guild")

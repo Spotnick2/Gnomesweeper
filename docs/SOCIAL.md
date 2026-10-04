@@ -101,6 +101,7 @@ result is checked). A message is fields separated by a tab:
 | `Q` (query) | Once per session at login (the first `PLAYER_ENTERING_WORLD`, after 5 s), and when the Guild tab opens if this guild wasn't queried in the last 5 minutes. **At most one per 60 s.** | none |
 | `B` (bests) | In reply to a `Q` (see replies). Only with at least one eligible best. | this character's bests |
 | `N` (new best) | When a win improves this character's own best in a category. | that one |
+| `R` (reset) | "Reset best times" (added after v1 shipped: older clients ignore it as an unknown type). Each other character of the account sends its own at its next login, once. | none |
 
 **Replies are deferred and coalesced, never dropped.** On a `Q`, if no reply is pending, one is
 scheduled for `max(now + 1..6 s, last reply + 60 s + 1..6 s)`. A `Q` that arrives while one is
@@ -199,8 +200,9 @@ wasn't queried in 5 minutes. Localized (#36).
   ranks, but a tie never toasts. Only `N`: `B` (sync) never toasts. Our own win never toasts us (the
   overlay celebrates it).
 - **Rechecked when shown:** a queued toast that something better has overtaken is dropped.
-- **What:** a glass card near the top of the screen for 6 s, on `UIParent` (board open or not):
-  the mascot's face and « Fizzle cleared Expert in 01:24, a new guild best! ». A click dismisses it.
+- **What:** a glass card near the top of the screen, on `UIParent` (board open or not): the mascot's
+  face and « Fizzle cleared Expert in 01:24, a new guild best! ». **It stays until it's clicked** (owner,
+  2026-10-04: no timeout); the click shows the next one waiting. Measured live between two accounts.
 - **Never in combat:** one arriving in combat waits; **one showing when a fight starts is hidden
   at once** and comes back after. Several queue, at most 3 (older ones dropped).
 - **A setting**, "Guild best toasts", on by default. Turning it off, or a guild change, clears the

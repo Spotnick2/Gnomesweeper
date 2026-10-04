@@ -320,8 +320,8 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   an epoch past 2038 overflows it (measured: 9999999999 printed as -2147483648).
 - **`Toast.lua`** (#17): the guild-best card: a `GlassPanel` on `UIParent` at the board's strata
   (FULLSCREEN_DIALOG) and above it (level 200), near the
-  top of the screen (the board open or not), her laughing face and a line, `Toast.SHOW` (6) seconds, a
-  click puts it away; built on first use. `Toast.Show(text, onDone)`, `Toast.Hide()` (no `onDone`).
+  top of the screen (the board open or not), her laughing face and a line; it **stays until it's clicked**
+  (owner: no timeout), and the click shows the next; built on first use. `Toast.Show(text, onDone)`, `Toast.Hide()` (no `onDone`).
   `Social.lua` decides when: a guildmate's `N` strictly faster than every time known in that category
   (the guild's and ours), decided before it's merged and rechecked when shown, once **synced** (a `B`
   or an `N` heard this session and `SYNC_WINDOW` since our first query, derived from the replies'
@@ -330,6 +330,10 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   Sounds: `PLAYER_REGEN_DISABLED` hides one showing and puts it back first); a guild change clears them
   (a moment without the guild's name isn't one); the "Guild best toasts" setting (`guildToasts`, on) turned off clears them
   (`Social.SettingsChanged`, from `Window.SettingsChanged`).
+- **The `R` message (a reset):** "Reset best times" clears this account's own bests and sends `R`; every
+  online guildmate drops that character's entry and any toast of its waiting. The reset is account-wide,
+  so each other character of the account sends its own `R` at its next login, once
+  (`social.resetAt` / `resetSent`). Older clients ignore `R` as an unknown type.
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**
   (`GnomesweeperDB.social.mine[memberKey]`, beside the account's `scores`, seeded once from the records
   this character set, name AND realm); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the

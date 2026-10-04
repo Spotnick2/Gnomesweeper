@@ -7,7 +7,8 @@
 --   Social.Ranking(category)             the guild's times for the Guild tab, best first
 --   Social.GuildName()                   the guild's name, or nil
 --   Social.QueryIfStale()                the Guild tab opening: ask, if not asked lately
---   Social.Reset()                       Reset best times: this account's own bests go
+--   Social.Reset()                       Reset best times: this account's own bests go, and
+--                                        the guild is told to forget them (R)
 --   Social.SettingsChanged()             the toasts' setting: off clears the queue
 --
 -- The guild-best toast (#17): a guildmate's N that is strictly faster than every time
@@ -253,9 +254,27 @@ function Social.RecordWin(category, seconds)
     return true
 end
 
-function Social.Reset()
+-- Reset best times: this account's characters' own bests go, and the guild is told (an R:
+-- every online guildmate drops the entry). The reset is account-wide but a character can
+-- only speak for itself, so its time is kept: each other character of the account sends its
+-- own R the next time it logs in, once (the owner's reset that didn't reach the guild).
+local function sendReset()
     local s = social(false)
-    if s then s.mine = {} end
+    local key = ownKey()
+    if not (s and key and type(s.resetAt) == "number" and guildKey()) then return end
+    if type(s.resetSent) ~= "table" then s.resetSent = {} end
+    if (s.resetSent[key] or 0) >= s.resetAt then return end
+    if send(Guild.Encode("R"), "NORMAL") then
+        s.resetSent[key] = s.resetAt
+        slog("R to %s: this character's times forgotten", guildKey())
+    end
+end
+
+function Social.Reset()
+    local s = social(true)
+    s.mine = {}
+    s.resetAt = time()
+    sendReset()
 end
 
 ------------------------------------------------------------
@@ -394,6 +413,15 @@ local function receive(text, channel, sender)
         scheduleReply(gk)
         return
     end
+    if msg.type == "R" then
+        local s = social(false)
+        local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
+        if type(bucket) == "table" then bucket[key] = nil end
+        for i = #queue, 1, -1 do if queue[i].key == key then table.remove(queue, i) end end
+        slog("R from %s: their times forgotten", key)
+        if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end
+        return
+    end
     heard[gk] = true
     slog("%s from %s (%d record(s))", msg.type, key, #msg.records)
     -- A guild best? Decided before it's merged in (it would be compared with itself).
@@ -527,6 +555,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
             -- query; the once-a-minute limit holds (Codex, #63).
             if gk and queriedGuild == gk then loginDue = false end
             if gk and loginDue and query(true) then loginDue = false end
+            if gk then sendReset() end                       -- a reset made on another character
             if loginDue and IsInGuild() and tries < Social.LOGIN_RETRIES then
                 C_Timer.After(Social.LOGIN_DELAY, loginQuery)
             end

@@ -5,7 +5,9 @@
 --
 -- A message is fields separated by a tab:  1\t<type>[\t<record>...]
 --   Q  a query: no records         B  my bests: 1 to 6 records, a category once
---   N  a new best: exactly one
+--   N  a new best: exactly one      R  forget my times (a reset): no records
+-- R came after v1 shipped with Q, B and N: a client from then ignores it as an unknown type,
+-- which is the rule this format was built on, so it needs no version bump.
 -- A record is <category>=<cs>@<at>: one of the six categories, the time in whole
 -- centiseconds (100..9999999, digits only, no leading zero), the win's epoch
 -- (1000000000..9999999999). Anything else is malformed, and a malformed message is
@@ -34,7 +36,7 @@ for _, c in ipairs(Guild.CATEGORIES) do KNOWN[c] = true end
 Guild.MIN_CS, Guild.MAX_CS = 100, 9999999            -- 1 s to about 27 h
 Guild.MIN_AT, Guild.MAX_AT = 1000000000, 9999999999   -- 2001 to 2286
 Guild.MAX_BYTES = 255
-Guild.TYPES = { Q = true, B = true, N = true }
+Guild.TYPES = { Q = true, B = true, N = true, R = true }
 
 -- The one eligibility rule (docs/SOCIAL.md): what is sent, ranked and compared.
 -- A first click that clears the board at 0 s is a best for the "You" tab, not for a guild.
@@ -58,7 +60,7 @@ function Guild.Encode(kind, records)
     records = records or {}
     if not Guild.TYPES[kind] then return nil, "type" end
     local n = #records
-    if (kind == "Q" and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
+    if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "count"
     end
     local parts, seen = { Guild.VERSION, kind }, {}
@@ -99,7 +101,7 @@ function Guild.Parse(msg)
     local kind = f[2]
     if not Guild.TYPES[kind] then return nil, "type" end
     local n = #f - 2
-    if (kind == "Q" and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
+    if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "malformed"
     end
     local records, seen = {}, {}

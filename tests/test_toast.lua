@@ -293,4 +293,37 @@ do  -- the guild's name gone for a moment when a toast ends: the queue waits, an
     check(shown() and shown():find("Cal Bolt", 1, true) ~= nil, "the guild known again: it shows")
 end
 
+do  -- leaving, then joining: the new guild is asked and synced (Codex, #66 follow-up)
+    local S = synced()
+    WoW.guild = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")            -- left: no guild for a while
+    WoW.advance(30)
+    WoW.addonSent = {}
+    WoW.guild = "Another Guild"
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")            -- joined
+    local asked = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = asked + 1 end end
+    eq(asked, 1, "left, then joined another guild: it's asked")
+    WoW.advance(61)                                      -- past the once-a-minute limit
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")            -- the roster's next update
+    asked = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = asked + 1 end end
+    eq(asked, 1, "...once (the roster's updates don't repeat it)")
+    from("Bob Cog", B("expert:area", 9000))
+    WoW.advance(14)
+    from("Cal Bolt", N("expert:area", 7000))
+    check(shown() ~= nil, "...and once heard and past its window, it toasts")
+    -- Leaving and rejoining the same guild works the same way.
+    WoW.advance(Gnomesweeper.Toast.SHOW + 0.1)
+    WoW.guild = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    WoW.addonSent = {}
+    WoW.guild = "Another Guild"
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    asked = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = asked + 1 end end
+    eq(asked, 1, "leaving and rejoining the same guild: asked again")
+    eq(S._test.synced("Another Guild-Forever"), false, "...and heard afresh, not synced from before")
+end
+
 done("test_toast")

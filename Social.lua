@@ -501,12 +501,14 @@ frame:SetScript("OnEvent", function(_, event, ...)
             -- The sync starts over (Codex, #66): a new guild must be asked and heard before it
             -- toasts, and a guild rejoined must be heard afresh.
             firstQuery, heard = {}, {}
-            if guildKey() then query(true) end
         end
         if gk then currentGuild = gk end
         if gk == nil and IsInGuild() == false then currentGuild = nil end
-        -- The login query, if the guild wasn't known yet when it was due (a slow login).
-        if gk and loginDue and queriedGuild ~= gk and query(true) then loginDue = false end
+        -- One rule for every way a guild becomes known (Codex, #66): a slow login, a switch, a
+        -- leave then a join, a rejoin. Known and not asked since the last change: ask it. A
+        -- query made sets queriedGuild, so the roster's frequent updates don't repeat it.
+        local known = guildKey()
+        if loggedIn and known and queriedGuild ~= known and query(false) then loginDue = false end
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
         showNext()                                        -- toasts that waited for the guild's name
     elseif event == "PLAYER_REGEN_DISABLED" then

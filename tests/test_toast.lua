@@ -393,7 +393,7 @@ do  -- Reset best times tells the guild: online guildmates forget our times (the
     page.reset._scripts.OnClick(page.reset)
     page.reset._scripts.OnClick(page.reset)
     local r = 0
-    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tR" then r = r + 1 end end
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
     eq(r, 1, "Reset best times sends one R to the guild")
     eq(next(GnomesweeperDB.social.mine), nil, "...and our own times are gone")
 end
@@ -402,7 +402,7 @@ do  -- receiving an R: that guildmate's times, and any toast of theirs waiting, 
     local S = synced()
     from("Bob Cog", N("expert:area", 8000))              -- on screen
     from("Cal Bolt", N("intermediate:area", 9000))       -- waiting
-    from("Cal Bolt", "1\tR")
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- a reset after those times
     eq(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"], nil, "an R drops that guildmate's entry")
     eq(#S._test.queue(), 0, "...and their waiting toast")
     check(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Bob Cog-Forever"] ~= nil, "...nobody else's")
@@ -421,7 +421,7 @@ do  -- the account's other characters send their own R at their next login, once
     WoW.fire("PLAYER_ENTERING_WORLD", true, false)
     WoW.advance(5.5)
     local r = 0
-    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tR" then r = r + 1 end end
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
     eq(r, 1, "another character of the reset account sends its own R at login")
     loadAddon({ db = GnomesweeperDB })                   -- and again, later
     WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"
@@ -429,8 +429,69 @@ do  -- the account's other characters send their own R at their next login, once
     WoW.fire("PLAYER_ENTERING_WORLD", true, false)
     WoW.advance(5.5)
     r = 0
-    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tR" then r = r + 1 end end
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then r = r + 1 end end
     eq(r, 0, "...once: not at every login")
+end
+
+----------------------------------------------------------------------------
+-- The review of #69 (the reset message)
+----------------------------------------------------------------------------
+local function rCount()
+    local n = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message:match("^1\tR\t") then n = n + 1 end end
+    return n
+end
+
+do  -- a win after the reset survives the R, whatever order they arrive in
+    local S = synced()
+    from("Cal Bolt", N("expert:area", 7000))             -- (at T) a time from before Cal's reset
+    from("Cal Bolt", "1\tN\tbeginner:area=900@" .. (T + 120))   -- a win after it...
+    from("Cal Bolt", "1\tR\t" .. (T + 60))               -- ...and the reset, arriving after
+    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    eq(e and e.bests["expert:area"], nil, "the R drops the time from before the reset")
+    eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 900, "...and keeps the win after it, though the R came later")
+end
+
+do  -- a refused reset stays pending: sent again at the next chance (Codex, #69)
+    local S = synced()
+    WoW.sendResults = { 10 }                             -- the R refused (NotInGuild)
+    S.Reset()
+    eq(rCount(), 0, "(the R refused)")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")            -- the next chance
+    eq(rCount(), 1, "a refused reset isn't counted as sent: it goes at the next chance")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "...once")
+end
+
+do  -- ...and refused later, through ChatThrottleLib's callback
+    local S = synced()
+    local queued = {}
+    ChatThrottleLib = { SendAddonMessage = function(self, prio, prefix, msg, ct, target, q, cb, arg)
+        queued[#queued + 1] = { msg = msg, cb = cb, arg = arg }
+    end }
+    S.Reset()
+    local r
+    for _, q in ipairs(queued) do if q.msg:match("^1\tR\t") then r = q end end
+    check(r ~= nil, "(the R queued in ChatThrottleLib)")
+    if r then r.cb(r.arg, false, 10) end                 -- it left, and was refused
+    ChatThrottleLib = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "refused through the callback: still pending, sent at the next chance")
+end
+
+do  -- a guild found after the login retries still gets the pending reset (Codex, #69)
+    local S = synced()
+    S.Reset()                                            -- sent on this character
+    local saved = GnomesweeperDB
+    loadAddon({ db = saved })                            -- another character of the account
+    WoW.playerName, WoW.playerSurname = "Gizmo", "Cogsworth"
+    WoW.guild, WoW.guildLoading = GUILD, true            -- its guild unknown for over a minute
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(70)
+    eq(rCount(), 0, "(no reset sent while the guild isn't known)")
+    WoW.guildLoading = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(rCount(), 1, "the guild found through the event: the pending reset goes")
 end
 
 done("test_toast")

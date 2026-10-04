@@ -258,16 +258,23 @@ end
 -- every online guildmate drops the entry). The reset is account-wide but a character can
 -- only speak for itself, so its time is kept: each other character of the account sends its
 -- own R the next time it logs in, once (the owner's reset that didn't reach the guild).
+-- Pending until it goes: marked sent now, and put back if the send is refused (at once, or
+-- later through ChatThrottleLib's callback), as queries and replies are (Codex, #69). It
+-- carries the reset's time: a guildmate drops only the records from before it, so a win
+-- earned after the reset survives whatever order the messages arrive in.
 local function sendReset()
     local s = social(false)
     local key = ownKey()
     if not (s and key and type(s.resetAt) == "number" and guildKey()) then return end
     if type(s.resetSent) ~= "table" then s.resetSent = {} end
     if (s.resetSent[key] or 0) >= s.resetAt then return end
-    if send(Guild.Encode("R"), "NORMAL") then
-        s.resetSent[key] = s.resetAt
-        slog("R to %s: this character's times forgotten", guildKey())
-    end
+    local was, at = s.resetSent[key], s.resetAt
+    s.resetSent[key] = at
+    -- (A refusal, at once or later, calls this back: send() does for both.)
+    local ok = send(Guild.Encode("R", nil, at), "NORMAL", function()
+        if s.resetSent[key] == at then s.resetSent[key] = was end
+    end)
+    slog("R (before %d) to %s: %s", at, tostring(guildKey()), ok and "sent" or "refused")
 end
 
 function Social.Reset()
@@ -416,9 +423,11 @@ local function receive(text, channel, sender)
     if msg.type == "R" then
         local s = social(false)
         local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
-        if type(bucket) == "table" then bucket[key] = nil end
-        for i = #queue, 1, -1 do if queue[i].key == key then table.remove(queue, i) end end
-        slog("R from %s: their times forgotten", key)
+        if type(bucket) == "table" then bucket[key] = Guild.Forget(bucket[key], msg.at) end
+        for i = #queue, 1, -1 do
+            if queue[i].key == key and (queue[i].at or 0) < msg.at then table.remove(queue, i) end
+        end
+        slog("R from %s: their times from before %d forgotten", key, msg.at)
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end
         return
     end
@@ -437,7 +446,7 @@ local function receive(text, channel, sender)
         elseif known and r.cs >= known then
             slog("  no toast: %s %d cs isn't faster than the best known, %d cs", r.cat, r.cs, known)
         else
-            toast = { guild = gk, key = key, cat = r.cat, cs = r.cs }
+            toast = { guild = gk, key = key, cat = r.cat, cs = r.cs, at = r.at }
             slog("  toast queued: %s %d cs (best known %s)", r.cat, r.cs, tostring(known))
         end
     end
@@ -584,6 +593,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         -- query made sets queriedGuild, so the roster's frequent updates don't repeat it.
         local known = guildKey()
         if loggedIn and known and queriedGuild ~= known and query(false) then loginDue = false end
+        if loggedIn and known then sendReset() end              -- a reset still pending (Codex, #69)
         if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
         showNext()                                        -- toasts that waited for the guild's name
     elseif event == "PLAYER_REGEN_DISABLED" then

@@ -150,10 +150,21 @@ eq(G.Display("Kaleid Sumner-ClassicBetaPvE", "ClassicBetaPvE"), "Kaleid Sumner",
 eq(G.Display("Kaleid Sumner-OtherRealm", "ClassicBetaPvE"), "Kaleid Sumner-OtherRealm", "another realm is")
 eq(G.Display("Zoë Écrou-R", "R"), "Zoë Écrou", "UTF-8 names are kept as they are")
 
--- R: forget my times (a reset), no records; after Q, B, N shipped, so older clients ignore it
-eq(G.Encode("R"), "1\tR", "R: no records")
-eq(G.Encode("R", { rec("expert:area", 8412) }), nil, "R carries none")
-eq(G.Parse("1\tR").type, "R", "R parses")
-eq(G.Parse("1\tR\texpert:area=8412@" .. T), nil, "an R with records is malformed")
+-- R: forget my times from before <at> (a reset); after Q, B, N shipped, so older clients ignore it
+eq(G.Encode("R", nil, T), "1\tR\t" .. T, "R: the reset's time, no records")
+eq(G.Encode("R", { rec("expert:area", 8412) }, T), nil, "R carries no records")
+eq(G.Encode("R", nil, 123), nil, "...and a real epoch")
+local pr = G.Parse("1\tR\t" .. T)
+eq(pr and pr.type, "R", "R parses")
+eq(pr and pr.at, T, "...with its time")
+eq(G.Parse("1\tR"), nil, "an R without its time is malformed")
+eq(G.Parse("1\tR\t0000000000"), nil, "...or with a bad one")
+eq(G.Parse("1\tR\texpert:area=8412@" .. T), nil, "...or with a record")
+-- Forget: the records from before the reset go, a newer one stays
+local fe = { seen = 1, bests = { ["expert:area"] = { cs = 8000, at = T - 10 }, ["beginner:area"] = { cs = 900, at = T + 10 } } }
+fe = G.Forget(fe, T)
+eq(fe.bests["expert:area"], nil, "Forget drops a record from before the reset")
+eq(fe.bests["beginner:area"].cs, 900, "...and keeps one earned after it (whatever order they arrived in)")
+eq(G.Forget({ bests = { ["expert:area"] = { cs = 8000, at = T - 10 } } }, T), nil, "nothing left: the member is forgotten")
 
 done("test_guild")

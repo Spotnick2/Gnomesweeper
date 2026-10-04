@@ -5,9 +5,14 @@
 --
 -- A message is fields separated by a tab:  1\t<type>[\t<record>...]
 --   Q  a query: no records         B  my bests: 1 to 6 records, a category once
---   N  a new best: exactly one      R  forget my times (a reset): no records
+--   N  a new best: exactly one      R  forget my times from before <at>: one epoch, no records
 -- R came after v1 shipped with Q, B and N: a client from then ignores it as an unknown type,
--- which is the rule this format was built on, so it needs no version bump.
+-- which is the rule this format was built on, so it needs no version bump. It carries the
+-- reset's time so a record earned after it survives, whatever order the messages arrive in
+-- (Codex, #69): ordering across ChatThrottleLib's priorities isn't guaranteed.
+--
+--   Guild.Encode("R", nil, at)        -> "1\tR\t<at>"
+--   Guild.Forget(entry, at)            -> entry with every record older than at dropped (nil if none left)
 -- A record is <category>=<cs>@<at>: one of the six categories, the time in whole
 -- centiseconds (100..9999999, digits only, no leading zero), the win's epoch
 -- (1000000000..9999999999). Anything else is malformed, and a malformed message is
@@ -56,9 +61,14 @@ local function validRecord(r)
         and validNumber(r.at, Guild.MIN_AT, Guild.MAX_AT)
 end
 
-function Guild.Encode(kind, records)
+function Guild.Encode(kind, records, at)
     records = records or {}
     if not Guild.TYPES[kind] then return nil, "type" end
+    if kind == "R" then
+        if #records ~= 0 then return nil, "count" end
+        if not validNumber(at, Guild.MIN_AT, Guild.MAX_AT) then return nil, "record" end
+        return string.format("%s\tR\t%.0f", Guild.VERSION, at)
+    end
     local n = #records
     if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "count"
@@ -101,6 +111,11 @@ function Guild.Parse(msg)
     local kind = f[2]
     if not Guild.TYPES[kind] then return nil, "type" end
     local n = #f - 2
+    if kind == "R" then
+        local at = n == 1 and integer(f[3], Guild.MIN_AT, Guild.MAX_AT)
+        if not at then return nil, "malformed" end
+        return { type = "R", records = {}, at = at }
+    end
     if ((kind == "Q" or kind == "R") and n ~= 0) or (kind == "N" and n ~= 1) or (kind == "B" and (n < 1 or n > #Guild.CATEGORIES)) then
         return nil, "malformed"
     end
@@ -137,6 +152,16 @@ function Guild.Merge(entry, records, seen)
     end
     entry.seen = seen
     return entry
+end
+
+-- A reset (R): a member's records from before `at` go; a record earned after it stays.
+-- nil when nothing is left (the member is then forgotten).
+function Guild.Forget(entry, at)
+    if type(entry) ~= "table" or type(entry.bests) ~= "table" then return nil end
+    for cat, b in pairs(entry.bests) do
+        if type(b) ~= "table" or type(b.at) ~= "number" or b.at < at then entry.bests[cat] = nil end
+    end
+    return next(entry.bests) and entry or nil
 end
 
 -- Members not heard from in maxAge seconds go.

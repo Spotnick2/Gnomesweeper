@@ -330,8 +330,11 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   Sounds: `PLAYER_REGEN_DISABLED` hides one showing and puts it back first); a guild change clears them
   (a moment without the guild's name isn't one); the "Guild best toasts" setting (`guildToasts`, on) turned off clears them
   (`Social.SettingsChanged`, from `Window.SettingsChanged`).
-- **The `R` message (a reset):** "Reset best times" clears this account's own bests and sends `R`; every
-  online guildmate drops that character's entry and any toast of its waiting. The reset is account-wide,
+- **The `R` message (a reset), `1	R	<at>`:** "Reset best times" clears this account's own bests and
+  sends `R` with the reset's time; every online guildmate drops that character's records **from before
+  it** (`Guild.Forget`: a win after the reset survives any message order) and its toasts from before it.
+  A refused `R` stays pending (restored by `send()`'s failure path, at once or through ChatThrottleLib's
+  callback), and it also goes when the guild becomes known through `PLAYER_GUILD_UPDATE`. The reset is account-wide,
   so each other character of the account sends its own `R` at its next login, once
   (`social.resetAt` / `resetSent`). Older clients ignore `R` as an unknown type.
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**

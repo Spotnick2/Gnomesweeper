@@ -1300,6 +1300,13 @@ function Window.ScaleInfo()
     return db().scale or 1, Window.scale
 end
 
+-- Where a model would go (#20's probe, #21): the face button, and the effects
+-- layer over the tiles (above them, under the end overlay). nil before the window
+-- is built.
+function Window.ModelHosts()
+    return ui.face, ui.fx
+end
+
 -- /gsweep perf: times the heavy operations on a scratch Expert board, then puts
 -- the real game back.
 function Window.Benchmark()

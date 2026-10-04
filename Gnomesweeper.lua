@@ -51,6 +51,7 @@ local HELP = {
     L["/gsweep reset - put the window back in the middle of the screen"],
     L["/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)"],
     "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
+    "/gsweep models | models perf - every candidate creature model (loaded, textured, its animations), then their frame cost over the board (for measuring), kept for /reload to save",
     "/gsweep sounds - play every candidate sound and the music, one after another (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
@@ -110,6 +111,10 @@ local function Slash(msg)
         end
     elseif msg == "assets" then
         GS.Assets.Toggle()
+    elseif msg == "models" then
+        GS.ModelProbe.Toggle()
+    elseif msg == "models perf" then
+        GS.ModelProbe.Perf()
     elseif msg == "perf" then
         for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
     elseif msg == "guildprobe" then

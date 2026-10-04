@@ -18,11 +18,12 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: the first beta, v0.1.0-beta (#11).** M1 made it playable; M2 polished it: personal
-bests and the best times panel, the settings, sounds and music, the celebrations, the generated
-art and two board themes, the clock's warning, hiding in combat, the mascot's motion, a minimap
-button, a key binding. Left: localization (#36, French first), and the live 3D models (#20, #21,
-the rest of #48). **Bugs come from players** (one owner, one setup): GitHub issues, through the
+**Status: v0.2.1 released** (v0.1.0-beta was the first, #11). M1 made it playable; M2 polished
+it: personal bests and the best times panel, the settings, sounds and music, the celebrations, the
+generated art and two board themes, the clock's warning, hiding in combat, the mascot's motion, a
+minimap button, a key binding. v0.2.0 added French (#36) and the guild's best times and toasts
+(#15, #17); v0.2.1 the embedded LibGlass (#71). Left: the live 3D models (#20's probe, then #21,
+the rest of #48), and friends' leaderboards (#16). **Bugs come from players** (one owner, one setup): GitHub issues, through the
 templates in `.github/ISSUE_TEMPLATE/` and the About page's "Report a bug" link.
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (public since the CurseForge setup), grouped by
@@ -37,7 +38,7 @@ TOC load order (planned files in brackets): `Libs\LibGlass-1.0\LibGlass-1.0.xml`
 material, #71) → `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
-`Sounds.lua` → `Assets.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
+`Sounds.lua` → `Assets.lua` → `ModelProbe.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -133,6 +134,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
 - **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
   `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never
   `SetCreature`**; never a model per tile; everything degrades to the 2D art.
+  Not written yet: #20's probe (`ModelProbe.lua`) measures first.
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
@@ -311,6 +313,16 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
   by eye (getters echo nonsense IDs). What `GetFileIDFromPath` answers for our own files is recorded
   too. Results go to `GnomesweeperDB.assetProbe` for a `/reload` to write to disk.
+- **`ModelProbe.lua`** (#20): `/gsweep models`, a sheet of every candidate creature model in
+  `docs/MODELS.md` (its `ModelScene`, on AltStable's recipe: far camera, narrow lens, scaled from its
+  box), each cell saying how long its bounding box took or "no box in 3s"; the player both ways
+  (an actor's `SetModelByUnit("player")`, unmeasured, and a `DressUpModel`'s `SetUnit("player")`).
+  Clicking one opens the **viewer**: the body, a head crop at the face button's 44 units and a
+  bigger one (the head raises the **camera**: whether an actor's position scales with it is
+  unmeasured), `<` `>` through `Probe.ANIMS`, ~20 named animation numbers (stepping every ID was too many to judge),
+  particles on or off. **`/gsweep models perf`**: frames over the open board for 5 s, then 5 s with
+  a head on the face and a bomb over the tiles (`Window.ModelHosts()`), counted from when both have
+  loaded. Results go to `GnomesweeperDB.modelProbe` for a `/reload`. English (a probe).
 - **`Guild.lua`** (#15, `docs/SOCIAL.md`): the guild's best times as **pure** Lua (every global but
   `tonumber` and a few builtins forbidden in `test_guild.lua`): the v1 wire format (`Encode`/`Parse`, the
   exact grammar, a malformed message dropped whole, the longest legal `B` 205 bytes), the one
@@ -580,6 +592,10 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
   the tooltip, a reload, and the result bar's room for its text on every difficulty.
 - **`test_assets.lua`** is the contact sheet: kinds, the survey, a missing path, a throwing check, the
   sheet's cells, the saved results.
+- **`test_modelprobe.lua`** is the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
+  numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
+  late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.
+  `test_methods` checks a `ModelSceneActor`'s calls against the dump's `[FrameAPIModelSceneFrameActor*]`.
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
   what they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,

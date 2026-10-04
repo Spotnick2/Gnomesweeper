@@ -17,6 +17,9 @@ local widget, globals = {}, {}
 -- Animation methods are documented functions tagged with their type's API
 -- (SetDegrees(...) [SimpleAnimRotationAPI]), not listed as widget methods.
 local animAPI = {}
+-- A model scene's actor (#20): its methods are documented functions tagged
+-- [FrameAPIModelSceneFrameActor] or [...ActorBase], not widget methods either.
+local actorAPI = {}
 local inWidgets, inGlobals = false, false
 for line in f:lines() do
     if line:match("^## ") then
@@ -28,6 +31,8 @@ for line in f:lines() do
     elseif inGlobals then
         local am, api = line:match("^([%a_][%w_]*)%(.-%[(SimpleAnim%w*API)%]")
         if am then animAPI[api] = animAPI[api] or {}; animAPI[api][am] = true end
+        local acm = line:match("^([%a_][%w_]*)%(.-%[FrameAPIModelSceneFrameActor%w*%]")
+        if acm then actorAPI[acm] = true end
         -- Documented functions carry a signature; the walk of _G is bare names.
         local g = line:match("^([%a_][%w_]*)%(") or line:match("^([%a_][%w_]*)%s*$")
         if g then globals[g] = true end
@@ -131,6 +136,23 @@ do
     end
     local bests = Gnomesweeper.Window._test.ui.bests
     bests.close._scripts.OnClick(bests.close)
+    do                                                  -- the model probe (#20): sheet, viewer, perf
+        WoW.modelBoxes[6977] = { -0.5, -0.4, -0.6, 0.5, 0.4, 0.6 }
+        WoW.modelBoxes["unit:player"] = { -0.3, -0.3, -0.5, 0.3, 0.3, 0.5 }
+        WoW.slash("/gsweep models")
+        WoW.advance(3.5)
+        local P = Gnomesweeper.ModelProbe._test
+        P.cells[1]._scripts.OnClick(P.cells[1])
+        WoW.advance(0.5)
+        local v = P.viewer()
+        v.next._scripts.OnClick(v.next); v.prev._scripts.OnClick(v.prev)
+        v.sparks._scripts.OnClick(v.sparks)
+        WoW.slash("/gsweep models perf")
+        for _ = 1, 700 do WoW.tick(0.016) end
+        WoW.advance(1)
+        for _ = 1, 700 do WoW.tick(0.016) end
+        P.sheet():Hide()
+    end
     WoW.slash("/gsweep assets")                         -- the contact sheet (#6)
     local sheet = Gnomesweeper.Assets._test.sheet()
     sheet._scripts.OnDragStart(sheet); sheet._scripts.OnDragStop(sheet)
@@ -174,6 +196,7 @@ for name in pairs(WoW.methodsCalled) do
         or ((wtype == "Rotation" or wtype == "Scale" or wtype == "Alpha" or wtype == "Translation")
             and (animAPI.SimpleAnimAPI or {})[m])
         or (wtype == "AnimationGroup" and (animAPI.SimpleAnimGroupAPI or {})[m])
+        or (wtype == "ModelSceneActor" and actorAPI[m])
     check(found, "method exists on Forever: " .. name)
 end
 check(n >= 25, "recorded the addon's method calls (" .. n .. ")")

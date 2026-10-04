@@ -173,7 +173,7 @@ local function recordScores(was, state)
     if state == "won" and was ~= "won" then
         -- This character's own best first (#15): its seeding reads the account's scores, which
         -- must not yet hold this win, or the win would count as already held and send nothing.
-        GS.Social.RecordWin(category, game:Elapsed(GetTime()))
+        pcall(GS.Social.RecordWin, category, game:Elapsed(GetTime()))   -- never at the scores' expense
         local isNew, previous = Scores.Won(scores(), category, {
             time = game:Elapsed(GetTime()),
             at = time(),
@@ -666,6 +666,7 @@ end
 local BESTS_W, BESTS_ROW = 264, 44
 local bestsMode = "you"     -- the best times panel's tab: "you" (the account's) or "guild" (#15)
 local GUILD_TOP = 5         -- a guild row's tooltip lists this many
+local TABS_H, TAB_W = 26, 72   -- the tabs' row under the title
 
 local function bestsRuleText()
     return rule == "cell" and L["First click: one safe tile (Windows XP's rule)."]
@@ -679,10 +680,11 @@ end
 
 -- The Guild tab (#15): per difficulty, the guild's best and where you stand.
 local function fillGuild(p)
-    local gname = GS.Social.GuildName()
+    local view = GS.Social.View()
+    local gname = view.name
     for _, key in ipairs(Board.PRESET_ORDER) do
         local row = p.rows[key]
-        local list = gname and GS.Social.Ranking(Scores.Category(key, rule)) or {}
+        local list = view.ranking(Scores.Category(key, rule))
         row.ranking = list
         local first = list[1]
         if first then
@@ -727,7 +729,7 @@ end
 local function buildBests()
     local p = Widgets.GlassPanel(win)
     p:SetFrameLevel(win:GetFrameLevel() + 30)           -- over the board and the end overlay, like the list
-    p:SetSize(BESTS_W, 50 + #Board.PRESET_ORDER * BESTS_ROW + 26)
+    p:SetSize(BESTS_W, 50 + TABS_H + #Board.PRESET_ORDER * BESTS_ROW + 26)
     p:SetPoint("TOP", ui.hud, "TOP", 0, 0)
     p:EnableMouse(true)                                  -- the board under it takes no clicks
 
@@ -740,12 +742,13 @@ local function buildBests()
     p.close:setAccent(unpack(C.closeAccent))
     p.close:SetScript("OnClick", function() p:Hide() end)
 
-    -- The tabs (#15): yours (the account's bests) and the guild's.
+    -- The tabs (#15): yours (the account's bests) and the guild's, on their own row under
+    -- the title (beside it, a longer title, French « Meilleurs temps », ran into them).
     p.tabs = {}
-    local prev = p.close
-    for _, t in ipairs({ { "guild", L["Guild"] }, { "you", L["You"] } }) do
-        local tab = Widgets.GlassButton(p, 52, 20, { fontSize = 11 })
-        tab:SetPoint("RIGHT", prev, "LEFT", -6, 0)
+    local prev
+    for _, t in ipairs({ { "you", L["You"] }, { "guild", L["Guild"] } }) do
+        local tab = Widgets.GlassButton(p, TAB_W, 20, { fontSize = 11 })
+        if prev then tab:SetPoint("LEFT", prev, "RIGHT", 6, 0) else tab:SetPoint("TOPLEFT", p, "TOPLEFT", 12, -38) end
         tab.mode = t[1]
         tab.label:SetText(t[2])
         tab:SetScript("OnClick", function()
@@ -762,7 +765,7 @@ local function buildBests()
         local col = Skin.DifficultyColor(key)
         local row = CreateFrame("Frame", nil, p)
         row:SetSize(BESTS_W - 20, BESTS_ROW - 4)
-        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -44 - (i - 1) * BESTS_ROW)
+        row:SetPoint("TOPLEFT", p, "TOPLEFT", 10, -44 - TABS_H - (i - 1) * BESTS_ROW)
         row.bg = row:CreateTexture(nil, "BACKGROUND")
         row.bg:SetAllPoints(row)
         row.bg:SetColorTexture(1, 1, 1, 0.05)        -- neutral: rare blue on a blue tint was hard to read
@@ -803,7 +806,10 @@ local function buildBests()
     p.rule:SetPoint("BOTTOMLEFT", p, "BOTTOMLEFT", 14, 10)
     p.rule:SetTextColor(unpack(C.hint))
 
-    p:SetScript("OnShow", function() fillBests() end)
+    p:SetScript("OnShow", function()
+        if bestsMode == "guild" then GS.Social.QueryIfStale() end   -- reopened on the Guild tab
+        fillBests()
+    end)
     Window.Floating(p)
     p:Hide()
     ui.bests = p

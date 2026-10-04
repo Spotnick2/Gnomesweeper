@@ -163,8 +163,9 @@ GnomesweeperDB.social = {
 - A member not heard from in **30 days** is dropped at login. Buckets for guilds this character
   isn't in are kept (it may come back) but never shown.
 - **What the tab shows is the guildmates heard recently**, not a verified roster.
-- Reading never creates the table (as `Scores`): opening Best times without a guild leaves the
-  SavedVariables alone.
+- Reading never creates the table (as `Scores`), with one exception: a record of this character's,
+  seeded from the scores, is kept as soon as it's seen (left as a preview, an alt beating the
+  account's best before this character's next win would lose it; review of #63).
 
 ## The Guild tab (phase 1)
 

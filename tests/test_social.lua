@@ -134,7 +134,8 @@ do  -- seeding: only the account's records this character set (name AND realm)
     local r = S.Ranking("expert:area")
     eq(#r, 1, "our record from the account's scores is ours before anything is written")
     eq(r[1].cs, 7050, "...its time")
-    eq(GnomesweeperDB.social, nil, "...and reading created nothing")
+    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"],
+        "...and kept at once: a record of this character's is never left to a preview (review of #63)")
     S.RecordWin("expert:area", 90)
     local mine = GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"]
     eq(mine["expert:area"].cs, 7050, "seeded on the first write: the account record this character set")
@@ -287,6 +288,124 @@ do  -- the window: a win sends an N; the Guild tab
     WoW.guild = nil
     W.ShowBests(false); W.ShowBests(true)
     eq(p.rule:GetText(), "Not in a guild.", "no guild: the Guild tab says so")
+end
+
+----------------------------------------------------------------------------
+-- The review of #63
+----------------------------------------------------------------------------
+do  -- a seeded record survives an alt beating the account's best (review: a preview could be lost)
+    loadAddon({ db = { scores = { version = 1,
+        ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } },
+    } } })
+    WoW.guild = GUILD
+    local S = Gnomesweeper.Social
+    eq(S.Ranking("expert:area")[1].cs, 7050, "(our record, from the scores)")
+    GnomesweeperDB.scores["expert:area"].best = { time = 60, at = T, name = "Ann Gear", realm = "Forever" }   -- an alt beats it
+    eq(S.Ranking("expert:area")[1].cs, 7050, "an alt beating the account's best doesn't take our record from us")
+end
+
+do  -- reading creates nothing when there's nothing of ours to keep
+    loadAddon()
+    WoW.guild = GUILD
+    Gnomesweeper.Social.Ranking("expert:area")
+    eq(GnomesweeperDB.social, nil, "no record of ours: reading creates nothing")
+end
+
+do  -- a slow login: the guild known only after the login query was due
+    loadAddon()
+    WoW.guild, WoW.guildLoading = GUILD, true
+    login()
+    eq(#sent("Q"), 0, "(the guild not known yet 5 s after login: no query)")
+    WoW.guildLoading = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(#sent("Q"), 1, "the login query goes when the guild becomes known (it isn't lost)")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(#sent("Q"), 1, "...once")
+end
+
+do  -- the guild first known isn't a guild change (review: it cancelled a reply owed)
+    loadAddon()
+    WoW.guild = GUILD
+    local S = Gnomesweeper.Social
+    S.RecordWin("expert:area", 84)
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.addonSent = {}
+    from("Ann Gear", "1\tQ")                          -- 0 s after login, before the 5 s timer
+    check(S._test.pending() ~= nil, "(a reply owed)")
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")          -- the usual update at login, same guild
+    check(S._test.pending() ~= nil, "the guild's first update at login doesn't cancel it")
+    WoW.advance(7)
+    eq(#sent("B"), 1, "...and the reply goes")
+end
+
+do  -- a refused send isn't counted as sent
+    loadAddon()
+    WoW.guild = GUILD
+    local S = Gnomesweeper.Social
+    WoW.addonResult = 3                                 -- refused
+    login()
+    eq(#sent("Q"), 0, "(the login query refused)")
+    check(S.lastFailure and S.lastFailure:find("^3 at") ~= nil, "the failure is kept (and the probe reports it)")
+    WoW.addonResult = nil
+    eq(S.QueryIfStale(), true, "a refused query doesn't block the next for 5 minutes")
+    eq(#sent("Q"), 1, "...it goes")
+    WoW.chat = {}
+    WoW.slash("/gsweep guildprobe")
+    local said = false
+    for _, line in ipairs(WoW.chat) do if line:find("last guild send failure", 1, true) then said = true end end
+    check(said, "/gsweep guildprobe reports the last failure")
+end
+
+do  -- through ChatThrottleLib: a failure reported later is read
+    loadAddon()
+    WoW.guild = GUILD
+    local S = Gnomesweeper.Social
+    local queued = {}
+    ChatThrottleLib = { SendAddonMessage = function(self, prio, prefix, msg, chatType, target, queue, cb, arg)
+        queued[#queued + 1] = { cb = cb, arg = arg }
+    end }
+    login()
+    eq(#queued, 1, "(the query queued in ChatThrottleLib)")
+    queued[1].cb(queued[1].arg, false, 7)              -- it left, and was refused
+    check(S.lastFailure and S.lastFailure:find("^7 at") ~= nil, "a failure ChatThrottleLib reports is kept")
+    eq(S.QueryIfStale(), true, "...and doesn't count as a query made")
+    ChatThrottleLib = nil
+end
+
+do  -- the guild layer failing never costs the account's best
+    loadAddon({ db = { seenFaceTip = true } })
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    Gnomesweeper.Social.RecordWin = function() error("a broken guild layer") end
+    WoW.now = 0
+    W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*.." }), "beginner:area")
+    local t = Gnomesweeper.Grid._test.tiles
+    t[2]._scripts.OnMouseDown(t[2], "LeftButton"); t[2]._scripts.OnMouseUp(t[2], "LeftButton", true)
+    WoW.now = 12
+    t[3]._scripts.OnMouseDown(t[3], "LeftButton"); t[3]._scripts.OnMouseUp(t[3], "LeftButton", true)
+    eq(W.game:State(), "won", "(a win)")
+    check(GnomesweeperDB.scores and GnomesweeperDB.scores["beginner:area"].best, "the account's best is kept, whatever the guild layer does")
+end
+
+do  -- the panel: the tabs' own row; reopened on the Guild tab, it asks; a guild change refreshes it
+    loadAddon({ db = { seenFaceTip = true } })
+    WoW.guild = GUILD
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    W.ShowBests(true)
+    local p = W._test.ui.bests
+    eq(p.tabs.you._points[1][1], "TOPLEFT", "the tabs sit on their own row under the title")
+    eq(p.tabs.you._points[1][5], -38, "...below it, so a longer title can't run into them")
+    eq(p.tabs.guild._points[1][2], p.tabs.you, "...side by side")
+    p.tabs.guild._scripts.OnClick(p.tabs.guild)
+    local q = #sent("Q")
+    W.ShowBests(false)
+    WoW.advance(301)
+    W.ShowBests(true)
+    eq(#sent("Q"), q + 1, "reopened on the Guild tab after 5 minutes: it asks the guild")
+    WoW.guild = nil
+    WoW.fire("PLAYER_GUILD_UPDATE", "player")
+    eq(p.rule:GetText(), "Not in a guild.", "leaving the guild: an open Guild tab shows it at once")
 end
 
 done("test_social")

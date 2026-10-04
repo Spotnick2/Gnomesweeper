@@ -36,18 +36,21 @@ local lastReply                  -- GetTime() of our last B
 local pending                    -- the reply waiting to go: { guild = key }, or nil
 local currentGuild               -- the guild key last seen (a change cancels what's pending)
 local loggedIn                   -- the login query is once a session
+local loginDue                   -- the login query couldn't go yet (the guild not known yet)
 
 local function db() return GnomesweeperDB end
 local function realm() return GetNormalizedRealmName() or "" end
 local function ownKey() return Guild.Key(GS.API.PlayerFullName(), realm()) end
 
--- The guild's key: its name and ITS realm (measured: it can differ from ours), or nil.
-local function guildKey()
-    if not IsInGuild() then return nil end
+-- The guild: its name, and its key (its name and ITS realm: measured, it can differ
+-- from ours). nil, nil out of a guild, or just after login before the client knows it.
+local function guildInfo()
+    if not IsInGuild() then return nil, nil end
     local name, _, _, grealm = GetGuildInfo("player")
-    if type(name) ~= "string" or name == "" then return nil end   -- not known yet, just after login
-    return name .. "-" .. ((type(grealm) == "string" and grealm ~= "") and grealm or realm())
+    if type(name) ~= "string" or name == "" then return nil, nil end
+    return name, name .. "-" .. ((type(grealm) == "string" and grealm ~= "") and grealm or realm())
 end
+local function guildKey() return (select(2, guildInfo())) end
 
 -- GnomesweeperDB.social: reading never creates it (as Scores), writing does.
 local function social(create)
@@ -91,17 +94,15 @@ local function mine(create)
     local s = social(create)
     local m = s and type(s.mine) == "table" and s.mine[key]
     if type(m) == "table" then return m end
-    if not create then
-        -- Nothing written yet: what seeding would give, without writing it (reading never
-        -- creates the table).
-        local preview = {}
-        seed(preview)
-        return next(preview) and preview or nil
-    end
-    m = {}
-    seed(m)
-    s.mine[key] = m
-    return m
+    -- Nothing written yet: seed it. Kept at once when there is a record of this character's
+    -- (a preview could be lost: an alt beating the account's best before this character's
+    -- next win would take the record from the scores). Reading creates nothing otherwise.
+    local seeded = {}
+    seed(seeded)
+    if not create and not next(seeded) then return nil end
+    s = social(true)
+    s.mine[key] = seeded
+    return seeded
 end
 
 local function ownRecords()
@@ -130,24 +131,41 @@ local function register()
 end
 
 -- ChatThrottleLib (Libs\, as AltStable) paces it when it's there; else a direct send.
-local function send(msg, prio)
+-- The result is read (docs/SOCIAL.md): a failure calls onFail (with ChatThrottleLib, when the
+-- message actually leaves, which can be later) and is kept in Social.lastFailure, which
+-- /gsweep guildprobe reports. Returns false when it failed at once.
+local function failed(result, onFail)
+    Social.lastFailure = tostring(result) .. " at " .. date("%H:%M:%S")
+    if onFail then onFail() end
+end
+local function send(msg, prio, onFail)
     if not (msg and IsInGuild()) then return false end
     register()
     local ctl = rawget(_G, "ChatThrottleLib")
     if ctl and ctl.SendAddonMessage then
-        return pcall(ctl.SendAddonMessage, ctl, prio or "BULK", Social.PREFIX, msg, "GUILD") and true or false
+        local ok, err = pcall(ctl.SendAddonMessage, ctl, prio or "BULK", Social.PREFIX, msg, "GUILD", nil, nil,
+            function(_, didSend, result) if not didSend then failed(result, onFail) end end)
+        if not ok then failed(err, onFail) end
+        return ok
     end
     local ok, result = pcall(C_ChatInfo.SendAddonMessage, Social.PREFIX, msg, "GUILD")
-    return ok and (result == 0 or result == nil or result == true)
+    if ok and (result == 0 or result == nil or result == true) then return true end
+    failed(ok and result or "error", onFail)
+    return false
 end
 
+-- A query: counted only if it isn't refused (a failed one would block the tab's for 5 minutes).
 local function query(force)
     local gk = guildKey()
     if not gk then return false end
     local now = GetTime()
     if not force and lastQuery and now - lastQuery < Social.QUERY_GAP then return false end
+    local wasQuery, wasGuild = lastQuery, queriedGuild
     lastQuery, queriedGuild = now, gk
-    return send(Guild.Encode("Q"), "BULK")
+    local mineQ = now
+    return send(Guild.Encode("Q"), "BULK", function()
+        if lastQuery == mineQ then lastQuery, queriedGuild = wasQuery, wasGuild end
+    end)
 end
 
 function Social.QueryIfStale()
@@ -174,8 +192,12 @@ local function scheduleReply(gk)
         if guildKey() ~= gk then return end            -- not that guild any more
         local records = ownRecords()
         if #records == 0 then return end
+        local wasReply = lastReply
         lastReply = GetTime()
-        send(Guild.Encode("B", records), "BULK")
+        local mineR = lastReply
+        send(Guild.Encode("B", records), "BULK", function()
+            if lastReply == mineR then lastReply = wasReply end   -- a failed reply doesn't hold back the next
+        end)
     end)
 end
 
@@ -205,25 +227,29 @@ end
 -- What the Guild tab shows
 ------------------------------------------------------------
 
-function Social.GuildName()
-    if not IsInGuild() then return nil end
-    local name = GetGuildInfo("player")
-    return (type(name) == "string" and name ~= "") and name or nil
-end
+function Social.GuildName() return (guildInfo()) end
 
--- The guild's times in a category, best first, ours merged in: { key, name, cs, at, mine }.
-function Social.Ranking(category)
-    local gk = guildKey()
-    if not gk then return {} end
+-- The Guild tab's view, looked up once: { name = the guild's or nil, ranking = function(category)
+-- -> { {key, name, cs, at, mine}... } best first, ours merged in }.
+function Social.View()
+    local name, gk = guildInfo()
+    local view = { name = name }
+    if not gk then
+        view.ranking = function() return {} end
+        return view
+    end
     local s = social(false)
     local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
-    local own = { key = ownKey() }
-    local m = mine(false)
-    own.best = m and m[category]
-    local list = Guild.Ranking(bucket, category, own)
-    for _, r in ipairs(list) do r.name = Guild.Display(r.key, realm()) end
-    return list
+    local key, r, m = ownKey(), realm(), mine(false)
+    view.ranking = function(category)
+        local list = Guild.Ranking(bucket, category, { key = key, best = m and m[category] })
+        for _, e in ipairs(list) do e.name = Guild.Display(e.key, r) end
+        return list
+    end
+    return view
 end
+
+function Social.Ranking(category) return Social.View().ranking(category) end
 
 ------------------------------------------------------------
 -- Receiving
@@ -300,6 +326,7 @@ function Social.Probe()
     local message = "1\tP\t" .. time()
     local ok, result = pcall(C_ChatInfo.SendAddonMessage, Social.PREFIX, message, "GUILD")
     log("SendAddonMessage(GUILD) = %s", ok and show(result) or ("error " .. tostring(result)))
+    log("last guild send failure: %s", show(Social.lastFailure))
     log("waiting for the echo (it should arrive within a second or two); then /reload to save")
 end
 
@@ -327,16 +354,24 @@ frame:SetScript("OnEvent", function(_, event, ...)
             for _, bucket in pairs(s.guilds) do Guild.Prune(bucket, time(), Social.FORGET) end
         end
         C_Timer.After(Social.LOGIN_DELAY, function()
-            currentGuild = guildKey()
-            query(true)
+            loginDue = true
+            local gk = guildKey()
+            if gk and currentGuild == nil then currentGuild = gk end
+            if gk and query(true) then loginDue = false end
         end)
     elseif event == "PLAYER_GUILD_UPDATE" then
         local gk = guildKey()
-        if gk ~= currentGuild then
-            -- Another guild (or none): what was pending for the old one goes.
+        if currentGuild ~= nil and gk ~= currentGuild then
+            -- Another guild (or none): what was pending for the old one goes. (Only a change:
+            -- the first time the guild is known, just after login, isn't one, and must not
+            -- cancel a reply a guildmate is owed.)
             pending, lastQuery, queriedGuild = nil, nil, nil
-            currentGuild = gk
         end
+        if gk then currentGuild = gk end
+        if gk == nil and IsInGuild() == false then currentGuild = nil end
+        -- The login query, if the guild wasn't known yet when it was due (a slow login).
+        if gk and loginDue and queriedGuild ~= gk and query(true) then loginDue = false end
+        if GS.Window and GS.Window.SocialChanged then GS.Window.SocialChanged() end   -- a Guild tab open shows it
     end
 end)
 
@@ -345,5 +380,6 @@ Social._test = {
     ownKey = ownKey,
     guildKey = guildKey,
     pending = function() return pending end,
-    reset = function() registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, probing = nil, nil, nil, nil, nil, nil, nil, false end,
+    currentGuild = function() return currentGuild end,
+    reset = function() registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false end,
 }

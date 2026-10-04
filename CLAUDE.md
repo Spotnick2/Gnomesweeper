@@ -326,8 +326,12 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   a received `Q` schedules ONE `B`, deferred 1-6 s and past a minute after our last reply, coalesced,
   never dropped. Received `B`/`N` (GUILD only, our own echo dropped) merge into
   `GnomesweeperDB.social.guilds[guildKey][memberKey]`; members silent 30 days are pruned at login; a guild
-  change cancels the pending reply. Sends go through **ChatThrottleLib** when loaded. Reading never
-  creates the table. Reset best times clears `mine`. **The Guild tab** (Window's Best times: You |
+  change cancels the pending reply (the guild first known at login is not a change), and the login
+  query waits for the guild to be known (a slow login). Sends go through **ChatThrottleLib** when
+  loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
+  `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
+  can never cost the account's best. Reading never creates the table, except a record of this
+  character's seeded from the scores, kept at once (a preview could be lost to an alt's new best). Reset best times clears `mine`. **The Guild tab** (Window's Best times: You |
   Guild): per difficulty the guild's best to the tenth, who and when, "you: 2 of 5", the top 5 in a
   row's tooltip, the guild's name at the bottom; it refreshes when a time arrives
   (`Window.SocialChanged`). And phase 0's **`/gsweep guildprobe`** (for

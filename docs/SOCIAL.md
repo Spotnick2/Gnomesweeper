@@ -30,6 +30,8 @@ Measured there on this client:
 
 ## Phases
 
+**Status:** phase 0 measured (#62); phase 1 built (#15), to measure with a guildmate.
+
 0. **Measure** (`/gsweep guildprobe`, one character in a guild is enough: the server echoes a
    guild addon message to its sender). What the `GUILD` sender looks like (name, surname, realm),
    what `Ambiguate(sender, "none")` returns for it, and the send's result code. This fixes the

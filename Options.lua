@@ -486,6 +486,7 @@ function Options.ResetClick(button)
         armed = armed + 1
         button:SetText(Options.RESET_LABEL)
         GS.Scores.Reset(GnomesweeperDB)
+        GS.Social.Reset()                      -- each character's own bests too (#15)
         GS.Window.ScoresReset()
         GS.Print(L["best times reset."])
         return

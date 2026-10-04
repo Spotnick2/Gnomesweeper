@@ -130,7 +130,8 @@ local function untranslated(text)
         -- Names and data, not text: the brand, the links' names, an unpackaged version, the
         -- player who set a best, and a date's month (GS.LOCALE.months: French is tested above).
         local DATA = { Gnomesweeper = true, Gnome = true, sweeper = true, CurseForge = true, GitHub = true, dev = true,
-                       Fizzle = true, Sprocketwhistle = true }
+                       Fizzle = true, Sprocketwhistle = true, Ann = true, Gear = true,
+                       Gnomeregan = true, Exiles = true }      -- a guildmate's name, the guild's name
         for _, m in ipairs(Gnomesweeper.LOCALE.months) do DATA[m] = true end
         if not DATA[word] then
             return word
@@ -231,6 +232,17 @@ do
     W.NewGame()
     W.ShowBests(true)
     sweep("the best times, one safe tile")
+
+    -- The Guild tab (#15): out of a guild, then in one with a guildmate's time.
+    local tabs = W._test.ui.bests.tabs
+    tabs.guild._scripts.OnClick(tabs.guild)
+    sweep("the Guild tab, no guild")
+    WoW.guild = "Gnomeregan Exiles"
+    WoW.fire("CHAT_MSG_ADDON", "GSWEEP", "1	B	expert:cell=8400@1790000000", "GUILD", "Ann Gear", "", 0, 0, "", 0)
+    tabs.guild._scripts.OnClick(tabs.guild)
+    sweep("the Guild tab")
+    hoverAll("the Guild tab")
+    tabs.you._scripts.OnClick(tabs.you)
 
     -- The settings and About.
     WoW.fire("PLAYER_LOGIN")

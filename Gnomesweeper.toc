@@ -14,6 +14,7 @@ Libs\LibStub\LibStub.lua
 Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
 Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Libs\ChatThrottleLib\ChatThrottleLib.lua
 Compat.lua
 Locales\enUS.lua
 Locales\frFR.lua
@@ -21,6 +22,7 @@ Glass.lua
 Board.lua
 Layout.lua
 Scores.lua
+Guild.lua
 Skin.lua
 Widgets.lua
 Input.lua

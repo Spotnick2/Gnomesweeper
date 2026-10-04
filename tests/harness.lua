@@ -53,7 +53,7 @@ end
 -- "pure" is then enforced, not claimed. A stray client call, or a missing
 -- `local`, fails the suite.
 local PURE_ALLOWED = { "math", "string", "table", "type", "setmetatable", "error", "tostring",
-                       "ipairs", "pairs", "assert", "select" }
+                       "tonumber", "ipairs", "pairs", "assert", "select" }
 function newPureEnv()
     local env = {}
     for _, k in ipairs(PURE_ALLOWED) do env[k] = _G[k] end

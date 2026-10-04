@@ -97,6 +97,12 @@ local T = {
     ["No win yet"] = "Pas encore de victoire",
     ["Not played yet"] = "Jamais jouée",
     ["won %d of %d"] = "victoires : %d sur %d",
+    ["You"] = "Vous",
+    ["Guild"] = "Guilde",
+    ["No time shared yet"] = "Aucun temps partagé",
+    ["you: %d of %d"] = "vous : %d sur %d",
+    ["%d with a time"] = "%d avec un temps",
+    ["Not in a guild."] = "Pas de guilde.",
 
     -- The settings
     ["/gsweep opens the board; the gear in its title bar opens this page."] =

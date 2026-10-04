@@ -130,9 +130,15 @@ phases 1 and 2). Our own echo is recognised by identity and dropped.
 So:
 
 - **The member key** is the sender as received, with `"-" .. GetNormalizedRealmName()` added when
-  it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that already carries a `-Realm`
-  (a guildmate from another realm, presumably: **unmeasured**, only one character tested) is kept
-  as it is. `Ambiguate` is not used (a no-op here).
+  it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that carries a `-Realm` is kept as
+  it is. `Ambiguate` is not used (a no-op here).
+- **Measured across connected realms (2026-10-04, two accounts):** Karuzo Macphisto, on ClassicBetaPvP
+  in a guild on ClassicBetaPvP2, reached a guildmate on ClassicBetaPvP2 as `"Karuzo Macphisto"`,
+  **with no realm**. So the receiver keys him `"Karuzo Macphisto-ClassicBetaPvP2"` (its own realm)
+  while he calls himself `-ClassicBetaPvP`. Harmless: a key is only compared on one client (names are
+  shown without the realm; a client recognises its own echo by its own key). The accepted risk: two
+  characters with the same name **and** surname on two connected realms, in one guild, would share an
+  entry.
 - **Our own key** is built the same way from `API.PlayerFullName()` and `GetNormalizedRealmName()`,
   so our echo matches it and is dropped, and our alts in the guild match their own keys.
 - **The guild key** is the guild's name and **its own** realm (`GetGuildInfo`'s 4th answer, ours

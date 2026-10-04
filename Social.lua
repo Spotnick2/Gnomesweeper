@@ -38,6 +38,8 @@ Social.FORGET = 30 * 86400       -- a member silent this long is forgotten
 -- After our query, the replies' whole window: a reply deferred past the minute, its jitter, and slack.
 Social.SYNC_WINDOW = Social.REPLY_GAP + Social.JITTER_MAX + 4
 Social.TOAST_QUEUE = 3           -- toasts waiting, at most (the oldest go)
+Social.LOGIN_RETRIES = 12        -- the guild not known yet at login: retry every LOGIN_DELAY, up to a minute
+Social.LOG_KEEP = 60             -- lines kept in GnomesweeperDB.socialLog
 
 local registered                 -- the prefix's registration result, once asked
 local lastQuery                  -- GetTime() of our last Q
@@ -54,6 +56,18 @@ local queue = {}                 -- toasts waiting: { guild, key, cat, cs }
 local current                    -- the toast on screen
 
 local function db() return GnomesweeperDB end
+
+-- The social log (the owner's toast that didn't show, 2026-10-04): what the guild key was,
+-- every query and its result, every message, every toast decision and its reason. The last
+-- LOG_KEEP lines, in GnomesweeperDB.socialLog, for a /reload to write to disk and be read.
+local function slog(fmt, ...)
+    local d = db()
+    if type(d) ~= "table" then return end
+    if type(d.socialLog) ~= "table" then d.socialLog = {} end
+    local ok, line = pcall(string.format, fmt, ...)
+    table.insert(d.socialLog, string.format("%s t=%.1f  %s", date("%H:%M:%S"), GetTime(), ok and line or fmt))
+    while #d.socialLog > Social.LOG_KEEP do table.remove(d.socialLog, 1) end
+end
 local function realm() return GetNormalizedRealmName() or "" end
 local function ownKey() return Guild.Key(GS.API.PlayerFullName(), realm()) end
 
@@ -151,6 +165,7 @@ end
 -- /gsweep guildprobe reports. Returns false when it failed at once.
 local function failed(result, onFail)
     Social.lastFailure = tostring(result) .. " at " .. date("%H:%M:%S")
+    slog("send FAILED: %s", tostring(result))
     if onFail then onFail() end
 end
 local function send(msg, prio, onFail)
@@ -180,10 +195,12 @@ local function query(force)
     local wasFirst = firstQuery[gk]
     firstQuery[gk] = firstQuery[gk] or now
     local mineQ = now
-    return send(Guild.Encode("Q"), "BULK", function()
+    local ok = send(Guild.Encode("Q"), "BULK", function()
         if lastQuery == mineQ then lastQuery, queriedGuild = wasQuery, wasGuild end
         if firstQuery[gk] == mineQ then firstQuery[gk] = wasFirst end
     end)
+    slog("Q to %s (%s): %s", gk, force and "forced" or "rate-limited", ok and "sent" or "refused")
+    return ok
 end
 
 function Social.QueryIfStale()
@@ -378,12 +395,23 @@ local function receive(text, channel, sender)
         return
     end
     heard[gk] = true
+    slog("%s from %s (%d record(s))", msg.type, key, #msg.records)
     -- A guild best? Decided before it's merged in (it would be compared with itself).
     local toast
-    if msg.type == "N" and synced(gk) and db().guildToasts ~= false then
+    if msg.type == "N" then
         local r = msg.records[1]
         local known = fastestKnown(gk, r.cat, nil)
-        if not known or r.cs < known then toast = { guild = gk, key = key, cat = r.cat, cs = r.cs } end
+        if db().guildToasts == false then
+            slog("  no toast: the setting is off")
+        elseif not synced(gk) then
+            slog("  no toast: not synced (heard %s, first query %s)", tostring(heard[gk]),
+                firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never")
+        elseif known and r.cs >= known then
+            slog("  no toast: %s %d cs isn't faster than the best known, %d cs", r.cat, r.cs, known)
+        else
+            toast = { guild = gk, key = key, cat = r.cat, cs = r.cs }
+            slog("  toast queued: %s %d cs (best known %s)", r.cat, r.cs, tostring(known))
+        end
     end
     local s = social(true)
     if type(s.guilds[gk]) ~= "table" then s.guilds[gk] = {} end
@@ -446,6 +474,11 @@ function Social.Probe()
     local ok, result = pcall(C_ChatInfo.SendAddonMessage, Social.PREFIX, message, "GUILD")
     log("SendAddonMessage(GUILD) = %s", ok and show(result) or ("error " .. tostring(result)))
     log("last guild send failure: %s", show(Social.lastFailure))
+    local gk = guildKey()
+    log("toasts: guild %s, synced %s, heard %s, first query %s, waiting %d, setting %s", show(gk),
+        show(gk and synced(gk)), show(gk and heard[gk]),
+        gk and firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never",
+        #queue, show(db().guildToasts))
     log("waiting for the echo (it should arrive within a second or two); then /reload to save")
 end
 
@@ -468,6 +501,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" then
         if loggedIn then return end                    -- once a session, not on every loading screen
         loggedIn = true
+        local initial, reloading = ...
+        slog("login (initial %s, reload %s), guild now %s", tostring(initial), tostring(reloading), tostring(guildKey()))
         register()
         inCombat = UnitAffectingCombat("player") and true or false
         -- This character's records from the account's scores, kept now (Codex, #63): left
@@ -478,17 +513,28 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if s and type(s.guilds) == "table" then
             for _, bucket in pairs(s.guilds) do Guild.Prune(bucket, time(), Social.FORGET) end
         end
-        C_Timer.After(Social.LOGIN_DELAY, function()
+        -- The login query. The guild may not be known yet (after a /reload on this beta, its
+        -- name can come late and PLAYER_GUILD_UPDATE may not follow): retry every LOGIN_DELAY,
+        -- up to LOGIN_RETRIES times, rather than wait for an event that may never come.
+        local tries = 0
+        local function loginQuery()
+            tries = tries + 1
             loginDue = true
             local gk = guildKey()
+            slog("login query due (try %d): guild %s, in a guild %s", tries, tostring(gk), tostring(IsInGuild()))
             if gk and currentGuild == nil then currentGuild = gk end
             -- Already asked this guild (the Guild tab, in the first seconds): that was the login
             -- query; the once-a-minute limit holds (Codex, #63).
             if gk and queriedGuild == gk then loginDue = false end
             if gk and loginDue and query(true) then loginDue = false end
-        end)
+            if loginDue and IsInGuild() and tries < Social.LOGIN_RETRIES then
+                C_Timer.After(Social.LOGIN_DELAY, loginQuery)
+            end
+        end
+        C_Timer.After(Social.LOGIN_DELAY, loginQuery)
     elseif event == "PLAYER_GUILD_UPDATE" then
         local gk = guildKey()
+        slog("PLAYER_GUILD_UPDATE: guild %s (was %s), in a guild %s", tostring(gk), tostring(currentGuild), tostring(IsInGuild()))
         -- In a guild but its name not loaded for a moment (a zone change): not a change (review of #66).
         if gk == nil and IsInGuild() then gk = currentGuild end
         if currentGuild ~= nil and gk ~= currentGuild then
@@ -536,6 +582,8 @@ Social._test = {
     queue = function() return queue end,
     current = function() return current end,
     synced = synced,
+    firstQuery = function() return firstQuery end,
+    heard = function() return heard end,
     reset = function()
         registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false
         firstQuery, heard, queue, current, inCombat = {}, {}, {}, nil, nil

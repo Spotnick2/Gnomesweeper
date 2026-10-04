@@ -339,7 +339,10 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   never dropped. Received `B`/`N` (GUILD only, our own echo dropped) merge into
   `GnomesweeperDB.social.guilds[guildKey][memberKey]`; members silent 30 days are pruned at login; a guild
   change cancels the pending reply (the guild first known at login is not a change), and the login
-  query waits for the guild to be known (a slow login). Sends go through **ChatThrottleLib** when
+  query **retries every 5 s for up to a minute** while the guild isn't known (after a `/reload` on this
+  beta its name can come late, with no `PLAYER_GUILD_UPDATE` after). **`GnomesweeperDB.socialLog`**
+  (the last 60 lines) records the login, each query and its result, guild events, every message, and
+  each toast decision with its reason; `/gsweep guildprobe` also reports the toasts' state. Sends go through **ChatThrottleLib** when
   loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
   `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
   can never cost the account's best. Reading never creates the table, except a record of this

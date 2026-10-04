@@ -326,4 +326,56 @@ do  -- leaving, then joining: the new guild is asked and synced (Codex, #66 foll
     eq(S._test.synced("Another Guild-Forever"), false, "...and heard afresh, not synced from before")
 end
 
+do  -- a slow /reload with no guild event after it: the login query retries (the owner's missing toast)
+    loadAddon()
+    WoW.guild, WoW.guildLoading = GUILD, true
+    WoW.fire("PLAYER_ENTERING_WORLD", false, true)       -- a /reload
+    WoW.advance(5.5)
+    local q = 0
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then q = q + 1 end end
+    eq(q, 0, "(the guild not known yet 5 s after the reload: no query)")
+    WoW.guildLoading = nil                               -- known now, and no PLAYER_GUILD_UPDATE follows
+    WoW.advance(5.5)
+    for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then q = q + 1 end end
+    eq(q, 1, "the login query retries until the guild is known, without waiting for an event")
+    from("Ann Gear", B("expert:area", 9000))
+    WoW.advance(75)
+    from("Bob Cog", N("expert:area", 8000))
+    check(shown() ~= nil, "...so the sync opens and a guild best toasts")
+end
+
+do  -- the retries stop: out of a guild, or after a minute
+    loadAddon()
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(120)
+    eq(#WoW.addonSent, 0, "not in a guild: nothing sent, and no endless retries")
+    local tries = 0
+    for _, line in ipairs(GnomesweeperDB.socialLog or {}) do if line:find("login query due", 1, true) then tries = tries + 1 end end
+    eq(tries, 1, "...one attempt, then it stops (not in a guild)")
+end
+
+do  -- the social log: every decision, with its reason
+    loadAddon()
+    WoW.guild = GUILD
+    WoW.fire("PLAYER_ENTERING_WORLD", true, false)
+    WoW.advance(5.5)
+    from("Bob Cog", N("expert:area", 8000))              -- not synced yet
+    from("Ann Gear", B("expert:area", 9000))
+    WoW.advance(75)
+    from("Cal Bolt", N("expert:area", 9500))             -- synced, not faster
+    from("Dee Nut", N("expert:area", 7000))              -- a guild best
+    local log = table.concat(GnomesweeperDB.socialLog, "\n")
+    check(log:find("login (initial true", 1, true) ~= nil, "the log has the login")
+    check(log:find("Q to " .. GUILD .. "-Forever (forced): sent", 1, true) ~= nil, "...the query and its result")
+    check(log:find("no toast: not synced (heard true, first query", 1, true) ~= nil, "...why an early N didn't toast")
+    check(log:find("no toast: expert:area 9500 cs isn't faster than the best known, 8000 cs", 1, true) ~= nil, "...why a slow one didn't")
+    check(log:find("toast queued: expert:area 7000 cs", 1, true) ~= nil, "...and the one that did")
+    check(#GnomesweeperDB.socialLog <= Gnomesweeper.Social.LOG_KEEP, "at most LOG_KEEP lines")
+    WoW.chat = {}
+    WoW.slash("/gsweep guildprobe")
+    local said = false
+    for _, line in ipairs(WoW.chat) do if line:find("toasts: guild", 1, true) and line:find("synced true", 1, true) then said = true end end
+    check(said, "/gsweep guildprobe reports the toasts' state")
+end
+
 done("test_toast")

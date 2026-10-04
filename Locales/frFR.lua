@@ -87,9 +87,6 @@ local T = {
     ["New best (-%s)"] = "Nouveau record (-%s)",
     ["New best!"] = "Nouveau record !",
     ["See the field"] = "Voir le champ",
-    ["Click to see the field"] = "Cliquez pour voir le champ",
-    ["Play again or Try again stays at the bottom, and the face starts a new game."] =
-        "Rejouer ou Réessayer reste en bas, et la gnome lance une nouvelle partie.",
 
     -- The best times panel
     ["First click: one safe tile (Windows XP's rule)."] = "Premier clic : une seule case sûre (règle de Windows XP).",

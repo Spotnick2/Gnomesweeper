@@ -181,10 +181,7 @@ do   -- a click on the overlay puts it away, to look at the board
     W.win:Hide(); W.win:Show()
     check(not o:IsShown(), "closing and reopening the window doesn't either")
 
-    GameTooltip._text = nil
-    o._scripts.OnEnter(o)
-    eq(GameTooltip._text, "Click to see the field", "hovering it says what a click does")
-    o._scripts.OnLeave(o)
+    eq(o._scripts.OnEnter, nil, "no tooltip on the panel (owner): See the field is a visible button")
 end
 
 do   -- the overlay survives closing the window, if it hasn't been put away

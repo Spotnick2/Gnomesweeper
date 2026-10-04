@@ -602,7 +602,7 @@ local function buildOverlay()
 
     -- And a click on the panel itself does the same.
     o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
-    Widgets.Tip(o, L["Click to see the field"], L["Play again or Try again stays at the bottom, and the face starts a new game."])
+    -- No tooltip on the panel (owner): "See the field" is a visible button now, and the tip was noise.
     o:Hide()
     ui.overlay = o
 end

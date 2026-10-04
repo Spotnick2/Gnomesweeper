@@ -12,5 +12,6 @@
 -- Glass.Font, Glass.Mask, ...). Glass.MEDIA is the library's folder: our own
 -- art is under Skin.MEDIA.
 
+local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
 Gnomesweeper.Glass = LibStub("LibGlass-1.0"):New()

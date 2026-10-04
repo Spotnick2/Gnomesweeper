@@ -34,8 +34,13 @@ try {
     # CI loads the .pkgmeta pin. Running against something else is fine (a library
     # change before a pin bump) but must not pass for a check of what ships.
     $libGlass = if ($env:LIBGLASS) { $env:LIBGLASS } else { Join-Path (Split-Path -Parent $RepoRoot) "LibGlass" }
-    $pin = (Get-Content ".pkgmeta") | Where-Object { $_ -match '^\s+(commit|tag):\s*(\S+)\s*$' } |
-        ForEach-Object { $Matches[2] } | Select-Object -First 1
+    # Only the Libs/LibGlass-1.0 entry's pin, as tests/fetch_libglass.sh reads it.
+    $pin = $null; $inLib = $false
+    foreach ($line in Get-Content ".pkgmeta") {
+        if ($line -match '^  Libs/LibGlass-1\.0:') { $inLib = $true; continue }
+        if ($inLib -and $line -match '^\s{0,2}\S') { break }
+        if ($inLib -and $line -match '^\s+(commit|tag):\s*(\S+)\s*$') { $pin = $Matches[2]; break }
+    }
     if ($pin -and (Test-Path -LiteralPath $libGlass)) {
         $want = git -C $libGlass rev-parse --verify --quiet "$pin^{commit}" 2>$null
         $head = git -C $libGlass rev-parse HEAD 2>$null

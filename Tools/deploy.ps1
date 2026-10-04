@@ -23,7 +23,9 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path $AddOnsPath)) { Write-Error "AddOns path not found: $AddOnsPath"; exit 1 }
 
+# A relative $env:LIBGLASS is from the repo root, as in the tests.
 $LibGlass = if ($env:LIBGLASS) { $env:LIBGLASS } else { Join-Path (Split-Path -Parent $RepoRoot) "LibGlass" }
+if (-not [System.IO.Path]::IsPathRooted($LibGlass)) { $LibGlass = Join-Path $RepoRoot $LibGlass }
 if (-not (Test-Path -LiteralPath (Join-Path $LibGlass "Tools\deploy.ps1"))) {
     Write-Error "LibGlass checkout not found at $LibGlass (clone github.com/Spotnick2/LibGlass there, or set `$env:LIBGLASS)"
     exit 1
@@ -32,8 +34,13 @@ if (-not (Test-Path -LiteralPath (Join-Path $LibGlass "Tools\deploy.ps1"))) {
 # The tag .pkgmeta pins is what the packager will ship. A dev checkout elsewhere
 # is legitimate (trying a library change before a pin bump), but an in-game check
 # then tests something the release won't carry: say so.
-$pin = (Get-Content -LiteralPath (Join-Path $RepoRoot ".pkgmeta")) |
-    Where-Object { $_ -match '^\s+(commit|tag):\s*(\S+)\s*$' } | ForEach-Object { $Matches[2] } | Select-Object -First 1
+# Only the Libs/LibGlass-1.0 entry's pin, as tests/fetch_libglass.sh reads it.
+$pin = $null; $inLib = $false
+foreach ($line in Get-Content -LiteralPath (Join-Path $RepoRoot ".pkgmeta")) {
+    if ($line -match '^  Libs/LibGlass-1\.0:') { $inLib = $true; continue }
+    if ($inLib -and $line -match '^\s{0,2}\S') { break }
+    if ($inLib -and $line -match '^\s+(commit|tag):\s*(\S+)\s*$') { $pin = $Matches[2]; break }
+}
 $want = $null; $head = $null; $dirty = $null
 try {
     $want = (git -C $LibGlass rev-parse --verify --quiet "$pin^{commit}" 2>$null)

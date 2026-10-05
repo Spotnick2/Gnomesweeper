@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.3.0
+
+The end of a game comes alive.
+
+- **A real Walking Bomb on a wipe**: when you hit a mine, the result panel shows Gnomeregan's Walking Bomb going off, then lying in pieces.
+- **The mascot cheers when you clear the field**: Tally Berryfizz, our green-haired gnome, cheers on the result panel, with her own voice.
+- **A new result panel**: it stands out over the dimmed board. A cleared field shows your time big, and a new record gets "Personal best!" with laurels, plus your previous best and how much faster you were.
+- **"Clean sweep!"** is the new word for a cleared field.
+- **3D models setting**: turn the models off in the settings if you prefer the panel without them.
+
 ## v0.2.1
 
 - The glass look now comes from **LibGlass**, a small library shared by the Glass addons, included in the download: nothing to install, and nothing changes on screen.

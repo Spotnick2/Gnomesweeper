@@ -560,7 +560,7 @@ local function buildOverlay()
     o.glass.shadow:SetVertexColor(0, 0, 0)
     o.glass.shadow:SetAlpha(0.95)
     o.glass.rim:SetAlpha(1)
-    -- The window under it dimmed (35% black), inside its glass only, never the game world.
+    -- The window under it dimmed (45% black), inside its glass only, never the game world.
     -- It takes no clicks: the title bar's close and settings still work under it.
     local dim = CreateFrame("Frame", nil, win)
     dim:SetAllPoints(win)
@@ -568,7 +568,7 @@ local function buildOverlay()
     dim:EnableMouse(false)
     dim.tex = dim:CreateTexture(nil, "BACKGROUND")
     dim.tex:SetAllPoints(dim)
-    dim.tex:SetColorTexture(0, 0, 0, 0.35)
+    dim.tex:SetColorTexture(0, 0, 0, 0.45)   -- 45%: at 35 the green selector and red timer still competed (the review)
     dim.tex:AddMaskTexture(Glass.Mask(dim, "body_mask", 16))
     dim:Hide()
     ui.dim = dim
@@ -697,6 +697,8 @@ local function dressEnd(col)
     o.title:SetText(title)
     o.button.label:SetText(button)
     o.button:setPrimary(true)                        -- the action: blue on either panel (owner)
+    o.view:setAccent(unpack(C.quietRim))             -- the others quieter, so it leads (the review)
+    o.bests:setAccent(unpack(C.quietRim))
     o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
     -- Tall enough for the model beside the words.
     local minH = col > 0 and GS.Models.HEIGHT + 28 or 0     -- its fuse reaches past its box

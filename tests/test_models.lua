@@ -72,7 +72,7 @@ do
     eq(actor._anim, 1, "playing its death: the explosion (#20)")
     eq(actor._particles, 1, "with its particles")
     local span = 2 * 40 * math.tan(0.15 / 2)
-    check(math.abs(actor._scale * 3.9 / span * Mo.FRAME - Mo.HEIGHT) < 1e-9, "its box drawn HEIGHT units tall")
+    check(math.abs(actor._scale * Mo.CAST.wipe.height / span * Mo.FRAME - Mo.HEIGHT) < 1e-9, "its measured height drawn HEIGHT units tall")
 
     local narrow, wide = widths(W)
     eq(o._width, wide, "the panel widened for it")
@@ -155,6 +155,8 @@ do
     eq(ui.overlay.button.glow, nil, "...without an outer glow (the second mockup)")
     eq(ui.overlay.bests.accent[1], ui.overlay.view.accent[1], "Best times styled like See the field (the second mockup)")
     eq(ui.overlay.bests.accent[3], ui.overlay.view.accent[3], "...both")
+    eq(ui.overlay.view.accent[1], Gnomesweeper.Skin.COLORS.quietRim[1], "...quieter than the main one, which leads (the review)")
+    check(ui.overlay.view.accent[3] < Gnomesweeper.Skin.COLORS.primaryRim[3], "...a dimmer rim")
     check(ui.overlay.divider:IsShown(), "the same thin line as the wipe's")
 end
 
@@ -188,7 +190,7 @@ do
     eq(dim._points[1][2], W.win, "...the window only, never the game world")
     check(dim:GetFrameLevel() > ui.fx:GetFrameLevel() and dim:GetFrameLevel() < o:GetFrameLevel(),
         "...over the board, under the panel")
-    eq(dim.tex._color[4], 0.35, "...35% black")
+    eq(dim.tex._color[4], 0.45, "...45% black (35 still let the header compete)")
     check(not dim._mouse, "...taking no clicks: the title bar still works")
     eq(o.backing._color[4], Gnomesweeper.Skin.COLORS.panelBg[4], "the panel: a deeper, near-opaque navy")
     eq(o.glass.rim._alpha, 1, "...a clearer rim")
@@ -198,27 +200,27 @@ do
     check(not dim:IsShown(), "...and stays so")
 end
 
--- The first box can come while the model streams in, smaller than the finished one (in
--- game, after a /reload: the model drawn too big): it's read again, and fitted again.
+-- Sized from its measured height, never the live box: the box follows the animation pose
+-- (in game: the bomb's grew from 3.91 to 6.00 as it went off), and sizing from it gave a
+-- different size after a /reload than on a reopen ("we reversed the bug", owner).
 do
     local W, ui = board({ win = true })
-    WoW.modelBoxes[3124] = { -0.2, -0.2, -0.335, 0.2, 0.2, 0.335 }   -- half her height, still loading
+    WoW.modelBoxes[3124] = { -0.2, -0.2, -0.335, 0.2, 0.2, 0.335 }   -- whatever pose it answers in
     win()
     local actor = ui.slot._test.actor()
     local span = 2 * 40 * math.tan(0.15 / 2)
     local Mo = Gnomesweeper.Models
-    local function drawn(h) return actor._scale * h / span * Mo.FRAME end
-    check(math.abs(drawn(0.67) - Mo.HEIGHT) < 1e-9, "(fitted to the partial box: too big)")
-    WoW.modelBoxes[3124] = TALLY                              -- the finished model
-    WoW.advance(0.3)
-    check(math.abs(drawn(1.34) - Mo.HEIGHT) < 1e-9, "fitted again once its box is whole: HEIGHT units tall")
-    local rec = GnomesweeperDB.modelBoxes and GnomesweeperDB.modelBoxes.win
-    check(rec and math.abs(rec.first - 0.67) < 1e-9 and math.abs(rec.final - 1.34) < 1e-9,
-        "both heights kept, for the record (a /reload writes them)")
     local s = actor._scale
-    WoW.advance(Mo.SETTLE + 1)
-    eq(actor._scale, s, "a steady box: nothing more")
-    eq(ui.slot.scene._camera[3], 0, "no lift for her: the partial box was what put her feet outside")
+    check(math.abs(s * Mo.CAST.win.height / span * Mo.FRAME - Mo.HEIGHT) < 1e-9,
+        "Tally sized from her measured height (" .. Mo.CAST.win.height .. "), not the box")
+    WoW.modelBoxes[3124] = { -0.5, -0.5, -0.9, 0.5, 0.5, 0.9 }       -- another pose, mid-cheer
+    WoW.advance(3)
+    eq(actor._scale, s, "the box changing doesn't resize her")
+    ui.overlay:Hide(); ui.overlay:Show()                            -- a reopen replays her
+    eq(actor._scale, s, "a reopen: the same size")
+    eq(GnomesweeperDB.modelBoxes, nil, "(nothing logged: no box is chased)")
+    check(math.abs(ui.slot.scene._camera[3] + Mo.CAST.win.lift * span / Mo.FRAME) < 1e-9,
+        "lifted " .. Mo.CAST.win.lift .. ": clear of the panel's edge (her toes touched it)")
 end
 
 ----------------------------------------------------------------------------

@@ -148,7 +148,9 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   spare room is empty and may reach past the panel). `Models.Slot(parent, level)`: `h.play(key, onFail)`, `h.stop()`, `h.playing`,
   `h.scene`; the actor is cleared and the scene hidden before each load; `onFail` runs at once (the
   **"3D models"** setting off, `GnomesweeperDB.models`; no `ModelScene`; the display refused) or
-  after `Models.WAIT` (0.5 s) without a box. In Window, `ui.slot` lives in the end panel at its
+  after `Models.WAIT` (0.5 s) without a box. **The first box can be partial** (after a `/reload`, the model still
+  streaming: drawn too big): it's read again for `Models.SETTLE` (2 s) and fitted again when it
+  changes; first and final heights in `GnomesweeperDB.modelBoxes`. In Window, `ui.slot` lives in the end panel at its
   content level, standing on its floor. `dressEnd(col)` lays the panel out after the owner's mockup
   (gpt-6-astra's two concepts, kept "cohesive", owner): with a `MODEL_COL` (100) column parted by a
   thin line, the panel `PANEL_MAX` (340) wide or as wide as the window allows; the title centred in

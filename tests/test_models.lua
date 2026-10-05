@@ -198,14 +198,27 @@ do
     check(not dim:IsShown(), "...and stays so")
 end
 
--- Tally stands inside the panel: drawn from her box she\'d stand ~23 units low (in game).
+-- The first box can come while the model streams in, smaller than the finished one (in
+-- game, after a /reload: the model drawn too big): it's read again, and fitted again.
 do
     local W, ui = board({ win = true })
+    WoW.modelBoxes[3124] = { -0.2, -0.2, -0.335, 0.2, 0.2, 0.335 }   -- half her height, still loading
     win()
+    local actor = ui.slot._test.actor()
     local span = 2 * 40 * math.tan(0.15 / 2)
     local Mo = Gnomesweeper.Models
-    check(math.abs(ui.slot.scene._camera[3] + Mo.CAST.win.lift * span / Mo.FRAME) < 1e-9,
-        "Tally is lifted " .. Mo.CAST.win.lift .. " units, her feet inside the panel")
+    local function drawn(h) return actor._scale * h / span * Mo.FRAME end
+    check(math.abs(drawn(0.67) - Mo.HEIGHT) < 1e-9, "(fitted to the partial box: too big)")
+    WoW.modelBoxes[3124] = TALLY                              -- the finished model
+    WoW.advance(0.3)
+    check(math.abs(drawn(1.34) - Mo.HEIGHT) < 1e-9, "fitted again once its box is whole: HEIGHT units tall")
+    local rec = GnomesweeperDB.modelBoxes and GnomesweeperDB.modelBoxes.win
+    check(rec and math.abs(rec.first - 0.67) < 1e-9 and math.abs(rec.final - 1.34) < 1e-9,
+        "both heights kept, for the record (a /reload writes them)")
+    local s = actor._scale
+    WoW.advance(Mo.SETTLE + 1)
+    eq(actor._scale, s, "a steady box: nothing more")
+    eq(ui.slot.scene._camera[3], 0, "no lift for her: the partial box was what put her feet outside")
 end
 
 ----------------------------------------------------------------------------

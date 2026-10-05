@@ -180,8 +180,12 @@ it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dres
 - **Wipe**: the Walking Bomb (6977) goes off (death, 1, particles on), then lies in its dead pose
   (6) after 1.5 s. Measured: the **wreckage lies lower than the bomb stood**, below the panel's
   edge; raised 24 units (the camera moves down, the actor stays) it sits inside. Judged right.
-- **Tally stands low**: drawn from her box, her feet were about 23 units below it, outside the
-  panel at every window scale (100% and 150%, in game): lifted 24, as the bomb's wreckage.
+- **The first box after a `/reload` is too small** (owner, in game): the model streams in, its box
+  answers before it's whole, and drawn from it the model came out too big (Tally's feet below the
+  panel, the bomb past its column); a close and reopen, from the cache, was right. So the box is
+  read again for `Models.SETTLE` (2 s) after it first answers and fitted again when it changes; the
+  first and final heights are kept in `GnomesweeperDB.modelBoxes` (to confirm the numbers). A lift
+  of 24 tried on Tally first was hiding this; it's gone.
 - **Win**: Tally (3124). Measured on Tally herself: **Blizzard's cheer (68) plays once** and she
   stands again. A jump-and-cheer loop (37, 38, 39, 68) was tried: **the jumps don't read in a frame**
   and move her root (owner: "cheer is the proper one"). So the cheer, once, with **her voice**: the

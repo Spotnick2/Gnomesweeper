@@ -32,9 +32,7 @@ Models.CAST = {
     -- Tally Berryfizz, the mascot's model (owner), cheering (68): it plays once and she
     -- stands. A jump-and-cheer loop was tried: the jumps don't read in a frame (owner: "cheer
     -- is the proper one"). Her voice is the win's sound (Sounds.KITS.win, her /cheer).
-    -- Drawn from her box she stands about 23 units low, her feet below the panel at every
-    -- scale (in game): `lift` (the whole cast) raises her, as the bomb's wreckage.
-    win = { display = 3124, lift = 24, steps = { { 68 } } },
+    win = { display = 3124, steps = { { 68 } } },
 }
 -- How tall a model's box is drawn, in window units (tiles are 24). 118 looked right
 -- over the field but stood taller than the old end panel; the owner's mockup made the
@@ -46,6 +44,7 @@ Models.HEIGHT = 104
 -- empty and may reach past the panel's edge.
 Models.FRAME = 180
 Models.WAIT = 0.5              -- a model not in by then is skipped: the panel is drawn without it
+Models.SETTLE = 2             -- seconds its box is read again after it first answers
 local POLL = 0.1
 local FOV, CAMERA = 0.15, 40   -- AltStable's framing (ModelProbe uses the same)
 
@@ -114,7 +113,26 @@ function Models.Slot(parent, level)
                 -- The view spans `span` scene units over FRAME window units: the box comes
                 -- out HEIGHT units tall.
                 local span = 2 * CAMERA * math.tan(FOV / 2)
-                pcall(actor.SetScale, actor, span * Models.HEIGHT / (height * Models.FRAME))
+                local function fit(hh) pcall(actor.SetScale, actor, span * Models.HEIGHT / (hh * Models.FRAME)) end
+                fit(height)
+                -- The first box can come while the model is still streaming in, smaller than
+                -- the finished one: drawn from it the model was too big, the first time only
+                -- (owner, in game: right after a close and reopen). Keep reading it a while
+                -- and fit again when it changes. Both heights are kept, for the record.
+                local log = { first = height, final = height }
+                local boxes = type(db().modelBoxes) == "table" and db().modelBoxes or {}
+                db().modelBoxes = boxes
+                boxes[key] = log
+                local function settle(left)
+                    if token ~= mine then return end
+                    local hh = readBox(actor)
+                    if hh and math.abs(hh - log.final) > log.final * 0.01 then
+                        log.final = hh
+                        fit(hh)
+                    end
+                    if left > 0 then C_Timer.After(POLL, function() settle(left - 1) end) end
+                end
+                C_Timer.After(POLL, function() settle(Models.SETTLE / POLL) end)
                 pcall(actor.SetParticleOverrideScale, actor, c.particles and 1 or 0)
                 h.scene:Show()
                 -- The steps, each after the last; a newer play or a stop drops the rest.

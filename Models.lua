@@ -33,7 +33,9 @@ Models.CAST = {
     -- The Walking Bomb (Gnomeregan): its death (1) is its explosion; then its dead pose
     -- (6), held while the panel is up. Its wreckage lies lower than it stood, below the
     -- panel (in game): lifted 24 it sits inside (judged right).
-    wipe = { display = 6977, height = 3.91, particles = true, steps = { { 1, 1.5 }, { 6, lift = 24 } } },
+    -- Its height: 3.91 standing drew it too big (in game); the size first approved was
+    -- drawn from its exploding box (6.00). 5.2, in a taller panel (WIPE_H, Window).
+    wipe = { display = 6977, height = 5.2, particles = true, steps = { { 1, 1.5 }, { 6, lift = 24 } } },
     -- Tally Berryfizz, the mascot's model (owner), cheering (68): it plays once and she
     -- stands. A jump-and-cheer loop was tried: the jumps don't read in a frame (owner: "cheer
     -- is the proper one"). Her voice is the win's sound (Sounds.KITS.win, her /cheer).

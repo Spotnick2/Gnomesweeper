@@ -77,7 +77,7 @@ do
     local narrow, wide = widths(W)
     eq(o._width, wide, "the panel widened for it")
     check(o._height >= Mo.HEIGHT + 28, "...and tall enough for it, fuse included")
-    eq(o._height, 142, "the wipe panel: as tall with or without it")
+    eq(o._height, 162, "the wipe panel: taller with the bomb (owner: it stood past the edges at 142)")
     eq(o.title._points[1][1], "TOP", "the title centred...")
     eq(o.title._points[1][4], centre(wide, 100), "...on the words' column, beside the bomb")
     eq(o.title._justifyH, "CENTER", "...like the win panel (owner: cohesive)")

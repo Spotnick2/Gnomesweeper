@@ -528,6 +528,7 @@ local OVERLAY_W, WIN_H, LOSS_H = 200, 210, 142   -- #21: a line under the title,
 local MODEL_COL = 100      -- the end panel's model column, when there is a model (#21)
 local PANEL_MAX = 340      -- the end panel's width with a model (#21: near the window's on Beginner)
 local PANEL_MARGIN = 14    -- from the window's edges, so the panel reads as a dialog over it (#21)
+local WIPE_H = 162         -- the wipe panel with the bomb (#21: 142 left it standing past the edges)
 -- The laurels (#12), now a badge beside "New personal best!" (#21, the mockup: no longer a wreath around the time).
 local LAUREL_W = 28
 local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 14
@@ -700,8 +701,9 @@ local function dressEnd(col)
     o.view:setAccent(unpack(C.quietRim))             -- the others quieter, so it leads (the review)
     o.bests:setAccent(unpack(C.quietRim))
     o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
-    -- Tall enough for the model beside the words.
-    local minH = col > 0 and GS.Models.HEIGHT + 28 or 0     -- its fuse reaches past its box
+    -- Tall enough for the model beside the words: the bomb, with its fuse and blast, wants
+    -- more room than Tally (owner: "you can just make the dialog bigger").
+    local minH = col > 0 and (won and GS.Models.HEIGHT + 28 or WIPE_H) or 0
     if won then
         local text, tint = bestLine()
         local isNew = lastWin and lastWin.new

@@ -185,9 +185,10 @@ it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dres
   cheering. Sized from it, a model's size depended on the pose the box was read in: wrong after a
   `/reload` (too big), and, once that was "fixed" by re-reading the box, wrong on a reopen instead
   (owner: "we reversed the bug"). So each cast member is **sized from its measured height**
-  (`Models.CAST[..].height`: the bomb 3.91, its standing box; Tally 1.8, her cheering one, the size the
-  owner approved), and the live box only says the model is in. Tally is lifted 6 (her toes touched
-  the panel's edge).
+  (`Models.CAST[..].height`: Tally 1.8, her cheering one, the size the  owner approved; the bomb 5.2: at 3.91, its standing box, it came out too big, the size first
+  approved having been drawn from its exploding box, 6.00), and the live box only says the model is
+  in. The wipe panel grows to 162 with the bomb (owner: "make the dialog bigger"). Tally is lifted 6
+  (her toes touched the panel's edge).
 - **Win**: Tally (3124). Measured on Tally herself: **Blizzard's cheer (68) plays once** and she
   stands again. A jump-and-cheer loop (37, 38, 39, 68) was tried: **the jumps don't read in a frame**
   and move her root (owner: "cheer is the proper one"). So the cheer, once, with **her voice**: the

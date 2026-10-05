@@ -80,6 +80,28 @@ function Widgets.GlassButton(parent, width, height, opts)
         self.border:SetVertexColor(r, g, bl)
         self.accent = { r, g, bl }
     end
+    -- The panel's main action (#21, the owner's mockup): a filled blue body, a bright
+    -- rim, a soft glow around it. Off: the plain glass button again.
+    function b.setPrimary(self, on)
+        if on then
+            if not self.glow then
+                self.glow = self:CreateTexture(nil, "BACKGROUND", nil, -1)
+                self.glow:SetPoint("TOPLEFT", self, "TOPLEFT", -6, 6)
+                self.glow:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", 6, -6)
+                self.glow:SetTexture(T.uiGlow)
+                if not opts.square then slice(self.glow) end
+                self.glow:SetBlendMode("ADD")
+                self.glow:SetVertexColor(unpack(C.primaryGlow))
+            end
+            self.fill:SetVertexColor(unpack(C.primaryFill))
+            self:setAccent(unpack(C.primaryRim))
+            self.glow:Show()
+        else
+            self.fill:SetVertexColor(1, 1, 1)
+            if self.glow then self.glow:Hide() end
+        end
+        self.primary = on and true or nil
+    end
     b:setAccent(unpack(C.accent))
     return b
 end

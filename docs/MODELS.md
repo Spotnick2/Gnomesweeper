@@ -170,3 +170,20 @@ sheet, boxes read from `GnomesweeperDB.modelProbe`.
 - **Any candidate is safe to try**: an absent display says so at once (`false`), a present one
   loads within ~0.2 s, and two scenes cost nothing measurable on Expert.
 - **The player's own character** works as a face (`actor:SetModelByUnit("player")`, textured).
+
+## What #21 built first: the end panel (in game, 1.60.1.70205, 2026-10-04)
+
+Over the field, the bomb didn't fit (owner); it went **into the end panel, on its left**, the panel
+widened for it and redone after the owner's mockup (gpt-6-astra's concept): title and a line under
+it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dressEnd`.
+
+- **Wipe**: the Walking Bomb (6977) goes off (death, 1, particles on), then lies in its dead pose
+  (6) after 1.5 s. Measured: the **wreckage lies lower than the bomb stood**, below the panel's
+  edge; raised 24 units (the camera moves down, the actor stays) it sits inside. Judged right.
+- **Win**: Tally (3124) cheering (68). Measured on Tally herself: **her cheer loops** while the
+  animation is set (she keeps jumping), and she stays in frame.
+- **Size**: the box drawn 104 units tall, standing on the panel's floor (8 units up). 118 over the
+  field was right, but stood taller than the panel; 92 fitted the old panel; the mockup's taller
+  panel (142) takes 104.
+- **The scene must be bigger than the model**: a 96-unit scene sliced the sphere, a 120 one the fuse
+  and blast (they reach past the box). 180, centred on the model's column, cuts nothing.

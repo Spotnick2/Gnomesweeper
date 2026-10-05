@@ -37,14 +37,14 @@ holds the decided design, so update it when the design changes.
 TOC load order (planned files in brackets): `Libs\LibGlass-1.0\LibGlass-1.0.xml` (first: the
 material, #71) → `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
-`Widgets.lua` → `Input.lua` → `Grid.lua` → [`Models.lua`] → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
+`Widgets.lua` → `Input.lua` → `Grid.lua` → `Models.lua` → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
 `Sounds.lua` → `Assets.lua` → `ModelProbe.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
   when needed instead of rewriting them.
 - **`Locales\`** (#36): **every player-facing string goes through `GS.L`, keyed by the English
-  text itself** (`L["Field cleared!"]`): a key with no translation reads back as itself, so English
+  text itself** (`L["Clean sweep!"]`): a key with no translation reads back as itself, so English
   needs no table and a missing translation shows English, never nil. Text built from parts is one
   format string (`L["Won %d of %d"]`) so a language can reorder it. `enUS.lua` holds the mechanism and
   `GS.LOCALE` (the decimal mark, the months), `GS.Decimal(fmt, v)` and `GS.FormatDate(t)`; `frFR.lua`
@@ -131,10 +131,30 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   new game plays it (`playerNewGame` in Window: the face, Play again, Try again, with the arm's sound).
   Mouse: `OnMouseDown`/`OnMouseUp` only, **never `OnClick`**
   (one dispatch path); `upInside` from the client, `IsMouseOver()` when it isn't passed.
-- **`Models.lua`** (#20, #21): live creature models (the gnome face, the bomb on a wipe) in
-  `ModelScene`s, on AltStable's pet-rendering recipe (`docs/MODELS.md`). **Display IDs, never
-  `SetCreature`**; never a model per tile; everything degrades to the 2D art.
-  Not written yet: #20's probe (`ModelProbe.lua`) measures first.
+- **`Models.lua`** (#21, on #20's measurements in `docs/MODELS.md`): live creature models in
+  `ModelScene`s, on AltStable's recipe. **Display IDs, never `SetCreature`**; never a model per tile;
+  everything degrades to the 2D art. **The end panel's model, on its left** (owner: "put it on the
+  left and increase the width of the dialog"; a bomb over the field didn't fit): `Models.CAST` says
+  who plays what, the **wipe**: the Walking Bomb (6977) going off (death, 1, particles on), then its
+  dead pose (6) after 1.5 s (timed: an actor has no animation-finished event), raised by `lift` (24
+  units: its wreckage lies lower than it stood, below the panel in game; the camera moves, not the actor); the **win**: Tally
+  (3124) jumping for joy (cheer, 68). Its box is drawn `Models.HEIGHT` (92: 118 stood taller than the panel) units tall in a
+  `Models.FRAME` (180) scene centred on its column (a model drawn past its scene is cut off: in game a
+  96 scene sliced the bomb's sphere, and a 120 one its fuse and blast, which reach past its box; the
+  spare room is empty and may reach past the panel). `Models.Slot(parent, level)`: `h.play(key, onFail)`, `h.stop()`, `h.playing`,
+  `h.scene`; the actor is cleared and the scene hidden before each load; `onFail` runs at once (the
+  **"3D models"** setting off, `GnomesweeperDB.models`; no `ModelScene`; the display refused) or
+  after `Models.WAIT` (0.5 s) without a box. In Window, `ui.slot` lives in the end panel at its
+  content level, standing on its floor. `dressEnd(col)` lays the panel out after the owner's mockup
+  (gpt-6-astra's concept): with a `MODEL_COL` (100) column, the panel `PANEL_MAX` (340) wide or as wide
+  as the window allows, the title left-aligned at the words' column with a **subtitle** under it ("One
+  more try?" / "Not a hair out of place."), the buttons spanning the column, the main one (Try again /
+  Play again) **filled blue** (`b:setPrimary`, Widgets); without a model the same, centred. The win
+  title is **"Clean sweep!"** (was "Field cleared!"; the French keeps "Champ déminé !").
+  `Window.EndModel()` starts the model, and `onFail` lays the panel out again without it. The
+  panel stops its model when it hides and starts it when it shows (the client hides children with
+  the window: a reopened panel replays it). **`/gsweep bomb`** (for measuring) replays the panel's
+  model.
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
@@ -163,7 +183,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
     back on screen when restored. `/gsweep reset` forgets it.
   - **The end of a game (#5):** the mascot follows `game:State()` (`ui.face:setState`, set in
     `Window.Refresh`). The action that ENDS a game (a state change in `Dispatch`, not just a finished
-    state) calls `Window.ShowEnd()`: one overlay frame, built on first use and re-dressed each time,
+    state) calls `Window.ShowEnd()` (with a model on its left, `Models.lua`, #21): one overlay frame, built on first use and re-dressed each time,
     centred on the board, above the tiles (so the board under it takes no clicks; the Board no-ops
     after the end anyway) and under the difficulty list. Cleared: gold title and rim, "Time mm:ss",
     "Play again". Wipe: red title and rim, "Try again". Under a win's time: **"New personal best!"**
@@ -595,6 +615,12 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
   the tooltip, a reload, and the result bar's room for its text on every difficulty.
 - **`test_assets.lua`** is the contact sheet: kinds, the survey, a missing path, a throwing check, the
   sheet's cells, the saved results.
+- **`test_models.lua`** is the end panel's models (#21): the bomb on a wipe (its pose after), Tally on a
+  win, the panel widened (capped on Beginner) and its words moved, the panel as before when a model
+  can't play (absent, the setting off, too slow, no `ModelScene`), a new game or a late load drawing
+  nothing, a panel shown again replaying it, the setting, `/gsweep bomb`. **The stub's end-panel
+  models are absent by default** (`WoW.modelSetFails[6977]` and `[3124]`), so every other test sees
+  the panel as before; a test about them brings them in.
 - **`test_modelprobe.lua`** is the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
   numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
   late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.

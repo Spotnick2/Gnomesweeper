@@ -1,7 +1,7 @@
 -- Locales/enUS.lua: the localization (#36). Loads right after Compat.lua, before
 -- anything with text in it.
 --
--- Gnomesweeper.L is keyed by the English text itself: L["Field cleared!"]. A key
+-- Gnomesweeper.L is keyed by the English text itself: L["Clean sweep!"]. A key
 -- with no translation reads back as itself, so English needs no table, a missing
 -- translation shows English (never nil, never an error), and the code stays
 -- readable. Text built from parts is one format string (L["Won %d of %d"]), so a

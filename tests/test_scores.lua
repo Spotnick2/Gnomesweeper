@@ -208,7 +208,7 @@ do  -- the first win, then slower, then faster
     check(o.laurels._points[1][5] < 0, "...the time high in the wreath, where the branches open widest")
     eq(o.newBest._points[1][2], o.laurels, "...the line under the wreath, not inside it")
     eq(o.beaten._points[1][2], o.newBest, "...the margin under the line")
-    eq(o:GetHeight(), 152 + 44, "...with room for the wreath and the line")
+    eq(o:GetHeight(), 180 + 44, "...with room for the wreath and the line")
     eq(menuBest(ui, "beginner"), "00:42", "the difficulty list shows the best, whole seconds")
     eq(menuBest(ui, "expert"), "-", "...and a dash where there is none")
     o.view._scripts.OnClick(o.view)
@@ -375,7 +375,7 @@ do  -- the same whole second: tenths, so a slower time can't look like a tie (re
     eq(o().time:GetText(), "Time 00:41.2", "another new best")
     eq(o().beaten:GetText(), "0.8 s faster than 00:42.0", "...0.8 s faster than the one before: 42.0 - 41.2 as shown (not 0.85 rounded)")
     check(o().beaten:IsShown() and o().newBest:IsShown(), "...both lines")
-    eq(o():GetHeight(), 152 + 44 + 17, "...the overlay grows for the wreath, the line and the margin")
+    eq(o():GetHeight(), 180 + 44 + 17, "...the overlay grows for the wreath, the line and the margin")
     o().view._scripts.OnClick(o().view)
     eq(W._test.ui.result.sub:GetText(), "Time 00:41.2  " .. string.char(194, 183) .. "  New best (-0.8 s)", "the result bar keeps both, short")
 

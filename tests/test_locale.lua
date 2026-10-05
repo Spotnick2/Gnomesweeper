@@ -19,7 +19,7 @@ end
 do
     loadAddon()
     local GS = Gnomesweeper
-    eq(GS.L["Field cleared!"], "Field cleared!", "English: a key reads back as itself")
+    eq(GS.L["Clean sweep!"], "Clean sweep!", "English: a key reads back as itself")
     eq(GS.L["anything at all"], "anything at all", "...any key, so a missing translation shows English, never nil")
     eq(GS.Decimal("%.1f", 0.8), "0.8", "English decimals: a point")
     eq(GS.FormatDate(os.time({ year = 2026, month = 10, day = 3, hour = 12 })), "3 Oct 2026", "an English date")
@@ -33,7 +33,7 @@ local NBSP = "\194\160"
 do
     loadAddon({ locale = "frFR" })
     local GS = Gnomesweeper
-    eq(GS.L["Field cleared!"], "Champ déminé" .. NBSP .. "!", "French: translated, with a non-breaking space before !")
+    eq(GS.L["Clean sweep!"], "Champ déminé" .. NBSP .. "!", "French: translated, with a non-breaking space before !")
     eq(GS.L["Beginner"], "Débutant", "...the difficulties")
     eq(GS.L["not a key"], "not a key", "...a missing entry still shows English")
     eq(GS.Decimal("%.1f", 0.8), "0,8", "French decimals: a comma")

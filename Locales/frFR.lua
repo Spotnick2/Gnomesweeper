@@ -75,7 +75,9 @@ local T = {
     ["Middle-click: Clear around number"] = "Clic milieu : dégager autour du chiffre",
 
     -- The end of a game
-    ["Field cleared!"] = "Champ déminé !",
+    ["Clean sweep!"] = "Champ déminé !",                       -- the old "Field cleared!" (#21): its words still fit
+    ["Not a hair out of place."] = "Pas un cheveu qui dépasse.",
+    ["One more try?"] = "On remet ça ?",
     ["Time %s"] = "Temps : %s",
     ["Play again"] = "Rejouer",
     ["Boom. Full wipe."] = "Boum. Wipe total.",
@@ -132,6 +134,9 @@ local T = {
         "Un combat range la fenêtre, en pause ; elle revient à la fin du combat.",
     ["Fireworks"] = "Feux d'artifice",
     ["Over the board when you beat your best time."] = "Sur le plateau quand vous battez votre record.",
+    ["3D models"] = "Modèles 3D",
+    ["At the end of a game: a Walking Bomb goes off on a wipe, the gnome jumps for joy on a win."] =
+        "À la fin d'une partie : une bombe ambulante explose sur un wipe, la gnome saute de joie sur une victoire.",
     ["Window size"] = "Taille de la fenêtre",
     ["Shown at %s so it fits the screen."] = "Affichée à %s pour tenir à l'écran.",
     ["Minimap button"] = "Bouton de la minicarte",

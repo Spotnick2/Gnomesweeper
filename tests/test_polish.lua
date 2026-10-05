@@ -275,7 +275,7 @@ do
     click(at(1, 1), L); click(at(5, 1), L)
     eq(W2.game:State(), "won", "(cleared)")
     ui2.overlay.view._scripts.OnClick(ui2.overlay.view)
-    eq(ui2.result.title:GetText(), "Field cleared!", "a win's result bar says so")
+    eq(ui2.result.title:GetText(), "Clean sweep!", "a win's result bar says so")
     eq(ui2.result.sub:GetText(), "Time 01:24", "...with the time")
     eq(ui2.result.button.label:GetText(), "Play again", "...and Play again")
     -- Closing and reopening keeps it.

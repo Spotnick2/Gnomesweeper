@@ -13,6 +13,7 @@ local BOMB = { -0.5, -0.4, -0.6, 0.5, 0.4, 0.6 }       -- six numbers, as Foreve
 
 local function setup()
     loadAddon()
+    WoW.modelSetFails[6977], WoW.modelSetFails[3124] = nil, nil   -- the stub's default: the end panel's models absent
     return Gnomesweeper.ModelProbe, Gnomesweeper.ModelProbe._test
 end
 

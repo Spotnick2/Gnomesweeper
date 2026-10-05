@@ -61,6 +61,8 @@ Options.ITEMS = {
       note = L["When a guildmate with Gnomesweeper sets a new guild best. Never in combat."] },
     { key = "fireworks", kind = "toggle", label = L["Fireworks"],
       note = L["Over the board when you beat your best time."] },
+    { key = "models", kind = "toggle", label = L["3D models"],
+      note = L["At the end of a game: a Walking Bomb goes off on a wipe, the gnome jumps for joy on a win."] },
     { key = "scale", kind = "scale", label = L["Window size"],
       get = function() return db().scale or 1 end,
       set = function(v)

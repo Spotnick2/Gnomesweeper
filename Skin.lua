@@ -163,5 +163,8 @@ Skin.COLORS = {
     overlayBg    = { 0.03, 0.06, 0.13, 0.94 },
     winRim       = { 1, 0.82, 0.30 },          -- the cleared overlay's gold rim
     lossRim      = { 1, 0.35, 0.30 },
+    primaryFill  = { 0.30, 0.55, 1.00 },        -- the end panel's main button (#21): filled blue
+    primaryRim   = { 0.55, 0.85, 1.00 },
+    primaryGlow  = { 0.30, 0.60, 1.00, 0.45 },
     boom         = { 1, 0.42, 0.36 },          -- "Boom. Full wipe."
 }

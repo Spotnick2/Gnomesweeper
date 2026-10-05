@@ -77,7 +77,7 @@ do
 end
 
 ----------------------------------------------------------------------------
--- Field cleared
+-- Clean sweep (was "Field cleared!", #21)
 ----------------------------------------------------------------------------
 do
     local W = onWall()
@@ -92,7 +92,7 @@ do
 
     local o = ui.overlay
     check(o ~= nil and o:IsShown(), "the cleared overlay is up")
-    eq(o.title:GetText(), "Field cleared!", "...with the storyboard's words")
+    eq(o.title:GetText(), "Clean sweep!", "...with the storyboard's words")
     eq(o.title._textColor[1], Skin.COLORS.gold[1], "...in gold")
     eq(o.time:GetText(), "Time 01:24", "...and the time (84 seconds)")
     check(o.time:IsShown(), "...shown")
@@ -111,7 +111,7 @@ do
     check(o._width <= ui.grid._width, "it fits the board (" .. o._width .. " of " .. ui.grid._width .. ")")
     local p = lastPoint(o)
     check(p[1] == "CENTER" and p[2] == ui.grid and p[3] == "CENTER", "...centred on it")
-    eq(o._height, 134, "without the personal-best line it is shorter")
+    eq(o._height, 162, "without the personal-best line it is shorter")
 end
 
 ----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ do
     check(not o.best:IsShown(), "...and no personal best")
     eq(o.button.label:GetText(), "Try again", "the button says Try again")
     eq(o.glass.rim._vertex[1], Skin.COLORS.lossRim[1], "the rim is red")
-    eq(o._height, 114, "the wipe overlay is the short one")
+    eq(o._height, 142, "the wipe overlay is the short one")
     eq(ui.face.state, "lost", "the mascot is in her wiped state")
 
     -- Both overlays are one frame, re-dressed: no second one is built.
@@ -141,7 +141,7 @@ do
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout(WALL))
     click(at(1, 1), L); click(at(5, 1), L)
     check(ui.overlay == o and o:IsShown(), "the next game's end reuses the same overlay")
-    eq(o.title:GetText(), "Field cleared!", "...dressed for a win")
+    eq(o.title:GetText(), "Clean sweep!", "...dressed for a win")
     eq(#WoW.frames, frames, "...creating no frames")
 end
 
@@ -244,7 +244,7 @@ do  -- #67: a Best times button on the win panel, beside See the field
     eq(W.game:State(), "lost", "(a wipe)")
     check(not o.bests:IsShown(), "a wipe: no Best times button")
     eq(o.view._points[1][1], "BOTTOM", "...See the field alone, centred")
-    eq(o.view:GetWidth(), 136, "...at its full width")
+    eq(o.view:GetWidth(), o:GetWidth() - 24, "...spanning the panel, less its margins (#21)")
 
     play({ "*.." }, { 2, 3 })
     check(o.bests:IsShown(), "a win again: the button is back")

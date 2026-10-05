@@ -39,7 +39,7 @@ local function win() click(1) end
 -- The panel's width, laid out with or without the model column.
 local function widths(W)
     local base = math.min(200, W.size.gridW - 12)
-    return base, math.min(340, W.size.width - 16)
+    return base, math.min(340, W.size.width - 28)
 end
 -- The centre of the words' column, from the panel's left (the model's column is 100).
 local function centre(total, col) return col + (total - col) / 2 end
@@ -120,7 +120,7 @@ do
     W, ui = board()
     W._test.SetGame(sized(9, 9))
     click(1)
-    eq(ui.overlay._width, W.size.width - 16, "Beginner: as wide as the window allows")
+    eq(ui.overlay._width, W.size.width - 28, "Beginner: as wide as the window allows, 14 from each edge")
     check(ui.overlay._width < 340, "...which is less")
 end
 
@@ -176,6 +176,36 @@ do
     local played = {}
     for _, s in ipairs(WoW.sounds) do played[#played + 1] = s.kit or s[1] end
     check(table.concat(played, ","):find(tostring(Gnomesweeper.Sounds.KITS.win), 1, true), "her /cheer was heard")
+end
+
+-- A dialog over the window, not a part of it (#21, the owner's review).
+do
+    local W, ui = board()
+    wipe()
+    local o, dim = ui.overlay, ui.dim
+    check(dim:IsShown(), "the window is dimmed under the panel")
+    eq(dim._points[1][1], "ALL", "...all of it (the header and footer too)")
+    eq(dim._points[1][2], W.win, "...the window only, never the game world")
+    check(dim:GetFrameLevel() > ui.fx:GetFrameLevel() and dim:GetFrameLevel() < o:GetFrameLevel(),
+        "...over the board, under the panel")
+    eq(dim.tex._color[4], 0.35, "...35% black")
+    check(not dim._mouse, "...taking no clicks: the title bar still works")
+    eq(o.backing._color[4], Gnomesweeper.Skin.COLORS.panelBg[4], "the panel: a deeper, near-opaque navy")
+    eq(o.glass.rim._alpha, 1, "...a clearer rim")
+    o.view._scripts.OnClick(o.view)                           -- See the field
+    check(not dim:IsShown(), "put away: the window bright again")
+    ui.result.button._scripts.OnClick(ui.result.button)       -- a new game
+    check(not dim:IsShown(), "...and stays so")
+end
+
+-- Tally stands inside the panel: drawn from her box she\'d stand ~23 units low (in game).
+do
+    local W, ui = board({ win = true })
+    win()
+    local span = 2 * 40 * math.tan(0.15 / 2)
+    local Mo = Gnomesweeper.Models
+    check(math.abs(ui.slot.scene._camera[3] + Mo.CAST.win.lift * span / Mo.FRAME) < 1e-9,
+        "Tally is lifted " .. Mo.CAST.win.lift .. " units, her feet inside the panel")
 end
 
 ----------------------------------------------------------------------------

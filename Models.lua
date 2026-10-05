@@ -22,7 +22,8 @@ GS.Models = Models
 -- Who plays what (#20, #21, in game): `steps`, each { animation, seconds [, lift = units] },
 -- played in order; a step without seconds is held.
 -- Timed, because no actor event says when an animation ends (only Model frames have
--- OnAnimFinished). `lift` raises the model (window units) while its step plays.
+-- OnAnimFinished). `lift` raises the model (window units), the cast's for all its steps
+-- or a step's while it plays.
 Models.CAST = {
     -- The Walking Bomb (Gnomeregan): its death (1) is its explosion; then its dead pose
     -- (6), held while the panel is up. Its wreckage lies lower than it stood, below the
@@ -31,7 +32,9 @@ Models.CAST = {
     -- Tally Berryfizz, the mascot's model (owner), cheering (68): it plays once and she
     -- stands. A jump-and-cheer loop was tried: the jumps don't read in a frame (owner: "cheer
     -- is the proper one"). Her voice is the win's sound (Sounds.KITS.win, her /cheer).
-    win = { display = 3124, steps = { { 68 } } },
+    -- Drawn from her box she stands about 23 units low, her feet below the panel at every
+    -- scale (in game): `lift` (the whole cast) raises her, as the bomb's wreckage.
+    win = { display = 3124, lift = 24, steps = { { 68 } } },
 }
 -- How tall a model's box is drawn, in window units (tiles are 24). 118 looked right
 -- over the field but stood taller than the old end panel; the owner's mockup made the
@@ -121,11 +124,12 @@ function Models.Slot(parent, level)
                     if not s then return end
                     pcall(actor.SetAnimation, actor, s[1])
                     -- The camera down by `lift` window units, in scene units: the model up.
-                    pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -(s.lift or 0) * span / Models.FRAME)
+                    pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -(s.lift or c.lift or 0) * span / Models.FRAME)
                     if s[2] then C_Timer.After(s[2], function() step(i + 1) end) end
                 end
                 if delay and delay > 0 then
                     pcall(actor.SetAnimation, actor, 0)                -- standing until her cue
+                    pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -(c.lift or 0) * span / Models.FRAME)
                     C_Timer.After(delay, function() step(1) end)
                 else
                     step(1)

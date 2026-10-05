@@ -198,7 +198,7 @@ do  -- the first win, then slower, then faster
     eq(best.realm, "Forever", "...the realm")
     local o = ui.overlay
     check(o.newBest:IsShown() and not o.best:IsShown(), "the overlay says so, on its own bigger line")
-    eq(o.newBest:GetText(), "New personal best!", "...New personal best!")
+    eq(o.newBest:GetText(), "Personal best!", "...Personal best! (shorter than New personal best!: it fits beside the badge)")
     eq(o.newBest._textColor[1], Skin.COLORS.gold[1], "...in gold")
     check(o.pulse.isPlaying(), "...with a beat (#10)")
     check(o.laurels:IsShown(), "...in laurels (#12)")

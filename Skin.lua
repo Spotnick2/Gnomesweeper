@@ -161,6 +161,7 @@ Skin.COLORS = {
     wrongFlag    = { 1, 0.15, 0.15 },          -- the X over a (greyed) flag that wasn't on a mine
     question     = { 0.98, 0.77, 0.38 },
     overlayBg    = { 0.03, 0.06, 0.13, 0.94 },
+    panelBg      = { 0.02, 0.04, 0.10, 0.98 },  -- the end panel: a deeper, near-opaque navy, a dialog over the window (#21)
     winRim       = { 1, 0.82, 0.30 },          -- the cleared overlay's gold rim
     lossRim      = { 1, 0.35, 0.30 },
     primaryFill  = { 0.30, 0.55, 1.00 },        -- the end panel's main button (#21): filled blue

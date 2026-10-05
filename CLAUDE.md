@@ -155,8 +155,12 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   the words' column with a **subtitle** under it ("One more try?" / "Not a hair out of place."), the
   buttons spanning the column, the main one (Try again / Play again) **filled blue** with no glow
   (`b:setPrimary`, Widgets), "See the field" and "Best times" styled alike; without a model the
-  same, centred. **A win's time is the main result**: a quiet "TIME" (`L["Time"]:upper()`), the time
-  big (28), then the best that stands, or "New personal best!" with the **laurels as a small badge**
+  same, centred. **A dialog over the window** (the owner's review): the window under it dimmed
+  (`ui.dim`, 35% black, masked to the window's glass, level +14, no mouse), `PANEL_MARGIN` (14) from
+  the window's edges, a deeper near-opaque navy (`C.panelBg`), less grain, a darker shadow, a clearer
+  rim (LibGlass's region fields). **A win's time is the main result**: a quiet "TIME" (`L["Time"]:upper()`), the time
+  big (28), then the best that stands, or "Personal best!" (14 pt, shorter than "New personal best!", which ran
+  past Beginner's column) with the **laurels as a small badge**
   beside it (no longer a wreath around the time) and, quieter, "Previous best: 01:08.8" and
   "58.9 s faster". The win
   title is **"Clean sweep!"** (was "Field cleared!"; the French keeps "Champ déminé !").

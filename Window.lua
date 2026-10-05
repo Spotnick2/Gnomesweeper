@@ -162,7 +162,7 @@ end
 -- What the end of a won game says about the best: the text and its colour.
 local function bestLine()
     if not lastWin then return nil end
-    if lastWin.new then return L["New personal best!"], C.gold end
+    if lastWin.new then return L["Personal best!"], C.gold end
     if lastWin.previous then return string.format(L["Best %s"], shownTime(lastWin.previous.time, sameSecond())), C.hint end
     return nil
 end
@@ -527,8 +527,9 @@ end
 local OVERLAY_W, WIN_H, LOSS_H = 200, 210, 142   -- #21: a line under the title, the time big, bigger buttons
 local MODEL_COL = 100      -- the end panel's model column, when there is a model (#21)
 local PANEL_MAX = 340      -- the end panel's width with a model (#21: near the window's on Beginner)
+local PANEL_MARGIN = 14    -- from the window's edges, so the panel reads as a dialog over it (#21)
 -- The laurels (#12), now a badge beside "New personal best!" (#21, the mockup: no longer a wreath around the time).
-local LAUREL_W = 40
+local LAUREL_W = 28
 local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 14
 
 local function endTexts()
@@ -551,8 +552,26 @@ local function buildOverlay()
     o.glass = Glass.Apply(o, "small")
     o.backing = o:CreateTexture(nil, "BACKGROUND", nil, -7)
     o.backing:SetAllPoints(o)
-    o.backing:SetColorTexture(unpack(C.overlayBg))
+    o.backing:SetColorTexture(unpack(C.panelBg))
     o.backing:AddMaskTexture(o.glass.mask)
+    -- A dialog, not a part of the window (#21, the owner's review): deeper and more opaque,
+    -- less grain, a darker shadow, a clearer thin rim (its colour follows the result).
+    o.glass.grain:SetAlpha(o.glass.grain:GetAlpha() * 0.4)
+    o.glass.shadow:SetVertexColor(0, 0, 0)
+    o.glass.shadow:SetAlpha(0.95)
+    o.glass.rim:SetAlpha(1)
+    -- The window under it dimmed (35% black), inside its glass only, never the game world.
+    -- It takes no clicks: the title bar's close and settings still work under it.
+    local dim = CreateFrame("Frame", nil, win)
+    dim:SetAllPoints(win)
+    dim:SetFrameLevel(win:GetFrameLevel() + 14)      -- over the board, the HUD and the footer; under the panel
+    dim:EnableMouse(false)
+    dim.tex = dim:CreateTexture(nil, "BACKGROUND")
+    dim.tex:SetAllPoints(dim)
+    dim.tex:SetColorTexture(0, 0, 0, 0.35)
+    dim.tex:AddMaskTexture(Glass.Mask(dim, "body_mask", 16))
+    dim:Hide()
+    ui.dim = dim
 
     o.title = Glass.Font(o, 20, "CENTER")
     o.title:SetPoint("TOP", o, "TOP", 0, -14)
@@ -570,9 +589,9 @@ local function buildOverlay()
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
     -- A new personal best is an event (#10): bigger, gold, and a beat, with the storyboard's
     -- laurels (#12) as a small badge beside it (the mockup: no longer a wreath around the time).
-    o.newBest = Glass.Font(o, 16, "CENTER")
+    o.newBest = Glass.Font(o, 14, "CENTER")   -- 14: with the badge and its pulse it fits Beginner's column (16 ran past it)
     o.newBest:SetTextColor(unpack(C.gold))
-    o.newBest:SetText(L["New personal best!"])
+    o.newBest:SetText(L["Personal best!"])         -- shorter than "New personal best!": it fits beside the badge
     o.newBest:SetPoint("TOP", o.time, "BOTTOM", 4 + LAUREL_W / 2, -6)  -- the badge and the words, centred together
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
@@ -620,8 +639,11 @@ local function buildOverlay()
     -- client hides children with it), started whenever it shows (a reopened window
     -- replays it).
     ui.slot = GS.Models.Slot(o, Glass.ContentLevel(o))
-    o:SetScript("OnHide", function() ui.slot.stop() end)
-    o:SetScript("OnShow", function() if not ui.slot.playing then Window.EndModel() end end)
+    o:SetScript("OnHide", function() ui.slot.stop(); ui.dim:Hide() end)
+    o:SetScript("OnShow", function()
+        ui.dim:Show()
+        if not ui.slot.playing then Window.EndModel() end
+    end)
     -- No tooltip on the panel (owner): "See the field" is a visible button now, and the tip was noise.
     o:Hide()
     ui.overlay = o
@@ -635,7 +657,7 @@ end
 local function dressEnd(col)
     local o = ui.overlay
     local title, color, sub, button, rim, subtitle, shown = endTexts()
-    local total = col > 0 and math.min(PANEL_MAX, Window.size.width - 16)
+    local total = col > 0 and math.min(PANEL_MAX, Window.size.width - 2 * PANEL_MARGIN)
         or math.min(OVERLAY_W, Window.size.gridW - 12)
     local w = total - col                            -- the words' and buttons' column
     local cx = col + w / 2                           -- its centre, from the panel's left

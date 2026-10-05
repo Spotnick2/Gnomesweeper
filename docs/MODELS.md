@@ -180,6 +180,8 @@ it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dres
 - **Wipe**: the Walking Bomb (6977) goes off (death, 1, particles on), then lies in its dead pose
   (6) after 1.5 s. Measured: the **wreckage lies lower than the bomb stood**, below the panel's
   edge; raised 24 units (the camera moves down, the actor stays) it sits inside. Judged right.
+- **Tally stands low**: drawn from her box, her feet were about 23 units below it, outside the
+  panel at every window scale (100% and 150%, in game): lifted 24, as the bomb's wreckage.
 - **Win**: Tally (3124). Measured on Tally herself: **Blizzard's cheer (68) plays once** and she
   stands again. A jump-and-cheer loop (37, 38, 39, 68) was tried: **the jumps don't read in a frame**
   and move her root (owner: "cheer is the proper one"). So the cheer, once, with **her voice**: the

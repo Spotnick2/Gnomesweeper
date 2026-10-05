@@ -379,6 +379,6 @@ do  -- with the music setting on, the probe's end leaves it playing
 end
 
 -- The cheer is a female gnome's (owner: the mascot is a she): /congratulate, Gnome, female.
-eq(Gnomesweeper.Sounds.KITS.win, 6122, "the win's congratulations: a female gnome")
+eq(Gnomesweeper.Sounds.KITS.win, 2847, "the win's voice: a female gnome's /cheer, with Tally's (EmotesTextSound: CHEER, gnome, female; #21)")
 
 done("test_sounds")

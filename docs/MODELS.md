@@ -170,3 +170,32 @@ sheet, boxes read from `GnomesweeperDB.modelProbe`.
 - **Any candidate is safe to try**: an absent display says so at once (`false`), a present one
   loads within ~0.2 s, and two scenes cost nothing measurable on Expert.
 - **The player's own character** works as a face (`actor:SetModelByUnit("player")`, textured).
+
+## What #21 built first: the end panel (in game, 1.60.1.70205, 2026-10-04)
+
+Over the field, the bomb didn't fit (owner); it went **into the end panel, on its left**, the panel
+widened for it and redone after the owner's mockup (gpt-6-astra's concept): title and a line under
+it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dressEnd`.
+
+- **Wipe**: the Walking Bomb (6977) goes off (death, 1, particles on), then lies in its dead pose
+  (6) after 1.5 s. Measured: the **wreckage lies lower than the bomb stood**, below the panel's
+  edge; raised 24 units (the camera moves down, the actor stays) it sits inside. Judged right.
+- **The live box follows the animation pose** (measured, 70205): the Walking Bomb's
+  `GetActiveBoundingBox` grew from 3.91 to 6.00 as it went off; Tally's is 1.34 standing and ~1.8
+  cheering. Sized from it, a model's size depended on the pose the box was read in: wrong after a
+  `/reload` (too big), and, once that was "fixed" by re-reading the box, wrong on a reopen instead
+  (owner: "we reversed the bug"). So each cast member is **sized from its measured height**
+  (`Models.CAST[..].height`: Tally 1.8, her cheering one, the size the  owner approved; the bomb 5.2: at 3.91, its standing box, it came out too big, the size first
+  approved having been drawn from its exploding box, 6.00), and the live box only says the model is
+  in. The wipe panel grows to 162 with the bomb (owner: "make the dialog bigger"). Tally is lifted 6
+  (her toes touched the panel's edge).
+- **Win**: Tally (3124). Measured on Tally herself: **Blizzard's cheer (68) plays once** and she
+  stands again. A jump-and-cheer loop (37, 38, 39, 68) was tried: **the jumps don't read in a frame**
+  and move her root (owner: "cheer is the proper one"). So the cheer, once, with **her voice**: the
+  female gnome's /cheer, kit 2847 (`EmotesTextSound`), as the win's sound; after a new best's
+  fanfare, the cheer waits for the voice (`Sounds.BEST_DELAY`).
+- **Size**: the box drawn 104 units tall, standing on the panel's floor (8 units up). 118 over the
+  field was right, but stood taller than the panel; 92 fitted the old panel; the mockup's taller
+  panel (142) takes 104.
+- **The scene must be bigger than the model**: a 96-unit scene sliced the sphere, a 120 one the fuse
+  and blast (they reach past the box). 180, centred on the model's column, cuts nothing.

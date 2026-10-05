@@ -162,7 +162,7 @@ end
 -- What the end of a won game says about the best: the text and its colour.
 local function bestLine()
     if not lastWin then return nil end
-    if lastWin.new then return L["New personal best!"], C.gold end
+    if lastWin.new then return L["Personal best!"], C.gold end
     if lastWin.previous then return string.format(L["Best %s"], shownTime(lastWin.previous.time, sameSecond())), C.hint end
     return nil
 end
@@ -524,25 +524,25 @@ end
 -- The end of a game: the overlay over the board
 ------------------------------------------------------------
 
-local OVERLAY_W, WIN_H, LOSS_H = 200, 152, 114
--- A new best crowns its TIME with the laurels (#12). Measured on the texture: the
--- branches leave about 71% of their drawn width open, in their upper half only;
--- "New personal best!" (~146 units, 160 at the pulse) would need laurels wider than
--- the panel, the time (~98 units) fits. So the time sits a quarter of the way down
--- the wreath (LAUREL_TEXT), and the line and the margin hang under it.
-local LAUREL_W = 150
-local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 53
-local LAUREL_TEXT = 0.25
-local NEW_BEST_H = WIN_H + 44           -- the wreath and the line under it, clear of Play again
+local OVERLAY_W, WIN_H, LOSS_H = 200, 210, 142   -- #21: a line under the title, the time big, bigger buttons
+local MODEL_COL = 100      -- the end panel's model column, when there is a model (#21)
+local PANEL_MAX = 340      -- the end panel's width with a model (#21: near the window's on Beginner)
+local PANEL_MARGIN = 14    -- from the window's edges, so the panel reads as a dialog over it (#21)
+local WIPE_H = 162         -- the wipe panel with the bomb (#21: 142 left it standing past the edges)
+-- The laurels (#12), now a badge beside "New personal best!" (#21, the mockup: no longer a wreath around the time).
+local LAUREL_W = 28
+local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 14
 
 local function endTexts()
     if game:State() == "won" then
         -- Tenths when they decide something: a new best, or a time in the same second as the best.
         local tenths = sameSecond() or (lastWin and lastWin.new) or false
-        return L["Field cleared!"], C.gold, string.format(L["Time %s"], shownTime(game:Elapsed(GetTime()), tenths)),
-            L["Play again"], C.winRim
+        local t = shownTime(game:Elapsed(GetTime()), tenths)
+        return L["Clean sweep!"], C.gold, string.format(L["Time %s"], t), L["Play again"], C.winRim,
+            L["Not a hair out of place."], t
     end
-    return L["Boom. Full wipe."], C.boom, L["Wrong flags are crossed out."], L["Try again"], C.lossRim
+    return L["Boom. Full wipe."], C.boom, L["Wrong flags are crossed out."], L["Try again"], C.lossRim,
+        L["One more try?"]
 end
 
 local function buildOverlay()
@@ -553,36 +553,69 @@ local function buildOverlay()
     o.glass = Glass.Apply(o, "small")
     o.backing = o:CreateTexture(nil, "BACKGROUND", nil, -7)
     o.backing:SetAllPoints(o)
-    o.backing:SetColorTexture(unpack(C.overlayBg))
+    o.backing:SetColorTexture(unpack(C.panelBg))
     o.backing:AddMaskTexture(o.glass.mask)
+    -- A dialog, not a part of the window (#21, the owner's review): deeper and more opaque,
+    -- less grain, a darker shadow, a clearer thin rim (its colour follows the result).
+    o.glass.grain:SetAlpha(o.glass.grain:GetAlpha() * 0.4)
+    o.glass.shadow:SetVertexColor(0, 0, 0)
+    o.glass.shadow:SetAlpha(0.95)
+    o.glass.rim:SetAlpha(1)
+    -- The window under it dimmed (45% black), inside its glass only, never the game world.
+    -- It takes no clicks: the title bar's close and settings still work under it.
+    local dim = CreateFrame("Frame", nil, win)
+    dim:SetAllPoints(win)
+    dim:SetFrameLevel(win:GetFrameLevel() + 14)      -- over the board, the HUD and the footer; under the panel
+    dim:EnableMouse(false)
+    dim.tex = dim:CreateTexture(nil, "BACKGROUND")
+    dim.tex:SetAllPoints(dim)
+    dim.tex:SetColorTexture(0, 0, 0, 0.45)   -- 45%: at 35 the green selector and red timer still competed (the review)
+    dim.tex:AddMaskTexture(Glass.Mask(dim, "body_mask", 16))
+    dim:Hide()
+    ui.dim = dim
 
     o.title = Glass.Font(o, 20, "CENTER")
     o.title:SetPoint("TOP", o, "TOP", 0, -14)
-    o.time = Glass.Font(o, 14, "CENTER")
-    o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
+    -- The line under it (#21, the owner's words): "One more try?", "Not a hair out of place."
+    o.subtitle = Glass.Font(o, 13, "CENTER")
+    o.subtitle:SetTextColor(unpack(C.hint))
+    -- A win's result (#21, the owner's mockup): a quiet "TIME", the time big under it.
+    o.timeLabel = Glass.Font(o, 11, "CENTER")
+    o.timeLabel:SetTextColor(unpack(C.hint))
+    o.timeLabel:SetText(L["Time"]:upper())
+    o.timeLabel:SetPoint("TOP", o.subtitle, "BOTTOM", 0, -10)    -- the subtitle spans the column: centred on it
+    o.time = Glass.Font(o, 28, "CENTER")
+    o.time:SetPoint("TOP", o.timeLabel, "BOTTOM", 0, -2)
     o.best = Glass.Font(o, 12, "CENTER")              -- the best that stands ("Best 00:42")
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
-    -- A new personal best is an event (#10): bigger, gold, and a beat.
-    o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
-
+    -- A new personal best is an event (#10): bigger, gold, and a beat, with the storyboard's
+    -- laurels (#12) as a small badge beside it (the mockup: no longer a wreath around the time).
+    o.newBest = Glass.Font(o, 14, "CENTER")   -- 14: with the badge and its pulse it fits Beginner's column (16 ran past it)
     o.newBest:SetTextColor(unpack(C.gold))
-    o.newBest:SetText(L["New personal best!"])
+    o.newBest:SetText(L["Personal best!"])         -- shorter than "New personal best!": it fits beside the badge
+    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 4 + LAUREL_W / 2, -6)  -- the badge and the words, centred together
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
-    -- The storyboard's laurels around it (#12): behind the text, open at the top.
     o.laurels = o:CreateTexture(nil, "ARTWORK")
     o.laurels:SetSize(LAUREL_W, LAUREL_H)
     o.laurels:SetTexture(T.laurels)
     o.laurels:SetTexCoord(unpack(Skin.LAUREL_CROP))
-    -- the time a quarter of the way down: the wreath's centre is that much lower
-    o.laurels:SetPoint("CENTER", o.time, "CENTER", 0, -(0.5 - LAUREL_TEXT) * LAUREL_H)
+    o.laurels:SetPoint("RIGHT", o.newBest, "LEFT", -4, 0)
     o.laurels:Hide()
-    o.newBest:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)     -- under the wreath (it always shows with it)
-    -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
+    -- Under it, quieter: the record it beat, and by how much.
     o.beaten = Glass.Font(o, 12, "CENTER")
-    o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
+    o.beaten:SetPoint("TOP", o.time, "BOTTOM", 0, -28)
     o.beaten:SetTextColor(unpack(C.hint))
     o.beaten:Hide()
+    o.faster = Glass.Font(o, 12, "CENTER")
+    o.faster:SetPoint("TOP", o.beaten, "BOTTOM", 0, -2)
+    o.faster:SetTextColor(unpack(C.hint))
+    o.faster:Hide()
+    -- The model's column and the words', parted by a thin line (the mockup).
+    o.divider = o:CreateTexture(nil, "ARTWORK")
+    o.divider:SetWidth(1)
+    o.divider:SetColorTexture(1, 1, 1, 0.12)
+    o.divider:Hide()
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
@@ -596,15 +629,133 @@ local function buildOverlay()
     -- After a win, the best times beside it (#67, owner): the trophy's own words, never "board".
     o.bests = Widgets.GlassButton(o, 87, 22, { fontSize = 10 })
     o.bests.label:SetText(L["Best times"])
-    o.bests:setAccent(unpack(C.gold))
+    -- Styled like "See the field" (the second mockup: both secondary buttons alike).
     o.bests:SetScript("OnClick", function() Window.ShowBests(true) end)
     o.bests:Hide()
 
     -- And a click on the panel itself does the same.
     o:SetScript("OnMouseUp", function() Window.DismissEnd() end)
+    -- The model on its left (#21): above the glass body, under the rim; it goes with the panel.
+    -- Stopped whenever the panel hides (put away, a new game, the window closing: the
+    -- client hides children with it), started whenever it shows (a reopened window
+    -- replays it).
+    ui.slot = GS.Models.Slot(o, Glass.ContentLevel(o))
+    o:SetScript("OnHide", function() ui.slot.stop(); ui.dim:Hide() end)
+    o:SetScript("OnShow", function()
+        ui.dim:Show()
+        if not ui.slot.playing then Window.EndModel() end
+    end)
     -- No tooltip on the panel (owner): "See the field" is a visible button now, and the tip was noise.
     o:Hide()
     ui.overlay = o
+end
+
+-- The panel's words and buttons (#21, after the owner's mockups): beside a model column
+-- `col` units wide on its left, parted by a thin line, or alone without one (col 0).
+-- With a model the panel is as wide as PANEL_MAX or the window allows. Both panels the
+-- same way (owner: "cohesive"): the words centred in their column, the buttons spanning
+-- it, the main one filled blue. A win's time is the main result, big under a quiet TIME.
+local function dressEnd(col)
+    local o = ui.overlay
+    local title, color, sub, button, rim, subtitle, shown = endTexts()
+    local total = col > 0 and math.min(PANEL_MAX, Window.size.width - 2 * PANEL_MARGIN)
+        or math.min(OVERLAY_W, Window.size.gridW - 12)
+    local w = total - col                            -- the words' and buttons' column
+    local cx = col + w / 2                           -- its centre, from the panel's left
+    local inner = w - 24                             -- the buttons' width, and the words'
+    o:SetWidth(total)
+    o.title:ClearAllPoints()
+    o.title:SetJustifyH("CENTER")
+    o.title:SetPoint("TOP", o, "TOPLEFT", cx, -16)
+    o.subtitle:ClearAllPoints()
+    o.subtitle:SetWidth(inner)
+    o.subtitle:SetJustifyH("CENTER")
+    o.subtitle:SetPoint("TOP", o.title, "BOTTOM", 0, -4)
+    o.subtitle:SetText(subtitle)
+    o.divider:ClearAllPoints()
+    o.divider:SetPoint("TOPLEFT", o, "TOPLEFT", col, -14)
+    o.divider:SetPoint("BOTTOMLEFT", o, "BOTTOMLEFT", col, 14)
+    o.divider:SetShown(col > 0)
+    o.button:ClearAllPoints()
+    o.button:SetSize(inner, 30)
+    o.button:SetPoint("BOTTOM", o, "BOTTOMLEFT", cx, 46)
+    -- A win: "See the field" and "Best times" side by side (#67); a wipe: "See the field" alone.
+    local won = game:State() == "won"
+    local half = math.floor((inner - 6) / 2)
+    o.view:ClearAllPoints()
+    o.bests:ClearAllPoints()
+    if won then
+        o.view:SetSize(half, 24)
+        o.view:SetPoint("BOTTOMRIGHT", o, "BOTTOMLEFT", cx - 3, 12)
+        o.bests:SetSize(half, 24)
+        o.bests:SetPoint("BOTTOMLEFT", o, "BOTTOMLEFT", cx + 3, 12)
+    else
+        o.view:SetSize(inner, 24)
+        o.view:SetPoint("BOTTOM", o, "BOTTOMLEFT", cx, 12)
+    end
+    o.bests:SetShown(won)
+    o.title:SetTextColor(color[1], color[2], color[3])
+    o.title:SetText(title)
+    o.button.label:SetText(button)
+    o.button:setPrimary(true)                        -- the action: blue on either panel (owner)
+    o.view:setAccent(unpack(C.quietRim))             -- the others quieter, so it leads (the review)
+    o.bests:setAccent(unpack(C.quietRim))
+    o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
+    -- Tall enough for the model beside the words: the bomb, with its fuse and blast, wants
+    -- more room than Tally (owner: "you can just make the dialog bigger").
+    local minH = col > 0 and (won and GS.Models.HEIGHT + 28 or WIPE_H) or 0
+    if won then
+        local text, tint = bestLine()
+        local isNew = lastWin and lastWin.new
+        local by = margin()
+        local h = WIN_H
+        if text and not isNew then h = h + 20 end              -- the best that stands
+        if isNew then h = h + 22 + (by and 34 or 0) end        -- the badge line; what it beat, by how much
+        o:SetHeight(math.max(minH, h))
+        o.timeLabel:Show()
+        o.time:SetText(shown)
+        o.time:Show()
+        if text and not isNew then
+            o.best:SetText(text)
+            o.best:SetTextColor(tint[1], tint[2], tint[3])
+        end
+        o.best:SetShown(text ~= nil and not isNew)
+        o.newBest:SetShown(isNew and true or false)
+        o.laurels:SetShown(isNew and true or false)
+        if by then
+            o.beaten:SetText(string.format(L["Previous best: %s"], shownTime(lastWin.previous.time, true)))
+            o.faster:SetText(string.format(L["%s faster"], by))
+        end
+        o.beaten:SetShown(by ~= nil)
+        o.faster:SetShown(by ~= nil)
+        if isNew then o.pulse.play() else o.pulse.stop() end
+    else
+        o:SetHeight(math.max(minH, LOSS_H))
+        for _, f in ipairs({ o.timeLabel, o.time, o.best, o.newBest, o.laurels, o.beaten, o.faster }) do f:Hide() end
+        o.pulse.stop()
+    end
+end
+
+-- The end panel's model (#21), with "3D models" on: Tally jumping for joy on a win,
+-- the Walking Bomb going off on a wipe, on the panel's left. The panel is laid out for
+-- it at once, and again without it if it can't play (absent, or not in within
+-- Models.WAIT).
+function Window.EndModel()
+    if not (ui.overlay and over()) then return end
+    local withModel = GS.Models.Enabled()
+    dressEnd(withModel and MODEL_COL or 0)
+    if not withModel then ui.slot.stop(); return end
+    -- A new best: her cheer waits for her voice, which follows the fanfare (Sounds.BEST_DELAY).
+    local won = game:State() == "won"
+    local cue = won and lastWin and lastWin.new and GS.Sounds.BEST_DELAY or nil
+    ui.slot.play(won and "win" or "wipe", function() dressEnd(0) end, cue)
+    local scene = ui.slot.scene
+    if scene then
+        scene:ClearAllPoints()
+        -- Standing on the panel's floor (the mockup), centred on its column; the scene's
+        -- spare room is empty and may reach past the panel.
+        scene:SetPoint("CENTER", ui.overlay, "BOTTOMLEFT", MODEL_COL / 2, 8 + GS.Models.HEIGHT / 2)
+    end
 end
 
 -- Shown once, when an action ends the game (Dispatch): cleared, or the wipe.
@@ -612,56 +763,7 @@ function Window.ShowEnd()
     if not over() then return end
     if not ui.overlay then buildOverlay() end
     local o = ui.overlay
-    local title, color, sub, button, rim = endTexts()
-    local w = math.min(OVERLAY_W, Window.size.gridW - 12)
-    o:SetWidth(w)
-    -- A win: "See the field" and "Best times" side by side (#67); a wipe: "See the field" alone.
-    local won = game:State() == "won"
-    local half = math.floor((w - 26) / 2)
-    o.view:ClearAllPoints()
-    o.bests:ClearAllPoints()
-    if won then
-        o.view:SetSize(half, 22)
-        o.view:SetPoint("BOTTOMRIGHT", o, "BOTTOM", -3, 14)
-        o.bests:SetSize(half, 22)
-        o.bests:SetPoint("BOTTOMLEFT", o, "BOTTOM", 3, 14)
-    else
-        o.view:SetSize(136, 22)
-        o.view:SetPoint("BOTTOM", o, "BOTTOM", 0, 14)
-    end
-    o.bests:SetShown(won)
-    o.title:SetTextColor(color[1], color[2], color[3])
-    o.title:SetText(title)
-    o.button.label:SetText(button)
-    o.button:setAccent(rim[1], rim[2], rim[3])
-    o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
-    if game:State() == "won" then
-        local text, col = bestLine()
-        local isNew = lastWin and lastWin.new
-        local by = margin()
-        o:SetHeight(isNew and (by and NEW_BEST_H + 17 or NEW_BEST_H) or text and WIN_H or WIN_H - 18)
-        if by then o.beaten:SetText(string.format(L["%s faster than %s"], by, shownTime(lastWin.previous.time, true))) end
-        o.beaten:SetShown(by ~= nil)
-        o.time:SetText(sub)
-        o.time:Show()
-        if text and not isNew then
-            o.best:SetText(text)
-            o.best:SetTextColor(col[1], col[2], col[3])
-        end
-        o.best:SetShown(text ~= nil and not isNew)
-        o.newBest:SetShown(isNew and true or false)
-        o.laurels:SetShown(isNew and true or false)
-        if isNew then o.pulse.play() else o.pulse.stop() end
-    else
-        o:SetHeight(LOSS_H)
-        o.time:Hide()
-        o.best:Hide()
-        o.newBest:Hide()
-        o.laurels:Hide()
-        o.beaten:Hide()
-        o.pulse.stop()
-    end
-    o:Show()
+    if o:IsShown() then Window.EndModel() else o:Show() end    -- its OnShow starts the model
 end
 
 -- Put the overlay away to look at the finished board. The board is exactly as it
@@ -1298,6 +1400,28 @@ end
 function Window.ScaleInfo()
     ensure()
     return db().scale or 1, Window.scale
+end
+
+-- /gsweep bomb (for measuring, #21): replays the end panel's model (the bomb on a
+-- wipe, Tally on a win) without ending another game, to judge it by eye. Says why
+-- when it can't.
+function Window.TestBomb()
+    if not Window.IsShown() then return "open the board first (/gsweep)." end
+    if not GS.Models.Enabled() then return "3D models are off in the settings." end
+    if not (ui.overlay and ui.overlay:IsShown()) then
+        return "end a game first (a wipe for the bomb, a win for Tally): this replays the panel's model."
+    end
+    ui.slot.stop()
+    Window.EndModel()
+    local c = GS.Models.CAST[game:State() == "won" and "win" or "wipe"]
+    -- Its steps as "1 (1.5 s), 6 (held, lift 24)", to judge each by eye.
+    local steps = {}
+    for _, s in ipairs(c.steps) do
+        steps[#steps + 1] = string.format("%d (%s%s)", s[1], s[2] and string.format("%.2f s", s[2]) or "held",
+            s.lift and (", lift " .. s.lift) or "")
+    end
+    return string.format("display %d: %s; drawn %d units tall (tiles are 24).", c.display,
+        table.concat(steps, ", "), GS.Models.HEIGHT)
 end
 
 -- Where a model would go (#20's probe, #21): the face button, and the effects

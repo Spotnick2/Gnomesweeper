@@ -19,6 +19,7 @@ local DEFAULTS = {
     sounds = true,             -- the effects (#9)
     music = false,             -- Gnomeregan's music while the board is open (#22)
     fireworks = true,          -- fireworks on a new personal best (#10)
+    models = true,             -- live 3D models: the bomb on a wipe (#21)
     hideInCombat = true,       -- a fight puts the window away, its end brings it back (#37)
     theme = "classic",         -- the board's tiles: classic or modern (#14)
     guildToasts = true,        -- a toast when a guildmate sets a new guild best (#17)
@@ -52,6 +53,7 @@ local HELP = {
     L["/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)"],
     "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
     "/gsweep models | models perf - every candidate creature model (loaded, textured, its animations), then their frame cost over the board (for measuring), kept for /reload to save",
+    "/gsweep bomb - replay the end panel's model (the bomb, or Tally on a win), to judge it (for measuring)",
     "/gsweep sounds - play every candidate sound and the music, one after another (for measuring)",
     "/gsweep perf - time the board on an Expert-sized game (for measuring)",
     "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
@@ -115,6 +117,8 @@ local function Slash(msg)
         GS.ModelProbe.Toggle()
     elseif msg == "models perf" then
         GS.ModelProbe.Perf()
+    elseif msg == "bomb" then
+        Print(GS.Window.TestBomb())
     elseif msg == "perf" then
         for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
     elseif msg == "guildprobe" then

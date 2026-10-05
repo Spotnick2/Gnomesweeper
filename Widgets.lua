@@ -80,6 +80,17 @@ function Widgets.GlassButton(parent, width, height, opts)
         self.border:SetVertexColor(r, g, bl)
         self.accent = { r, g, bl }
     end
+    -- The panel's main action (#21, the owner's mockups): a filled blue body and a bright
+    -- rim (no outer glow: the second mockup took it off). Off: the plain glass button.
+    function b.setPrimary(self, on)
+        if on then
+            self.fill:SetVertexColor(unpack(C.primaryFill))
+            self:setAccent(unpack(C.primaryRim))
+        else
+            self.fill:SetVertexColor(1, 1, 1)
+        end
+        self.primary = on and true or nil
+    end
     b:setAccent(unpack(C.accent))
     return b
 end

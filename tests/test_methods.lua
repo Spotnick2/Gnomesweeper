@@ -137,6 +137,7 @@ do
     local bests = Gnomesweeper.Window._test.ui.bests
     bests.close._scripts.OnClick(bests.close)
     do                                                  -- the model probe (#20): sheet, viewer, perf
+        WoW.modelSetFails[6977] = nil
         WoW.modelBoxes[6977] = { -0.5, -0.4, -0.6, 0.5, 0.4, 0.6 }
         WoW.modelBoxes["unit:player"] = { -0.3, -0.3, -0.5, 0.3, 0.3, 0.5 }
         WoW.slash("/gsweep models")

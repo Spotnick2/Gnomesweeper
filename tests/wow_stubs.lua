@@ -144,6 +144,7 @@ function Methods.SetAnimation(a, id) a._anim = id end
 function Methods.SetParticleOverrideScale(a, s) a._particles = s end
 function Methods.SetCameraPosition(scene, x, y, z) scene._camera = { x, y, z } end
 function Methods.SetUnit(m, unit) m._unit = unit end
+function Methods.SetJustifyH(w, j) w._justifyH = j end
 
 function Methods.Show(w)
     local was = w._shown
@@ -295,7 +296,10 @@ function WoW.reset()
     WoW.now = 0
     WoW.mouseDown = false
     WoW.fileIDs = {}
-    WoW.modelBoxes, WoW.modelSetFails = {}, {}
+    -- The end panel's models (#21: the Walking Bomb 6977, Tally 3124) are absent unless a
+    -- test brings them (modelSetFails[id] = nil, and a box): the panel is then drawn as
+    -- before, as on a client without them.
+    WoW.modelBoxes, WoW.modelSetFails = {}, { [6977] = true, [3124] = true }
     WoW.modelStale = nil
     WoW.sounds, WoW.willPlay, WoW.timers = {}, {}, {}
     WoW.music, WoW.musicStops, WoW.inCombat = nil, 0, false

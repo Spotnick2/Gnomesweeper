@@ -91,10 +91,10 @@ do
     check(not o.view.primary, "See the field isn't")
 
     eq(scene._camera[3], 0, "level while it stands and goes off")
-    WoW.advance(Mo.CAST.wipe.after + 0.05)
+    WoW.advance(Mo.CAST.wipe.steps[1][2] + 0.05)
     eq(actor._anim, 6, "then it lies in its dead pose")
     local span = 2 * 40 * math.tan(0.15 / 2)
-    check(math.abs(scene._camera[3] + Mo.CAST.wipe.lift * span / Mo.FRAME) < 1e-9,
+    check(math.abs(scene._camera[3] + Mo.CAST.wipe.steps[2].lift * span / Mo.FRAME) < 1e-9,
         "...raised by its lift: its wreckage lies lower than it stood (in game: below the panel)")
     check(scene._shown, "...still there while the panel is up")
 
@@ -132,10 +132,23 @@ do
     local actor = ui.slot._test.actor()
     check(ui.overlay:IsShown() and ui.slot.scene._shown, "the panel, with her")
     eq(actor._model, 3124, "Tally Berryfizz, the mascot's model")
-    eq(actor._anim, 68, "cheering (68)")
     eq(actor._particles, 0, "no particles")
-    WoW.advance(3)
-    eq(actor._anim, 68, "she keeps at it while the panel is up")
+    -- Jumping for joy: jump start, in the air, landing, cheer, and again (owner: Blizzard's
+    -- cheer plays once). Walked step by step on the stub's clock.
+    local seen, steps = {}, Gnomesweeper.Models.CAST.win.steps
+    for round = 1, 2 do
+        for _, s in ipairs(steps) do
+            seen[#seen + 1] = actor._anim
+            WoW.advance(s[2])
+        end
+    end
+    eq(table.concat(seen, " "), "37 38 39 68 37 38 39 68", "jump start, in the air, landing, cheer, and again")
+    ui.overlay.view._scripts.OnClick(ui.overlay.view)       -- put away
+    local at = actor._anim
+    WoW.advance(10)
+    eq(actor._anim, at, "put away: the sequence stops")
+    ui.overlay:Show()
+    eq(actor._anim, 37, "shown again: from the first jump")
     local narrow, wide = widths(W)
     eq(ui.overlay._width, wide, "the win panel widened too")
     eq(ui.overlay.bests._points[1][4], centre(wide, 100) + 3, "Best times shares the bottom row")
@@ -263,7 +276,7 @@ do
     eq(actor._anim, 6, "(lying there)")
     WoW.slash("/gsweep bomb")
     eq(actor._anim, 1, "it goes off again")
-    check(said("display 6977, animation 1, then 6 after 1.5 s; drawn " .. Gnomesweeper.Models.HEIGHT .. " units tall"), "the chat says what it plays")
+    check(said("display 6977: 1 (1.50 s), 6 (held, lift 24); drawn " .. Gnomesweeper.Models.HEIGHT .. " units tall"), "the chat says what it plays")
     Gnomesweeper.Options.Set("models", false)
     WoW.slash("/gsweep bomb")
     check(said("3D models are off"), "with the setting off, it says so")

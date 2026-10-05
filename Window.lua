@@ -1378,8 +1378,14 @@ function Window.TestBomb()
     ui.slot.stop()
     Window.EndModel()
     local c = GS.Models.CAST[game:State() == "won" and "win" or "wipe"]
-    return string.format("display %d, animation %d%s; drawn %d units tall (tiles are 24).", c.display, c.anim,
-        c.rest and string.format(", then %d after %.1f s", c.rest, c.after) or "", GS.Models.HEIGHT)
+    -- Its steps as "1 (1.5 s), 6 (held, lift 24)", to judge each by eye.
+    local steps = {}
+    for _, s in ipairs(c.steps) do
+        steps[#steps + 1] = string.format("%d (%s%s)", s[1], s[2] and string.format("%.2f s", s[2]) or "held",
+            s.lift and (", lift " .. s.lift) or "")
+    end
+    return string.format("display %d: %s%s; drawn %d units tall (tiles are 24).", c.display,
+        table.concat(steps, ", "), c.loop and ", again" or "", GS.Models.HEIGHT)
 end
 
 -- Where a model would go (#20's probe, #21): the face button, and the effects

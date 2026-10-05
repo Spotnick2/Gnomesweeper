@@ -135,10 +135,13 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   `ModelScene`s, on AltStable's recipe. **Display IDs, never `SetCreature`**; never a model per tile;
   everything degrades to the 2D art. **The end panel's model, on its left** (owner: "put it on the
   left and increase the width of the dialog"; a bomb over the field didn't fit): `Models.CAST` says
-  who plays what, the **wipe**: the Walking Bomb (6977) going off (death, 1, particles on), then its
-  dead pose (6) after 1.5 s (timed: an actor has no animation-finished event), raised by `lift` (24
-  units: its wreckage lies lower than it stood, below the panel in game; the camera moves, not the actor); the **win**: Tally
-  (3124) jumping for joy (cheer, 68). Its box is drawn `Models.HEIGHT` (92: 118 stood taller than the panel) units tall in a
+  who plays what as timed `steps` ({ animation, seconds [, lift] }; a step without seconds is held;
+  `loop` starts over; timed because an actor has no animation-finished event). The **wipe**: the
+  Walking Bomb (6977) going off (death, 1, particles on), then its dead pose (6), held, `lift` 24 (its
+  wreckage lies lower than it stood, below the panel in game; the camera moves, not the actor). The
+  **win**: Tally (3124) jumping for joy, a loop (Blizzard's cheer plays once): jump start 37, in the
+  air 38, landing 39, cheer 68. Its box is drawn `Models.HEIGHT` (104, standing on the panel's floor:
+  118 stood taller than the old panel) units tall in a
   `Models.FRAME` (180) scene centred on its column (a model drawn past its scene is cut off: in game a
   96 scene sliced the bomb's sphere, and a 120 one its fuse and blast, which reach past its box; the
   spare room is empty and may reach past the panel). `Models.Slot(parent, level)`: `h.play(key, onFail)`, `h.stop()`, `h.playing`,

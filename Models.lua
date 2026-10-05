@@ -19,17 +19,19 @@ local GS = Gnomesweeper
 local Models = {}
 GS.Models = Models
 
--- Who plays what (#20, in game). `anim` first; `rest` after `after` seconds (no actor
--- event says when an animation ends: only Model frames have OnAnimFinished).
+-- Who plays what (#20, #21, in game): `steps`, each { animation, seconds [, lift = units] },
+-- played in order; a step without seconds is held; `loop` starts over after the last.
+-- Timed, because no actor event says when an animation ends (only Model frames have
+-- OnAnimFinished). `lift` raises the model (window units) while its step plays.
 Models.CAST = {
-    -- The Walking Bomb (Gnomeregan): its death (1) is its explosion; then its dead
-    -- pose (6) while the panel is up (unmeasured: judged in game).
-    -- Its wreckage lies lower than it stood, below the panel (in game): `lift` raises it,
-    -- in window units, once it rests.
-    wipe = { display = 6977, anim = 1, rest = 6, after = 1.5, lift = 24, particles = true },
-    -- Tally Berryfizz, the mascot's model (owner): her cheer (68), which #20 found keeps
-    -- her in frame (measured on Emi Shortfuse, the same body).
-    win = { display = 3124, anim = 68 },
+    -- The Walking Bomb (Gnomeregan): its death (1) is its explosion; then its dead pose
+    -- (6), held while the panel is up. Its wreckage lies lower than it stood, below the
+    -- panel (in game): lifted 24 it sits inside (judged right).
+    wipe = { display = 6977, particles = true, steps = { { 1, 1.5 }, { 6, lift = 24 } } },
+    -- Tally Berryfizz, the mascot's model (owner), jumping for joy: Blizzard's cheer (68)
+    -- plays once (in game), so a sequence (owner): jump start (37), in the air (38), landing
+    -- (39), cheer (68), again. The lengths are guesses, to judge in game.
+    win = { display = 3124, loop = true, steps = { { 37, 0.3 }, { 38, 0.35 }, { 39, 0.3 }, { 68, 2.2 } } },
 }
 -- How tall a model's box is drawn, in window units (tiles are 24). 118 looked right
 -- over the field but stood taller than the old end panel; the owner's mockup made the
@@ -111,19 +113,21 @@ function Models.Slot(parent, level)
                 local span = 2 * CAMERA * math.tan(FOV / 2)
                 pcall(actor.SetScale, actor, span * Models.HEIGHT / (height * Models.FRAME))
                 pcall(actor.SetParticleOverrideScale, actor, c.particles and 1 or 0)
-                pcall(actor.SetAnimation, actor, c.anim)
                 h.scene:Show()
-                if c.rest then
-                    C_Timer.After(c.after, function()
-                        if token ~= mine then return end
-                        pcall(actor.SetAnimation, actor, c.rest)
-                        if c.lift then
-                            -- The camera down by `lift` window units, in scene units: the model up.
-                            local span = 2 * CAMERA * math.tan(FOV / 2)
-                            pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -c.lift * span / Models.FRAME)
-                        end
-                    end)
+                -- The steps, each after the last; a newer play or a stop drops the rest.
+                local function step(i)
+                    if token ~= mine then return end
+                    local s = c.steps[i]
+                    if not s then
+                        if c.loop then return step(1) end
+                        return
+                    end
+                    pcall(actor.SetAnimation, actor, s[1])
+                    -- The camera down by `lift` window units, in scene units: the model up.
+                    pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -(s.lift or 0) * span / Models.FRAME)
+                    if s[2] then C_Timer.After(s[2], function() step(i + 1) end) end
                 end
+                step(1)
             elseif left > 0 then
                 C_Timer.After(POLL, function() poll(left - 1) end)
             else

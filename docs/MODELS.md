@@ -180,8 +180,9 @@ it on the right, the main button filled blue. `Models.lua`, `Window.lua`'s `dres
 - **Wipe**: the Walking Bomb (6977) goes off (death, 1, particles on), then lies in its dead pose
   (6) after 1.5 s. Measured: the **wreckage lies lower than the bomb stood**, below the panel's
   edge; raised 24 units (the camera moves down, the actor stays) it sits inside. Judged right.
-- **Win**: Tally (3124) cheering (68). Measured on Tally herself: **her cheer loops** while the
-  animation is set (she keeps jumping), and she stays in frame.
+- **Win**: Tally (3124). Measured on Tally herself: **Blizzard's cheer (68) plays once** and she
+  stands again, and she stays in frame. So a sequence (owner): jump start (37), in the air (38),
+  landing (39), cheer (68), again (`Models.CAST.win.steps`; the step lengths are guesses to judge).
 - **Size**: the box drawn 104 units tall, standing on the panel's floor (8 units up). 118 over the
   field was right, but stood taller than the panel; 92 fitted the old panel; the mockup's taller
   panel (142) takes 104.

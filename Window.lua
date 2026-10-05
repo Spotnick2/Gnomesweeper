@@ -719,7 +719,10 @@ function Window.EndModel()
     local withModel = GS.Models.Enabled()
     dressEnd(withModel and MODEL_COL or 0)
     if not withModel then ui.slot.stop(); return end
-    ui.slot.play(game:State() == "won" and "win" or "wipe", function() dressEnd(0) end)
+    -- A new best: her cheer waits for her voice, which follows the fanfare (Sounds.BEST_DELAY).
+    local won = game:State() == "won"
+    local cue = won and lastWin and lastWin.new and GS.Sounds.BEST_DELAY or nil
+    ui.slot.play(won and "win" or "wipe", function() dressEnd(0) end, cue)
     local scene = ui.slot.scene
     if scene then
         scene:ClearAllPoints()
@@ -1391,8 +1394,8 @@ function Window.TestBomb()
         steps[#steps + 1] = string.format("%d (%s%s)", s[1], s[2] and string.format("%.2f s", s[2]) or "held",
             s.lift and (", lift " .. s.lift) or "")
     end
-    return string.format("display %d: %s%s; drawn %d units tall (tiles are 24).", c.display,
-        table.concat(steps, ", "), c.loop and ", again" or "", GS.Models.HEIGHT)
+    return string.format("display %d: %s; drawn %d units tall (tiles are 24).", c.display,
+        table.concat(steps, ", "), GS.Models.HEIGHT)
 end
 
 -- Where a model would go (#20's probe, #21): the face button, and the effects

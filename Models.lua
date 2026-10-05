@@ -20,7 +20,7 @@ local Models = {}
 GS.Models = Models
 
 -- Who plays what (#20, #21, in game): `steps`, each { animation, seconds [, lift = units] },
--- played in order; a step without seconds is held; `loop` starts over after the last.
+-- played in order; a step without seconds is held.
 -- Timed, because no actor event says when an animation ends (only Model frames have
 -- OnAnimFinished). `lift` raises the model (window units) while its step plays.
 Models.CAST = {
@@ -28,10 +28,10 @@ Models.CAST = {
     -- (6), held while the panel is up. Its wreckage lies lower than it stood, below the
     -- panel (in game): lifted 24 it sits inside (judged right).
     wipe = { display = 6977, particles = true, steps = { { 1, 1.5 }, { 6, lift = 24 } } },
-    -- Tally Berryfizz, the mascot's model (owner), jumping for joy: Blizzard's cheer (68)
-    -- plays once (in game), so a sequence (owner): jump start (37), in the air (38), landing
-    -- (39), cheer (68), again. The lengths are guesses, to judge in game.
-    win = { display = 3124, loop = true, steps = { { 37, 0.3 }, { 38, 0.35 }, { 39, 0.3 }, { 68, 2.2 } } },
+    -- Tally Berryfizz, the mascot's model (owner), cheering (68): it plays once and she
+    -- stands. A jump-and-cheer loop was tried: the jumps don't read in a frame (owner: "cheer
+    -- is the proper one"). Her voice is the win's sound (Sounds.KITS.win, her /cheer).
+    win = { display = 3124, steps = { { 68 } } },
 }
 -- How tall a model's box is drawn, in window units (tiles are 24). 118 looked right
 -- over the field but stood taller than the old end panel; the owner's mockup made the
@@ -66,8 +66,8 @@ local function readBox(actor)
     return z1 - z0
 end
 
--- A model slot on `parent` at frame level `level`. h.play(key, onFail) loads
--- Models.CAST[key] and plays it; onFail runs (at once, or after WAIT) when it can't,
+-- A model slot on `parent` at frame level `level`. h.play(key, onFail, delay) loads
+-- Models.CAST[key] and plays it; its first step waits `delay` seconds (standing) when given; onFail runs (at once, or after WAIT) when it can't,
 -- so the caller can lay the panel out without it. h.stop() hides it and drops any
 -- load or timer still on its way. h.scene is nil until the first play.
 function Models.Slot(parent, level)
@@ -94,7 +94,7 @@ function Models.Slot(parent, level)
         return s
     end
 
-    function h.play(key, onFail)
+    function h.play(key, onFail, delay)
         h.stop()
         local c = Models.CAST[key]
         if not (c and Models.Enabled() and build()) then return onFail() end
@@ -118,16 +118,18 @@ function Models.Slot(parent, level)
                 local function step(i)
                     if token ~= mine then return end
                     local s = c.steps[i]
-                    if not s then
-                        if c.loop then return step(1) end
-                        return
-                    end
+                    if not s then return end
                     pcall(actor.SetAnimation, actor, s[1])
                     -- The camera down by `lift` window units, in scene units: the model up.
                     pcall(h.scene.SetCameraPosition, h.scene, CAMERA, 0, -(s.lift or 0) * span / Models.FRAME)
                     if s[2] then C_Timer.After(s[2], function() step(i + 1) end) end
                 end
-                step(1)
+                if delay and delay > 0 then
+                    pcall(actor.SetAnimation, actor, 0)                -- standing until her cue
+                    C_Timer.After(delay, function() step(1) end)
+                else
+                    step(1)
+                end
             elseif left > 0 then
                 C_Timer.After(POLL, function() poll(left - 1) end)
             else

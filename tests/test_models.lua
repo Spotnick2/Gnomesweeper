@@ -135,22 +135,16 @@ do
     check(ui.overlay:IsShown() and ui.slot.scene._shown, "the panel, with her")
     eq(actor._model, 3124, "Tally Berryfizz, the mascot's model")
     eq(actor._particles, 0, "no particles")
-    -- Jumping for joy: jump start, in the air, landing, cheer, and again (owner: Blizzard's
-    -- cheer plays once). Walked step by step on the stub's clock.
-    local seen, steps = {}, Gnomesweeper.Models.CAST.win.steps
-    for round = 1, 2 do
-        for _, s in ipairs(steps) do
-            seen[#seen + 1] = actor._anim
-            WoW.advance(s[2])
-        end
-    end
-    eq(table.concat(seen, " "), "37 38 39 68 37 38 39 68", "jump start, in the air, landing, cheer, and again")
-    ui.overlay.view._scripts.OnClick(ui.overlay.view)       -- put away
-    local at = actor._anim
+    -- Cheering (68), once (owner: "cheer is the proper one"; a jump-and-cheer loop didn't
+    -- read in a frame). A plain win: at once, with her voice.
+    eq(actor._anim, 68, "cheering (68), at once")
     WoW.advance(10)
-    eq(actor._anim, at, "put away: the sequence stops")
+    eq(actor._anim, 68, "...the one cheer: no sequence after it")
+    ui.overlay.view._scripts.OnClick(ui.overlay.view)       -- put away
+    check(not ui.slot.scene._shown, "put away: gone")
+    actor._anim = nil
     ui.overlay:Show()
-    eq(actor._anim, 37, "shown again: from the first jump")
+    eq(actor._anim, 68, "shown again: she cheers again")
     local narrow, wide = widths(W)
     eq(ui.overlay._width, wide, "the win panel widened too")
     eq(ui.overlay.bests._points[1][4], centre(wide, 100) + 3, "Best times shares the bottom row")
@@ -162,6 +156,26 @@ do
     eq(ui.overlay.bests.accent[1], ui.overlay.view.accent[1], "Best times styled like See the field (the second mockup)")
     eq(ui.overlay.bests.accent[3], ui.overlay.view.accent[3], "...both")
     check(ui.overlay.divider:IsShown(), "the same thin line as the wipe's")
+end
+
+-- A new best: her voice follows the fanfare (Sounds.BEST_DELAY), and her cheer waits for it.
+do
+    loadAddon()
+    WoW.modelSetFails[3124] = nil
+    WoW.modelBoxes[3124] = TALLY
+    WoW.slash("/gsweep")
+    local W = Gnomesweeper.Window
+    W._test.SetGame(Gnomesweeper.Board.New(5, 4, 0), "beginner:area")   -- no best yet: this one is new
+    win()
+    local actor = W._test.ui.slot._test.actor()
+    eq(actor._anim, 0, "a new best: standing while the fanfare plays")
+    WoW.advance(Gnomesweeper.Sounds.BEST_DELAY - 0.05)
+    eq(actor._anim, 0, "...until her cue")
+    WoW.advance(0.1)
+    eq(actor._anim, 68, "...then cheering, with her voice")
+    local played = {}
+    for _, s in ipairs(WoW.sounds) do played[#played + 1] = s.kit or s[1] end
+    check(table.concat(played, ","):find(tostring(Gnomesweeper.Sounds.KITS.win), 1, true), "her /cheer was heard")
 end
 
 ----------------------------------------------------------------------------

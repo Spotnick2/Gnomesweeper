@@ -136,11 +136,12 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   everything degrades to the 2D art. **The end panel's model, on its left** (owner: "put it on the
   left and increase the width of the dialog"; a bomb over the field didn't fit): `Models.CAST` says
   who plays what as timed `steps` ({ animation, seconds [, lift] }; a step without seconds is held;
-  `loop` starts over; timed because an actor has no animation-finished event). The **wipe**: the
+  timed because an actor has no animation-finished event). The **wipe**: the
   Walking Bomb (6977) going off (death, 1, particles on), then its dead pose (6), held, `lift` 24 (its
   wreckage lies lower than it stood, below the panel in game; the camera moves, not the actor). The
-  **win**: Tally (3124) jumping for joy, a loop (Blizzard's cheer plays once): jump start 37, in the
-  air 38, landing 39, cheer 68. Its box is drawn `Models.HEIGHT` (104, standing on the panel's floor:
+  **win**: Tally (3124) cheering (68, once: a jump-and-cheer loop didn't read in a frame), with her
+  voice, the female gnome's /cheer (`Sounds.KITS.win` 2847); on a new best her cheer waits for the
+  voice after the fanfare (`h.play(key, onFail, delay)`, `Sounds.BEST_DELAY`). Its box is drawn `Models.HEIGHT` (104, standing on the panel's floor:
   118 stood taller than the old panel) units tall in a
   `Models.FRAME` (180) scene centred on its column (a model drawn past its scene is cut off: in game a
   96 scene sliced the bomb's sphere, and a 120 one its fuse and blast, which reach past its box; the

@@ -78,9 +78,11 @@ do
     eq(o._width, wide, "the panel widened for it")
     check(o._height >= Mo.HEIGHT + 28, "...and tall enough for it, fuse included")
     eq(o._height, 142, "the wipe panel: as tall with or without it")
-    eq(o.title._points[1][1], "TOPLEFT", "the title starts at the words' column...")
-    eq(o.title._points[1][4], 112, "...beside the bomb")
-    eq(o.title._justifyH, "LEFT", "...left-aligned (the mockup)")
+    eq(o.title._points[1][1], "TOP", "the title centred...")
+    eq(o.title._points[1][4], centre(wide, 100), "...on the words' column, beside the bomb")
+    eq(o.title._justifyH, "CENTER", "...like the win panel (owner: cohesive)")
+    check(o.divider:IsShown(), "a thin line parts the model's column from the words'")
+    eq(o.divider._points[1][4], 100, "...at the column's edge")
     eq(o.subtitle:GetText(), "One more try?", "the line under it (owner)")
     eq(o.subtitle._points[1][2], o.title, "...under the title")
     local cx = centre(wide, 100)
@@ -156,6 +158,10 @@ do
     eq(ui.overlay.subtitle:GetText(), "Not a hair out of place.", "...Not a hair out of place.")
     eq(ui.overlay.button.label:GetText(), "Play again", "...Play again")
     check(ui.overlay.button.primary, "...the main action, blue")
+    eq(ui.overlay.button.glow, nil, "...without an outer glow (the second mockup)")
+    eq(ui.overlay.bests.accent[1], ui.overlay.view.accent[1], "Best times styled like See the field (the second mockup)")
+    eq(ui.overlay.bests.accent[3], ui.overlay.view.accent[3], "...both")
+    check(ui.overlay.divider:IsShown(), "the same thin line as the wipe's")
 end
 
 ----------------------------------------------------------------------------

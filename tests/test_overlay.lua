@@ -94,7 +94,7 @@ do
     check(o ~= nil and o:IsShown(), "the cleared overlay is up")
     eq(o.title:GetText(), "Clean sweep!", "...with the storyboard's words")
     eq(o.title._textColor[1], Skin.COLORS.gold[1], "...in gold")
-    eq(o.time:GetText(), "Time 01:24", "...and the time (84 seconds)")
+    eq(o.time:GetText(), "01:24", "...and the time (84 seconds)")
     check(o.time:IsShown(), "...shown")
     check(not o.best:IsShown(), "'New personal best!' stays hidden until #7 can say it's true")
     eq(o.button.label:GetText(), "Play again", "the button says Play again")
@@ -111,7 +111,7 @@ do
     check(o._width <= ui.grid._width, "it fits the board (" .. o._width .. " of " .. ui.grid._width .. ")")
     local p = lastPoint(o)
     check(p[1] == "CENTER" and p[2] == ui.grid and p[3] == "CENTER", "...centred on it")
-    eq(o._height, 162, "without the personal-best line it is shorter")
+    eq(o._height, 210, "without the personal-best line it is shorter")
 end
 
 ----------------------------------------------------------------------------
@@ -215,7 +215,7 @@ do   -- on Expert the overlay is its full width
     local o = W._test.ui.overlay
     eq(W.game:State(), "won", "(Expert with no mines is won by one click)")
     eq(o._width, 200, "the overlay is 200 wide on a big board")
-    check(o.time:GetText():find("^Time %d%d:%d%d$"), "...and shows a clock time")
+    check(o.time:GetText():find("^%d%d:%d%d$"), "...and shows a clock time")
 end
 
 do  -- #67: a Best times button on the win panel, beside See the field

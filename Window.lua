@@ -524,25 +524,20 @@ end
 -- The end of a game: the overlay over the board
 ------------------------------------------------------------
 
-local OVERLAY_W, WIN_H, LOSS_H = 200, 180, 142   -- #21: a line under the title, bigger buttons
+local OVERLAY_W, WIN_H, LOSS_H = 200, 210, 142   -- #21: a line under the title, the time big, bigger buttons
 local MODEL_COL = 100      -- the end panel's model column, when there is a model (#21)
 local PANEL_MAX = 340      -- the end panel's width with a model (#21: near the window's on Beginner)
--- A new best crowns its TIME with the laurels (#12). Measured on the texture: the
--- branches leave about 71% of their drawn width open, in their upper half only;
--- "New personal best!" (~146 units, 160 at the pulse) would need laurels wider than
--- the panel, the time (~98 units) fits. So the time sits a quarter of the way down
--- the wreath (LAUREL_TEXT), and the line and the margin hang under it.
-local LAUREL_W = 150
-local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 53
-local LAUREL_TEXT = 0.25
-local NEW_BEST_H = WIN_H + 44           -- the wreath and the line under it, clear of Play again
+-- The laurels (#12), now a badge beside "New personal best!" (#21, the mockup: no longer a wreath around the time).
+local LAUREL_W = 40
+local LAUREL_H = math.floor(LAUREL_W / Skin.ASPECT.laurels + 0.5)     -- 14
 
 local function endTexts()
     if game:State() == "won" then
         -- Tenths when they decide something: a new best, or a time in the same second as the best.
         local tenths = sameSecond() or (lastWin and lastWin.new) or false
-        return L["Clean sweep!"], C.gold, string.format(L["Time %s"], shownTime(game:Elapsed(GetTime()), tenths)),
-            L["Play again"], C.winRim, L["Not a hair out of place."]
+        local t = shownTime(game:Elapsed(GetTime()), tenths)
+        return L["Clean sweep!"], C.gold, string.format(L["Time %s"], t), L["Play again"], C.winRim,
+            L["Not a hair out of place."], t
     end
     return L["Boom. Full wipe."], C.boom, L["Wrong flags are crossed out."], L["Try again"], C.lossRim,
         L["One more try?"]
@@ -564,31 +559,43 @@ local function buildOverlay()
     -- The line under it (#21, the owner's words): "One more try?", "Not a hair out of place."
     o.subtitle = Glass.Font(o, 13, "CENTER")
     o.subtitle:SetTextColor(unpack(C.hint))
-    o.time = Glass.Font(o, 14, "CENTER")
-    o.time:SetPoint("TOP", o.title, "BOTTOM", 0, -8)
+    -- A win's result (#21, the owner's mockup): a quiet "TIME", the time big under it.
+    o.timeLabel = Glass.Font(o, 11, "CENTER")
+    o.timeLabel:SetTextColor(unpack(C.hint))
+    o.timeLabel:SetText(L["Time"]:upper())
+    o.timeLabel:SetPoint("TOP", o.subtitle, "BOTTOM", 0, -10)    -- the subtitle spans the column: centred on it
+    o.time = Glass.Font(o, 28, "CENTER")
+    o.time:SetPoint("TOP", o.timeLabel, "BOTTOM", 0, -2)
     o.best = Glass.Font(o, 12, "CENTER")              -- the best that stands ("Best 00:42")
     o.best:SetPoint("TOP", o.time, "BOTTOM", 0, -6)
-    -- A new personal best is an event (#10): bigger, gold, and a beat.
-    o.newBest = Glass.Font(o, 16, "CENTER")              -- bigger than the quiet line, with room to pulse inside the panel
-
+    -- A new personal best is an event (#10): bigger, gold, and a beat, with the storyboard's
+    -- laurels (#12) as a small badge beside it (the mockup: no longer a wreath around the time).
+    o.newBest = Glass.Font(o, 16, "CENTER")
     o.newBest:SetTextColor(unpack(C.gold))
     o.newBest:SetText(L["New personal best!"])
+    o.newBest:SetPoint("TOP", o.time, "BOTTOM", 4 + LAUREL_W / 2, -6)  -- the badge and the words, centred together
     o.newBest:Hide()
     o.pulse = GS.Effects.Pulse(o.newBest)
-    -- The storyboard's laurels around it (#12): behind the text, open at the top.
     o.laurels = o:CreateTexture(nil, "ARTWORK")
     o.laurels:SetSize(LAUREL_W, LAUREL_H)
     o.laurels:SetTexture(T.laurels)
     o.laurels:SetTexCoord(unpack(Skin.LAUREL_CROP))
-    -- the time a quarter of the way down: the wreath's centre is that much lower
-    o.laurels:SetPoint("CENTER", o.time, "CENTER", 0, -(0.5 - LAUREL_TEXT) * LAUREL_H)
+    o.laurels:SetPoint("RIGHT", o.newBest, "LEFT", -4, 0)
     o.laurels:Hide()
-    o.newBest:SetPoint("TOP", o.laurels, "BOTTOM", 0, -2)     -- under the wreath (it always shows with it)
-    -- Under it: by how much, and the record it beat ("0.8 s faster than 00:22.1").
+    -- Under it, quieter: the record it beat, and by how much.
     o.beaten = Glass.Font(o, 12, "CENTER")
-    o.beaten:SetPoint("TOP", o.newBest, "BOTTOM", 0, -4)
+    o.beaten:SetPoint("TOP", o.time, "BOTTOM", 0, -28)
     o.beaten:SetTextColor(unpack(C.hint))
     o.beaten:Hide()
+    o.faster = Glass.Font(o, 12, "CENTER")
+    o.faster:SetPoint("TOP", o.beaten, "BOTTOM", 0, -2)
+    o.faster:SetTextColor(unpack(C.hint))
+    o.faster:Hide()
+    -- The model's column and the words', parted by a thin line (the mockup).
+    o.divider = o:CreateTexture(nil, "ARTWORK")
+    o.divider:SetWidth(1)
+    o.divider:SetColorTexture(1, 1, 1, 0.12)
+    o.divider:Hide()
 
     o.button = Widgets.GlassButton(o, 136, 26)
     o.button:SetPoint("BOTTOM", o, "BOTTOM", 0, 44)
@@ -602,7 +609,7 @@ local function buildOverlay()
     -- After a win, the best times beside it (#67, owner): the trophy's own words, never "board".
     o.bests = Widgets.GlassButton(o, 87, 22, { fontSize = 10 })
     o.bests.label:SetText(L["Best times"])
-    o.bests:setAccent(unpack(C.gold))
+    -- Styled like "See the field" (the second mockup: both secondary buttons alike).
     o.bests:SetScript("OnClick", function() Window.ShowBests(true) end)
     o.bests:Hide()
 
@@ -620,13 +627,14 @@ local function buildOverlay()
     ui.overlay = o
 end
 
--- The panel's words and buttons (#21, after the owner's mockup): beside a model column
--- `col` units wide on its left, or centred without one (col 0). With a model the panel
--- is as wide as PANEL_MAX or the window allows; the title and its line under it start
--- at the column's left, the buttons span it, the main one filled blue.
+-- The panel's words and buttons (#21, after the owner's mockups): beside a model column
+-- `col` units wide on its left, parted by a thin line, or alone without one (col 0).
+-- With a model the panel is as wide as PANEL_MAX or the window allows. Both panels the
+-- same way (owner: "cohesive"): the words centred in their column, the buttons spanning
+-- it, the main one filled blue. A win's time is the main result, big under a quiet TIME.
 local function dressEnd(col)
     local o = ui.overlay
-    local title, color, sub, button, rim, subtitle = endTexts()
+    local title, color, sub, button, rim, subtitle, shown = endTexts()
     local total = col > 0 and math.min(PANEL_MAX, Window.size.width - 16)
         or math.min(OVERLAY_W, Window.size.gridW - 12)
     local w = total - col                            -- the words' and buttons' column
@@ -634,22 +642,17 @@ local function dressEnd(col)
     local inner = w - 24                             -- the buttons' width, and the words'
     o:SetWidth(total)
     o.title:ClearAllPoints()
+    o.title:SetJustifyH("CENTER")
+    o.title:SetPoint("TOP", o, "TOPLEFT", cx, -16)
     o.subtitle:ClearAllPoints()
     o.subtitle:SetWidth(inner)
-    if col > 0 then
-        o.title:SetJustifyH("LEFT")
-        o.title:SetPoint("TOPLEFT", o, "TOPLEFT", col + 12, -16)
-        o.subtitle:SetJustifyH("LEFT")
-        o.subtitle:SetPoint("TOPLEFT", o.title, "BOTTOMLEFT", 0, -4)
-    else
-        o.title:SetJustifyH("CENTER")
-        o.title:SetPoint("TOP", o, "TOPLEFT", cx, -16)
-        o.subtitle:SetJustifyH("CENTER")
-        o.subtitle:SetPoint("TOP", o.title, "BOTTOM", 0, -4)
-    end
+    o.subtitle:SetJustifyH("CENTER")
+    o.subtitle:SetPoint("TOP", o.title, "BOTTOM", 0, -4)
     o.subtitle:SetText(subtitle)
-    o.time:ClearAllPoints()
-    o.time:SetPoint("TOP", o.subtitle, "BOTTOM", 0, -8)  -- the subtitle spans the column: centred on it
+    o.divider:ClearAllPoints()
+    o.divider:SetPoint("TOPLEFT", o, "TOPLEFT", col, -14)
+    o.divider:SetPoint("BOTTOMLEFT", o, "BOTTOMLEFT", col, 14)
+    o.divider:SetShown(col > 0)
     o.button:ClearAllPoints()
     o.button:SetSize(inner, 30)
     o.button:SetPoint("BOTTOM", o, "BOTTOMLEFT", cx, 46)
@@ -675,14 +678,16 @@ local function dressEnd(col)
     o.glass.rim:SetVertexColor(rim[1], rim[2], rim[3])
     -- Tall enough for the model beside the words.
     local minH = col > 0 and GS.Models.HEIGHT + 28 or 0     -- its fuse reaches past its box
-    if game:State() == "won" then
+    if won then
         local text, tint = bestLine()
         local isNew = lastWin and lastWin.new
         local by = margin()
-        o:SetHeight(math.max(minH, isNew and (by and NEW_BEST_H + 17 or NEW_BEST_H) or text and WIN_H or WIN_H - 18))
-        if by then o.beaten:SetText(string.format(L["%s faster than %s"], by, shownTime(lastWin.previous.time, true))) end
-        o.beaten:SetShown(by ~= nil)
-        o.time:SetText(sub)
+        local h = WIN_H
+        if text and not isNew then h = h + 20 end              -- the best that stands
+        if isNew then h = h + 22 + (by and 34 or 0) end        -- the badge line; what it beat, by how much
+        o:SetHeight(math.max(minH, h))
+        o.timeLabel:Show()
+        o.time:SetText(shown)
         o.time:Show()
         if text and not isNew then
             o.best:SetText(text)
@@ -691,14 +696,16 @@ local function dressEnd(col)
         o.best:SetShown(text ~= nil and not isNew)
         o.newBest:SetShown(isNew and true or false)
         o.laurels:SetShown(isNew and true or false)
+        if by then
+            o.beaten:SetText(string.format(L["Previous best: %s"], shownTime(lastWin.previous.time, true)))
+            o.faster:SetText(string.format(L["%s faster"], by))
+        end
+        o.beaten:SetShown(by ~= nil)
+        o.faster:SetShown(by ~= nil)
         if isNew then o.pulse.play() else o.pulse.stop() end
     else
         o:SetHeight(math.max(minH, LOSS_H))
-        o.time:Hide()
-        o.best:Hide()
-        o.newBest:Hide()
-        o.laurels:Hide()
-        o.beaten:Hide()
+        for _, f in ipairs({ o.timeLabel, o.time, o.best, o.newBest, o.laurels, o.beaten, o.faster }) do f:Hide() end
         o.pulse.stop()
     end
 end

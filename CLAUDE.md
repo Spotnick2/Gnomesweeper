@@ -149,10 +149,15 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   **"3D models"** setting off, `GnomesweeperDB.models`; no `ModelScene`; the display refused) or
   after `Models.WAIT` (0.5 s) without a box. In Window, `ui.slot` lives in the end panel at its
   content level, standing on its floor. `dressEnd(col)` lays the panel out after the owner's mockup
-  (gpt-6-astra's concept): with a `MODEL_COL` (100) column, the panel `PANEL_MAX` (340) wide or as wide
-  as the window allows, the title left-aligned at the words' column with a **subtitle** under it ("One
-  more try?" / "Not a hair out of place."), the buttons spanning the column, the main one (Try again /
-  Play again) **filled blue** (`b:setPrimary`, Widgets); without a model the same, centred. The win
+  (gpt-6-astra's two concepts, kept "cohesive", owner): with a `MODEL_COL` (100) column parted by a
+  thin line, the panel `PANEL_MAX` (340) wide or as wide as the window allows; the title centred in
+  the words' column with a **subtitle** under it ("One more try?" / "Not a hair out of place."), the
+  buttons spanning the column, the main one (Try again / Play again) **filled blue** with no glow
+  (`b:setPrimary`, Widgets), "See the field" and "Best times" styled alike; without a model the
+  same, centred. **A win's time is the main result**: a quiet "TIME" (`L["Time"]:upper()`), the time
+  big (28), then the best that stands, or "New personal best!" with the **laurels as a small badge**
+  beside it (no longer a wreath around the time) and, quieter, "Previous best: 01:08.8" and
+  "58.9 s faster". The win
   title is **"Clean sweep!"** (was "Field cleared!"; the French keeps "Champ déminé !").
   `Window.EndModel()` starts the model, and `onFail` lays the panel out again without it. The
   panel stops its model when it hides and starts it when it shows (the client hides children with

@@ -24,7 +24,8 @@ function API.SafeFrame(ftype, parent, template, proof)
 end
 
 -- The addon's version from its TOC, or "dev" for an unpackaged copy (the
--- packager replaces the @project-version@ token). GetAddOnMetadata moved from a
+-- packager replaces the "@" .. "project-version@" token, in every file it ships:
+-- so the check is for an "@", never for the whole token). GetAddOnMetadata moved from a
 -- global to C_AddOns on Retail; either, or neither, is handled.
 function API.AddOnVersion(addon)
     local ns = rawget(_G, "C_AddOns")

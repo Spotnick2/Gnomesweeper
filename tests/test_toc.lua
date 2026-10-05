@@ -5,6 +5,34 @@ dofile("tests/harness.lua")
 local toc = io.open("Gnomesweeper.toc"):read("*a")
 check(toc:find("## Interface: 16001", 1, true), "interface 16001 (1.60.1; 11601 is the transposed-digit bug)")
 check(toc:find("## Version: @project-version@", 1, true), "packager version token kept")
+
+-- ...and the packager substitutes keywords in EVERY file it ships, Lua included, not
+-- only the TOC (Priestly #83, #75 here): a Lua comparison against the whole
+-- version token became `version == "v2.0.12"` in Priestly's release, and every
+-- player's copy took itself for a development copy - which no offline test could
+-- see, because they load the source, where the token is still raw. So no shipped
+-- Lua file may hold a packager keyword whole, not even in a comment; code that
+-- needs one builds it from pieces. Matched by shape: the packager has a family of
+-- them (@project-revision@, @file-date-iso@, @debug@, ...). Every Lua file the TOC
+-- loads: ours, the vendored Libs\, and the embedded LibGlass's (its XML's scripts).
+do
+    local shipped = tocFiles(true)
+    for _, f in ipairs(libGlassScripts()) do shipped[#shipped + 1] = f end
+    for _, file in ipairs(shipped) do
+        local fh = io.open(file, "rb")
+        local src = fh and fh:read("*a") or ""
+        if fh then fh:close() end
+        local n, keyword = 0, nil
+        for line in (src .. "\n"):gmatch("([^\n]*)\n") do
+            n = n + 1
+            keyword = line:match("(@[%w%-]+@)")
+            if keyword then break end
+        end
+        check(keyword == nil, file .. " holds no packager keyword the release would rewrite: "
+            .. tostring(keyword) .. " at line " .. n)
+    end
+    check(#shipped >= 25, "(every shipped Lua file was read: " .. #shipped .. ")")
+end
 check(toc:find("## SavedVariables: GnomesweeperDB", 1, true), "saved variables declared")
 local files, seen = tocFiles(), {}
 for _, f in ipairs(files) do

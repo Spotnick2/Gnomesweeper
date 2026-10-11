@@ -1,6 +1,6 @@
 ---
 name: client-update
-description: Handle a new WoW Forever client build for Gnomesweeper - find (or have AltStable produce) the new API dump in C:\Projects\References, diff it against the previous build for names this addon uses, and prepare the MEASURED_ON_BUILD bump PR. Use when the owner says there is a new build/API bump, "apidump done", "new api build", or a build newer than MEASURED_ON_BUILD shows up in C:\Projects\References.
+description: Handle a new WoW Forever client build for Gnomesweeper - find (or have AltStable produce) the new API dump in C:\Projects\WoW\References, diff it against the previous build for names this addon uses, and prepare the MEASURED_ON_BUILD bump PR. Use when the owner says there is a new build/API bump, "apidump done", "new api build", or a build newer than MEASURED_ON_BUILD shows up in C:\Projects\WoW\References.
 version: 1.0.0
 allowed-tools: [Bash, Read, Edit, Write, Grep, Glob]
 ---
@@ -9,13 +9,13 @@ allowed-tools: [Bash, Read, Edit, Write, Grep, Glob]
 
 Adapted from AltStable's `client-update` skill. **Gnomesweeper does not own the dump tooling**: the
 dump addon and its converters live in `..\AltStable\Tools\ForeverAPIDump\`, and the converted dumps
-are shared by every Forever project in `C:\Projects\References\forever-api-<version>.<build>.md`.
+are shared by every Forever project in `C:\Projects\WoW\References\forever-api-<version>.<build>.md`.
 
 ## Who does what
 
 | Step | Who | What |
 |---|---|---|
-| 1. Dump | **owner**, in game | only if `C:\Projects\References` has no dump for the new build yet: deploy AltStable's dump addon, `/apidump`, `/reload` |
+| 1. Dump | **owner**, in game | only if `C:\Projects\WoW\References` has no dump for the new build yet: deploy AltStable's dump addon, `/apidump`, `/reload` |
 | 1. Convert | you | `pwsh ..\AltStable\Tools\ForeverAPIDump\Convert-Dump.ps1` (skip if the file already exists — another session may have done it) |
 | 2. Diff | you | `pwsh ..\AltStable\Tools\ForeverAPIDump\Compare-Dumps.ps1` |
 | 3. Check | you | grep this repo for every changed name |
@@ -51,5 +51,5 @@ Branch `build-<build>` from `main`:
 Then `pwsh tests\run.ps1` green, `pwsh Tools\deploy.ps1`, and a `/reload` in game. Commit, push and
 open the PR (`Closes #N`) **only when the owner asks** — the owner runs every review.
 
-Addon-agnostic findings about the new build go in `C:\Projects\References\PORTING-TBC-TO-FOREVER.md`,
+Addon-agnostic findings about the new build go in `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md`,
 not here.

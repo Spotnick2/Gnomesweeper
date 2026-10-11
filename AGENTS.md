@@ -16,6 +16,6 @@ Quick facts, in case you read only this:
   externals, gitignored); material changes are LibGlass PRs. The tests need a LibGlass checkout
   (`..\LibGlass` or `$LIBGLASS`). Our own art is `Skin.MEDIA`, never `Glass.MEDIA`.
 - Never commit a literal version over `## Version: @project-version@`.
-- Review context: `C:\Projects\References\PORTING-TBC-TO-FOREVER.md` (measured client facts) and
-  `C:\Projects\References\forever-api-1.60.1.70205.md` (API dump). Single-owner addon: don't
+- Review context: `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md` (measured client facts) and
+  `C:\Projects\WoW\References\forever-api-1.60.1.70205.md` (API dump). Single-owner addon: don't
   ratchet complexity.

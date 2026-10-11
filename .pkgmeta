@@ -17,7 +17,7 @@ manual-changelog:
 externals:
   Libs/LibGlass-1.0:
     url: https://github.com/Spotnick2/LibGlass
-    tag: r1
+    tag: r5
 
 # YAML list, not markdown bullets: a `*` here silently ignores nothing, which
 # is how development files end up in a published zip.

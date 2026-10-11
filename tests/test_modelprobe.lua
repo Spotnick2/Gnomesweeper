@@ -78,7 +78,7 @@ do
     check(chatHas("loaded a box"), "the summary once every model has answered")
 
     local probe = GnomesweeperDB.modelProbe
-    eq(probe.build, "1.60.1.70205", "the build is recorded")
+    eq(probe.build, "1.60.1.70338", "the build is recorded")
     local e = probe.candidates.walkingBomb
     eq(e.display, 6977, "the display")
     check(e.box and math.abs(e.box.h - 1.2) < 1e-9, "the box")

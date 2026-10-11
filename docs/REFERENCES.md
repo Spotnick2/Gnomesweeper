@@ -45,7 +45,7 @@ folder and is summarised in `LICENSE`):
 
 | Repo | Take from it |
 |---|---|
-| `..\LibGlass` | **The glass material**, LibGlass-1.0, embedded since #71: the code, its 15 textures, `Tools/make_textures.py`, `docs/GLASS-MATERIAL.md`. MIT. |
+| `..\LibGlass` | **The glass material**, LibGlass-1.0, embedded since #71: the code, its textures, `Tools/make_textures.py`, `docs/GLASS-MATERIAL.md`. MIT. |
 | `..\GlassUnitFrames` | The material's pilot consumer (its harness, deploy and CI are the embedding templates). Options panel on Retail's Settings framework. |
 | `..\GlassPanel` (was GlassXp) | The closest template: single-owner CLAUDE.md, `Compat.lua` helpers (`Fail`, `Button`, `Window` = the one glass dialog), `Share.lua` (safe import/export strings), `Options.lua`, tests harness. |
 | `..\GlassRaidFrames` | `tests/wow_stubs.lua` (dump-validated allowlist stub), `Tools/deploy.ps1`. |
@@ -54,6 +54,6 @@ folder and is summarised in `LICENSE`):
 ## Forever client
 
 - `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md` — canonical measured field notes.
-- `C:\Projects\WoW\References\forever-api-1.60.1.70205.md` — latest API dump (functions, events,
+- `C:\Projects\WoW\References\forever-api-1.60.1.70338.md` — latest API dump (functions, events,
   widget methods, `_G`).
 - `C:\Projects\WoW\wow-ui-source` (branch `forever`) — Blizzard's FrameXML: atlas names, templates.

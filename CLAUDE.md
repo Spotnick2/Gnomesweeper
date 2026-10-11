@@ -479,7 +479,7 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 
 The material is **LibGlass-1.0** (#71), an embedded LibStub library (`..\LibGlass`,
 github.com/Spotnick2/LibGlass, public, MIT) that every glass addon embeds. Its repo owns the code,
-the 15 textures, their generator (`Tools/make_textures.py`) and the write-up
+its textures, their generator (`Tools/make_textures.py`) and the write-up
 (`docs/GLASS-MATERIAL.md`), and its `CLAUDE.md` holds the contract (the API, region fields and
 texture names only grow; instances; upgrade rules). The migration guide is
 `C:\Projects\WoW\References\LIBGLASS-MIGRATION.md`.
@@ -492,7 +492,7 @@ texture names only grow; instances; upgrade rules). The migration guide is
   (`$env:LIBGLASS`, default `..\LibGlass`) through its own `Tools\deploy.ps1`, which
   `Tools\deploy.ps1` here calls first. The tests load the same checkout (`libGlassScripts()` in the
   harness, a fresh LibStub and library per `loadAddon`), and fail loudly without it.
-- **The pin:** `.pkgmeta` pins a tag (`tag: r1`), **never `tag: latest`**. Bump it only in a release
+- **The pin:** `.pkgmeta` pins a tag (`tag: r5`), **never `tag: latest`**. Bump it only in a release
   made anyway: players get library fixes earlier through whichever glass addon ships the newest
   copy (LibStub runs that one). `tests\run.ps1` and the deploy warn when the checkout isn't at the
   pin. CI reads the pin (`tests/fetch_libglass.sh`), tests against it, and asserts the zip's
@@ -514,7 +514,7 @@ texture names only grow; instances; upgrade rules). The migration guide is
   sounds (`PlaySoundFile` refuses game-file *paths*: use SoundKit / FileDataIDs or shipped files),
   "Draw order inside one layer", "A MaskTexture small in BOTH directions must NOT be sliced"
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
-- `C:\Projects\WoW\References\forever-api-1.60.1.70205.md` — the latest API dump: functions, events,
+- `C:\Projects\WoW\References\forever-api-1.60.1.70338.md` — the latest API dump: functions, events,
   **widget methods** and the `_G` walk. Proves a name exists, not that it works.
 - `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
@@ -595,7 +595,7 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 - **The stub is an allowlist**, modelled on `..\GlassRaidFrames\tests\wow_stubs.lua`:
   - globals are **strict** (reading one the stub doesn't define is an error), so before stubbing one,
     confirm it's in the dump and copy its signature;
-  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70205.txt`, made from
+  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70338.txt`, made from
     the dump by `Tools/make_events_fixture.py`; `test_toc` checks it against the dump);
   - widgets answer **any** method as a recorded no-op, so **`test_methods.lua`** checks every
     `Type:Method` the addon called against the dump's widget methods (skipped, loudly, without the

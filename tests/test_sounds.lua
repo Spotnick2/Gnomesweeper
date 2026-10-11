@@ -302,7 +302,7 @@ do
     eq(#WoW.sounds, n, "every candidate plays, one by one")
     for i, c in ipairs(S.CANDIDATES) do eq(WoW.sounds[i].kit, c[1], "...in order: " .. c[1]) end
     local probe = GnomesweeperDB.soundProbe
-    eq(probe.build, "1.60.1.70205", "the results are saved with the build")
+    eq(probe.build, "1.60.1.70338", "the results are saved with the build")
     eq(probe.kits[8959].willPlay, true, "...each kit's willPlay")
     eq(probe.kits[18871].willPlay, false, "...including a kit the client refuses")
     check(chatHas("18871") and chatHas("won't play"), "chat says which one won't play")

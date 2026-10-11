@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Gnomesweeper — Minesweeper Forever** is a Minesweeper clone for **World of Warcraft: Forever
 1.60.1** (Interface `16001`), written in **Lua 5.1**. It's a single-owner project (Spotnick), on the
 same stack and conventions as the sibling Forever addons `..\GlassUnitFrames` (the glass
-material's pilot; the material itself is `..\LibGlass`), `..\GlassRaidFrames`, `..\GlassXp` (GlassPanel) and `..\AltStable`. When this file
+material's pilot; the material itself is `..\LibGlass`), `..\GlassRaidFrames`, `..\GlassPanel` (was GlassXp) and `..\AltStable`. When this file
 doesn't cover something, check how those handle it before you invent a new idiom.
 
 - **Name in the AddOns list / logo:** Gnomesweeper. Namespace, TOC, deployed folder: `Gnomesweeper`.
@@ -41,7 +41,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
 `Sounds.lua` → `Assets.lua` → `ModelProbe.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
-  and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassXp\Compat.lua` (`Fail`, `Button`, `Window`)
+  and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassPanel\Compat.lua` (`Fail`, `Button`, `Window`)
   when needed instead of rewriting them.
 - **`Locales\`** (#36): **every player-facing string goes through `GS.L`, keyed by the English
   text itself** (`L["Clean sweep!"]`): a key with no translation reads back as itself, so English
@@ -479,10 +479,10 @@ Windows XP Minesweeper is the baseline (see `docs/REFERENCES.md`):
 
 The material is **LibGlass-1.0** (#71), an embedded LibStub library (`..\LibGlass`,
 github.com/Spotnick2/LibGlass, public, MIT) that every glass addon embeds. Its repo owns the code,
-the 15 textures, their generator (`Tools/make_textures.py`) and the write-up
+its textures, their generator (`Tools/make_textures.py`) and the write-up
 (`docs/GLASS-MATERIAL.md`), and its `CLAUDE.md` holds the contract (the API, region fields and
 texture names only grow; instances; upgrade rules). The migration guide is
-`C:\Projects\References\LIBGLASS-MIGRATION.md`.
+`C:\Projects\WoW\References\LIBGLASS-MIGRATION.md`.
 
 - **Material changes are LibGlass PRs**, never edits here (nor in `..\LibGlass` from this
   repo's session): a bug or a need found here goes on a LibGlass issue.
@@ -492,7 +492,7 @@ texture names only grow; instances; upgrade rules). The migration guide is
   (`$env:LIBGLASS`, default `..\LibGlass`) through its own `Tools\deploy.ps1`, which
   `Tools\deploy.ps1` here calls first. The tests load the same checkout (`libGlassScripts()` in the
   harness, a fresh LibStub and library per `loadAddon`), and fail loudly without it.
-- **The pin:** `.pkgmeta` pins a tag (`tag: r1`), **never `tag: latest`**. Bump it only in a release
+- **The pin:** `.pkgmeta` pins a tag (`tag: r5`), **never `tag: latest`**. Bump it only in a release
   made anyway: players get library fixes earlier through whichever glass addon ships the newest
   copy (LibStub runs that one). `tests\run.ps1` and the deploy warn when the checkout isn't at the
   pin. CI reads the pin (`tests/fetch_libglass.sh`), tests against it, and asserts the zip's
@@ -508,15 +508,15 @@ texture names only grow; instances; upgrade rules). The migration guide is
 
 ## References: read these before touching an unfamiliar API
 
-- `C:\Projects\References\PORTING-TBC-TO-FOREVER.md` — canonical, addon-agnostic field notes
+- `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md` — canonical, addon-agnostic field notes
   measured on the live client. Treat as fact; write new addon-agnostic findings **there**.
   Most relevant here: "Checking a texture exists before you draw it" (`GetFileIDFromPath`),
   sounds (`PlaySoundFile` refuses game-file *paths*: use SoundKit / FileDataIDs or shipped files),
   "Draw order inside one layer", "A MaskTexture small in BOTH directions must NOT be sliced"
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
-- `C:\Projects\References\forever-api-1.60.1.70205.md` — the latest API dump: functions, events,
+- `C:\Projects\WoW\References\forever-api-1.60.1.70338.md` — the latest API dump: functions, events,
   **widget methods** and the `_G` walk. Proves a name exists, not that it works.
-- `C:\Projects\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
+- `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\LibGlass\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
 - `docs/SOCIAL.md` — **the social plan** (#15 guild best times, #17 guild-best toasts, #16 friends):
@@ -595,7 +595,7 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 - **The stub is an allowlist**, modelled on `..\GlassRaidFrames\tests\wow_stubs.lua`:
   - globals are **strict** (reading one the stub doesn't define is an error), so before stubbing one,
     confirm it's in the dump and copy its signature;
-  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70205.txt`, made from
+  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70338.txt`, made from
     the dump by `Tools/make_events_fixture.py`; `test_toc` checks it against the dump);
   - widgets answer **any** method as a recorded no-op, so **`test_methods.lua`** checks every
     `Type:Method` the addon called against the dump's widget methods (skipped, loudly, without the

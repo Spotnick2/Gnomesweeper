@@ -1,6 +1,7 @@
 -- Compat.lua: Gnomesweeper.API, the only route to client APIs that moved or
--- may be absent. Lift helpers from ..\GlassXp\Compat.lua (Fail, Button, Window)
--- and ..\AltStable\Compat.lua when a file needs them, rather than rewriting them.
+-- may be absent. Lift helpers from ..\GlassPanel\Compat.lua (Fail, Button,
+-- Window) and ..\AltStable\Compat.lua when a file needs them, rather than
+-- rewriting them.
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -8,10 +9,12 @@ local API = {}
 Gnomesweeper.API = API
 
 -- The client build the notes and stubs describe: the API dump the tests check
--- against (C:\Projects\References\forever-api-1.60.1.70205.md). 70205's
--- documented API is identical to 70170's (Compare-Dumps, 2026-10-02), and the
--- asset probe ran on it: every texture draws.
-Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70205"
+-- against (C:\Projects\WoW\References\forever-api-1.60.1.70338.md). Against
+-- 70205, where the asset probe ran (every texture draws), 70338 changes only
+-- voice chat, Discord and LFG listings, none of which this addon calls, and no
+-- widget method (Compare-Dumps, 2026-10-11); measured in game on 70338 by the
+-- owner, 2026-10-11.
+Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70338"
 
 -- CreateFrame with a template that may be missing on this client. A missing
 -- template doesn't throw, it returns a bare frame (Priestly, FOREVER-PROBE), so

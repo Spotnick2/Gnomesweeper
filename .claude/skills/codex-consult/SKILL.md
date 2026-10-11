@@ -83,9 +83,9 @@ For Gnomesweeper, good things to hand Codex:
 - any plan that grows scope beyond a single-owner minigame.
 
 **Always hand it `CLAUDE.md` alongside the diff or plan**, plus
-`C:/Projects/References/PORTING-TBC-TO-FOREVER.md`. Those findings were measured on the live
+`C:/Projects/WoW/References/PORTING-TBC-TO-FOREVER.md`. Those findings were measured on the live
 client; without them a cold reviewer argues from Classic-era or Retail behaviour that doesn't hold
-here. `C:/Projects/References/forever-api-1.60.1.70205.md` is the full API surface when a question
+here. `C:/Projects/WoW/References/forever-api-1.60.1.70338.md` is the full API surface when a question
 turns on whether something exists. Game-logic references and their licences: `docs/REFERENCES.md`.
 
 Say what you have already established and ask it not to repeat that work. A clean "no defect found"

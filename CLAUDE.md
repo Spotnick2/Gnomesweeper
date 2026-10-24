@@ -683,3 +683,20 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
 - **Borrow ideas, not unlicensed code.** Only MIT/compatible sources may be copied, with credit
   in `docs/REFERENCES.md` and `LICENSE`.
 - Match the surrounding code's idiom. Keep pure refactors in their own commit.
+
+## Consulting Codex
+
+The shared `codex-consult` skill (user level) has the invocation and the gotchas. For this repo:
+
+For Gnomesweeper, good things to hand Codex:
+- `Board.lua`'s rules: first-click safety, flood fill, chord with wrong flags, win/loss edge cases;
+- tile pooling and render cost at Expert size (480 tiles), and anything that creates frames per game;
+- the SavedVariables shape once released (personal bests), and any leaderboard wire format (M4):
+  versioning, the 255-byte addon-message cap, what an old client does with a new message;
+- any plan that grows scope beyond a single-owner minigame.
+
+**Always hand it `CLAUDE.md` alongside the diff or plan**, plus
+`C:/Projects/WoW/References/Docs/PORTING-TBC-TO-FOREVER.md`. Those findings were measured on the live
+client; without them a cold reviewer argues from Classic-era or Retail behaviour that doesn't hold
+here. `C:/Projects/WoW/References/Forever/api/forever-api-<version>.<build>.md` (take the highest build) is the full API surface when a question
+turns on whether something exists. Game-logic references and their licences: `docs/REFERENCES.md`.

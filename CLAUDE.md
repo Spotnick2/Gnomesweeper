@@ -562,10 +562,13 @@ it, not a newer Lua on `PATH`.
 pwsh tests\run.ps1                                                  # luac -p on every TOC .lua + every tests\test_*.lua (needs ..\LibGlass or $env:LIBGLASS)
 & 'C:\Program Files (x86)\Lua\5.1\lua.exe' tests\test_toc.lua      # one test, from the repo root
 pwsh Tools\deploy.ps1                                               # -> AddOns\Gnomesweeper
-pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_classic_beta_\Interface\AddOns"
+pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 ```
 
-- Default AddOns path: `C:\Program Files (x86)\World of Warcraft\_classic_beta_\Interface\AddOns`.
+- Default AddOns path: `C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns`.
+- **`_forever_` is the live client** (the beta closed on 2026-10-30): a deploy runs on the owner's
+  real characters. Deploy a probe or a measuring build only for a test session the owner is
+  actually running, never just to have it there.
 - Deploy ends with **RESTART the client** when it brought a new file or a changed TOC (the client
   reads those only at start), else "/reload is enough".
 - Deploy rewrites `## Version: @project-version@` to `dev` **in the deployed copy only**. Never

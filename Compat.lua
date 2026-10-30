@@ -9,7 +9,7 @@ local API = {}
 Gnomesweeper.API = API
 
 -- The client build the notes and stubs describe: the API dump the tests check
--- against (C:\Projects\WoW\References\forever-api-1.60.1.70338.md). Against
+-- against (C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md). Against
 -- 70205, where the asset probe ran (every texture draws), 70338 changes only
 -- voice chat, Discord and LFG listings, none of which this addon calls, and no
 -- widget method (Compare-Dumps, 2026-10-11); measured in game on 70338 by the

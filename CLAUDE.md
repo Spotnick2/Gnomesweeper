@@ -482,7 +482,7 @@ github.com/Spotnick2/LibGlass, public, MIT) that every glass addon embeds. Its r
 its textures, their generator (`Tools/make_textures.py`) and the write-up
 (`docs/GLASS-MATERIAL.md`), and its `CLAUDE.md` holds the contract (the API, region fields and
 texture names only grow; instances; upgrade rules). The migration guide is
-`C:\Projects\WoW\References\LIBGLASS-MIGRATION.md`.
+`C:\Projects\WoW\References\Docs\LIBGLASS-MIGRATION.md`.
 
 - **Material changes are LibGlass PRs**, never edits here (nor in `..\LibGlass` from this
   repo's session): a bug or a need found here goes on a LibGlass issue.
@@ -508,13 +508,13 @@ texture names only grow; instances; upgrade rules). The migration guide is
 
 ## References: read these before touching an unfamiliar API
 
-- `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md` — canonical, addon-agnostic field notes
+- `C:\Projects\WoW\References\Docs\PORTING-TBC-TO-FOREVER.md` — canonical, addon-agnostic field notes
   measured on the live client. Treat as fact; write new addon-agnostic findings **there**.
   Most relevant here: "Checking a texture exists before you draw it" (`GetFileIDFromPath`),
   sounds (`PlaySoundFile` refuses game-file *paths*: use SoundKit / FileDataIDs or shipped files),
   "Draw order inside one layer", "A MaskTexture small in BOTH directions must NOT be sliced"
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
-- `C:\Projects\WoW\References\forever-api-1.60.1.70338.md` — the latest API dump: functions, events,
+- `C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md` — the latest API dump: functions, events,
   **widget methods** and the `_G` walk. Proves a name exists, not that it works.
 - `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.

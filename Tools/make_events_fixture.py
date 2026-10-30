@@ -1,7 +1,7 @@
 """Regenerate tests/events-<build>.txt from the Forever API dump.
 
 The test stub validates every RegisterEvent against the client's real event
-list. The dump lives outside this repo (C:\\Projects\\References), so the list is
+list. The dump lives outside this repo (C:\\Projects\\WoW\\References\\Forever\\api), so the list is
 checked in as a fixture and tests/test_toc.lua fails if the two ever differ.
 A new client build means a new dump: run this, then update EVENTS_FIXTURE in
 tests/wow_stubs.lua (see .claude/skills/client-update).
@@ -12,7 +12,7 @@ import re
 import sys
 from pathlib import Path
 
-DEFAULT = r"C:\Projects\WoW\References\forever-api-1.60.1.70338.md"
+DEFAULT = r"C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md"
 dump = Path(sys.argv[1] if len(sys.argv) > 1 else DEFAULT)
 build = re.search(r"(\d+\.\d+\.\d+\.\d+)", dump.name).group(1)
 

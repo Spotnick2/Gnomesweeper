@@ -12,7 +12,7 @@ before copying anything.
 | [SomeDevNow/love2d-minesweeper](https://github.com/SomeDevNow/love2d-minesweeper) (LÖVE, Lua) | MIT | Rough (hardcoded 16×16/40). Only the **iterative queue flood fill** (`data.clear_blanks` in `src/grid_info.lua`) is worth a look. |
 | [Simon Tatham's Mines](https://www.chiark.greenend.org.uk/~sgtatham/puzzles/doc/mines.html) ([source](https://git.tartarus.org/?p=simon/puzzles.git)) | MIT (verify) | "Ensure solubility": generate → run a logical solver → retry, so a board never needs a guess. For a later no-guess mode. |
 | [Microsoft Minesweeper (Wikipedia)](https://en.wikipedia.org/wiki/Microsoft_Minesweeper), [Minesweeper wiki](https://minesweeper.fandom.com/wiki/Microsoft_Minesweeper) | — | The rules baseline: presets, first-click guarantee, chord, timer cap 999, counter may go negative, question marks. |
-| Minesweeper v3.0.0 by Phoslead (Retail, Interface 120000, Ace3 + LibDBIcon) — local copy at `C:\Projects\WoW\References\Minesweeper_v3.0.0` | **No licence file: ideas only.** **Secondary reference — don't consult it first**: the author may port it to Forever themselves, so Gnomesweeper should stand on its own. Notable ideas: shipped `.ogg` sfx (cell, flag, explosion, clock, lose, victory), game-mode picker, game log and replay, minimap button. |
+| Minesweeper v3.0.0 by Phoslead (Retail, Interface 120000, Ace3 + LibDBIcon) — local copy at `C:\Projects\WoW\References\Addons\Minigames\Minesweeper` | **No licence file: ideas only.** **Secondary reference — don't consult it first**: the author may port it to Forever themselves, so Gnomesweeper should stand on its own. Notable ideas: shipped `.ogg` sfx (cell, flag, explosion, clock, lose, victory), game-mode picker, game log and replay, minimap button. |
 | [MineSweeper (WoW, CurseForge)](https://www.curseforge.com/wow/addons/minesweeper) | All Rights Reserved | **Ideas only.** Abandoned 2012. Had: first click never loses, pause when minimised, character/guild/friends leaderboards, "show on death / in group" triggers. |
 
 ## Embedded libraries (`Libs\`, #40)
@@ -53,7 +53,7 @@ folder and is summarised in `LICENSE`):
 
 ## Forever client
 
-- `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md` — canonical measured field notes.
-- `C:\Projects\WoW\References\forever-api-1.60.1.70338.md` — latest API dump (functions, events,
+- `C:\Projects\WoW\References\Docs\PORTING-TBC-TO-FOREVER.md` — canonical measured field notes.
+- `C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md` — latest API dump (functions, events,
   widget methods, `_G`).
 - `C:\Projects\WoW\wow-ui-source` (branch `forever`) — Blizzard's FrameXML: atlas names, templates.

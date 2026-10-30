@@ -109,7 +109,7 @@ dropdown's mascot. That's an idea, not a decision.
 Everything goes to `GnomesweeperDB.modelProbe`; a `/reload` writes it to
 `WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua`, to be read from disk. Record the results here
 (the build, what rendered, textured or not, the animation IDs, the frame cost), and the
-addon-agnostic ones in `C:\Projects\WoW\References\PORTING-TBC-TO-FOREVER.md`.
+addon-agnostic ones in `C:\Projects\WoW\References\Docs\PORTING-TBC-TO-FOREVER.md`.
 
 ## Results (1.60.1.70205, 2026-10-04, `/gsweep models`)
 

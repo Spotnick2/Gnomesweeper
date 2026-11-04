@@ -55,6 +55,8 @@ do
     for _, n in ipairs(UISpecialFrames) do if n == "GnomesweeperWindow" then special = special + 1 end end
     eq(special, 1, "Escape closes it (registered once in UISpecialFrames)")
     check(win.glass and win.glass.top, "it wears the glass material")
+    eq(Gnomesweeper.Glass.preset, "pearl", "the material is LibGlass's Pearl (owner)")
+    eq(win.glass.size, "thin", "...so the window's rim is the thin one")
 
     -- Beginner at the default screen: the minimum width, the board centred.
     eq(win._width, 300, "Beginner: the minimum width")

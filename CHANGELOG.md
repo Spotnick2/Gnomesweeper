@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.0
+
+Gnomesweeper 1.0: a new coat of glass.
+
+- **Pearl glass**: the window and its panels now wear Pearl, the look shared by the Glass addons. The glass is clearer and softer, with thinner outlines and no grain. The board, the numbers and the result panel keep their dark backing, so they read just as well over any scenery.
+- **Updated glass library** (LibGlass r11), included in the download: nothing to install.
+- **Downloads on GitHub too**: every version is now also published as a GitHub release, with the same zip as CurseForge, which addon managers such as WowUp can pick up.
+
 ## v0.3.0
 
 The end of a game comes alive.

@@ -18,12 +18,14 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: v0.2.1 released** (v0.1.0-beta was the first, #11). M1 made it playable; M2 polished
+**Status: v1.0.0** (v0.1.0-beta was the first, #11). M1 made it playable; M2 polished
 it: personal bests and the best times panel, the settings, sounds and music, the celebrations, the
 generated art and two board themes, the clock's warning, hiding in combat, the mascot's motion, a
 minimap button, a key binding. v0.2.0 added French (#36) and the guild's best times and toasts
-(#15, #17); v0.2.1 the embedded LibGlass (#71). Left: the live 3D models (#20's probe, then #21,
-the rest of #48), and friends' leaderboards (#16). **Bugs come from players** (one owner, one setup): GitHub issues, through the
+(#15, #17); v0.2.1 the embedded LibGlass (#71); v0.3.0 the end panel's live models (#21: the
+Walking Bomb, Tally's cheer) and its redesign; v1.0.0 LibGlass r11's **Pearl** material and a
+GitHub Release for every tag (#81). Left: a live 3D face (the rest of #21), the mascot's frames and
+living gnome (#48's levels 2 and 3), and friends' leaderboards (#16). **Bugs come from players** (one owner, one setup): GitHub issues, through the
 templates in `.github/ISSUE_TEMPLATE/` and the About page's "Report a bug" link.
 
 **The backlog is GitHub issues** at `github.com/Spotnick2/Gnomesweeper` (public since the CurseForge setup), grouped by
@@ -492,7 +494,11 @@ texture names only grow; instances; upgrade rules). The migration guide is
   (`$env:LIBGLASS`, default `..\LibGlass`) through its own `Tools\deploy.ps1`, which
   `Tools\deploy.ps1` here calls first. The tests load the same checkout (`libGlassScripts()` in the
   harness, a fresh LibStub and library per `loadAddon`), and fail loudly without it.
-- **The pin:** `.pkgmeta` pins a tag (`tag: r5`), **never `tag: latest`**. Bump it only in a release
+- **Pearl (owner, v1.0.0):** `Glass.lua` builds the instance with `New({ preset = "pearl" })`, the
+  Glass suite's theme (r11): clean with a softer wash and gloss, thin rims (`Apply`'s `"large"` /
+  `"small"` resolve to `"thin"` / `"thin_small"`, same masks), no grain, a clear body. The window and
+  the panels keep their own dark backings under it. `test_window` checks the preset and the thin rim.
+- **The pin:** `.pkgmeta` pins a tag (`tag: r11`), **never `tag: latest`**. Bump it only in a release
   made anyway: players get library fixes earlier through whichever glass addon ships the newest
   copy (LibStub runs that one). `tests\run.ps1` and the deploy warn when the checkout isn't at the
   pin. CI reads the pin (`tests/fetch_libglass.sh`), tests against it, and asserts the zip's
@@ -514,8 +520,10 @@ texture names only grow; instances; upgrade rules). The migration guide is
   sounds (`PlaySoundFile` refuses game-file *paths*: use SoundKit / FileDataIDs or shipped files),
   "Draw order inside one layer", "A MaskTexture small in BOTH directions must NOT be sliced"
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
-- `C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md` — the latest API dump: functions, events,
-  **widget methods** and the `_G` walk. Proves a name exists, not that it works.
+- `C:\Projects\WoW\References\Forever\api\forever-api-<version>.<build>.md`, **the highest build** —
+  the API dump: functions, events, **widget methods** and the `_G` walk. Proves a name exists, not
+  that it works. The tests and `MEASURED_ON_BUILD` are on 70338; newer dumps exist (70532 on
+  2026-11-03), and `/client-update` moves the addon to them.
 - `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\LibGlass\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
@@ -673,9 +681,13 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 - Releases: CurseForge's packager from the tag webhook, reading `.pkgmeta`. Every tag needs a
   `CHANGELOG.md` entry, written for players (what's in it, not how it got there). CI
   (`.github/workflows/package-check.yml`, AltStable's) runs the Lua 5.1 tests and a packager dry run on
-  every PR and push to `main`, and asserts the zip's shape (the TOC's files, `Bindings.xml`, the media;
-  no dev files; the version substituted). Check the published zip by hand after a release: CurseForge's
-  packager isn't the one CI ran.
+  every PR, push to `main` and tag, and asserts the zip's shape (the TOC's files, `Bindings.xml`, the
+  media; no dev files; the version substituted). **A tag also gets a GitHub Release (#81)**: the
+  `release` job publishes the zip CI built and checked, with `release.json` (WowUp) and the tag's
+  `CHANGELOG.md` section as its notes, both from `tests/release_files.sh` (the shared template, copied
+  unchanged); a failed one is published again from Actions (Run workflow from `main`, the tag). The
+  whole procedure is `C:\Projects\WoW\References\Docs\RELEASING.md`. No Wago upload yet: the TOC has
+  no `X-Wago-ID`. Check the CurseForge zip by hand after a release: its packager isn't the one CI ran.
 
 ## Conventions
 

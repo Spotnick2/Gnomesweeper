@@ -27,11 +27,20 @@ itself the moment combat starts.
 - **Your best times.** Each difficulty keeps your best, shared by all your characters, with who set it
   and when. The clock turns yellow as you near it, flashes in the last 3 seconds, and goes red past it.
   Beat it for a fanfare and fireworks.
+- **Your guild's best times.** Guildmates with Gnomesweeper share their times through hidden addon
+  messages, never in chat. The **Guild** tab of Best times shows the guild's best at each difficulty, who
+  set it and when, and where you stand; hover a difficulty for the top five. A new guild record gets a
+  small toast (never in combat), until you click it. Resetting your best times reaches your guild too.
 - **The gnome.** She's your new-game button, and she reacts: focused while you play, surprised while you
   hold a tile, laughing when you clear the field, sooty after a wipe. She bounces, shudders and nods.
+- **The end of a game.** The result panel stands out over the dimmed board. Clear the field ("Clean
+  sweep!") and Tally Berryfizz, our gnome, cheers in 3D, with your time, your best and how much faster
+  you were. Hit a mine and Gnomeregan's Walking Bomb goes off. The 3D models can be turned off.
 - **Two looks.** Classic, and Modern with ice-blue glass tiles. The difficulties wear WoW's item colours.
-- **Sounds and music.** Clicks, the Walking Bomb, a gnome's last words, a "Congratulations", and
-  Gnomeregan's music if you want it.
+- **Sounds and music.** Clicks, the Walking Bomb, a gnome's last words, a "Congratulations", Tally's
+  cheer, and Gnomeregan's music if you want it.
+- **En français !** Every window, tooltip, setting and chat message is in French on a French client,
+  with French decimals and dates.
 - **Plays nice with your UI.** Hides itself in combat and comes back after (a setting), never touches
   anything protected, and is usable in combat if you turn that off. A minimap button, an entry in the
   minimap's addon list, and a key binding.
@@ -69,7 +78,7 @@ Clear every tile that isn't a mine. The **?** in the title bar explains it all i
 |---|---|
 | `/gsweep` | Opens or closes the board |
 | `/gsweep beginner` · `intermediate` · `expert` | Starts a game at that difficulty |
-| `/gsweep scores` | Your best times (also the trophy in the title bar) |
+| `/gsweep scores` | Your best times and your guild's (also the trophy in the title bar) |
 | `/gsweep settings` | The settings (also the gear in the title bar) |
 | `/gsweep music` | Gnomeregan's music on or off (also the note in the title bar) |
 | `/gsweep combat` | Hiding in combat on or off |
@@ -86,6 +95,8 @@ In **Options > AddOns > Gnomesweeper** (or the gear in the title bar):
 - **Board**: Classic or Modern. Changes at once, even mid-game.
 - **Clear with left-click**: a left-click on a number whose flags match clears around it.
 - **Sounds**, **Gnomeregan music**, **Fireworks**, **Hide in combat**, the **minimap button**.
+- **Guild best toasts**: the card when a guildmate sets a new guild record.
+- **3D models**: Tally and the Walking Bomb on the result panel, or the panel without them.
 - **Window size**, and **Reset best times**.
 
 ## Found a bug? Have an idea?
@@ -100,19 +111,22 @@ most. Ideas are welcome too.
 - **The rules** follow Windows XP Minesweeper.
   [Kurtsley/XP-Minesweeper-Classic](https://github.com/Kurtsley/XP-Minesweeper-Classic) (MIT) was the
   model for its behaviour; no code is copied. Details in [docs/REFERENCES.md](docs/REFERENCES.md).
-- **Libraries**, embedded under their own licences: LibStub, CallbackHandler-1.0, LibDataBroker-1.1 and
-  LibDBIcon-1.0 (their authors and licences are listed in [LICENSE](LICENSE)).
-- **Sounds, music and the bomb** are World of Warcraft's own, played from the client; nothing of
-  Blizzard's is redistributed.
+- **Libraries**, embedded under their own licences: LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
+  LibDBIcon-1.0, ChatThrottleLib and LibGlass-1.0 (their authors and licences are listed in
+  [LICENSE](LICENSE)).
+- **Sounds, music, the bomb icon and the 3D models** are World of Warcraft's own, played from the
+  client; nothing of Blizzard's is redistributed.
 - **The gnome's expressions, the lettering, the laurels and the Modern tiles** were generated for this
   addon ([Media/README.md](Media/README.md), with every prompt in
   [Media/ART-PROMPTS.md](Media/ART-PROMPTS.md)). The rest of the art is drawn by the scripts in `Tools/`.
-- **The glass** is the Liquid Glass material shared by the Glass addons (Glass Unit Frames and family).
+- **The glass** is [LibGlass](https://github.com/Spotnick2/LibGlass)'s Pearl material, shared by the
+  Glass addons (Glass Unit Frames and family).
 
 ## Development
 
-Lua 5.1 on Forever's Retail API, no build step. `pwsh tests\run.ps1` runs the tests; CI runs them on
-every pull request, with a packaging check. The design is [docs/PLAN.md](docs/PLAN.md), the art
+Lua 5.1 on Forever's Retail API, no build step. `pwsh tests\run.ps1` runs the tests (they need a
+[LibGlass](https://github.com/Spotnick2/LibGlass) checkout beside this one, or `$env:LIBGLASS`); CI runs
+them on every pull request, with a packaging check, and publishes each tag as a GitHub release. The design is [docs/PLAN.md](docs/PLAN.md), the art
 direction [docs/ART.md](docs/ART.md), and the working notes for contributors (and AI agents)
 [CLAUDE.md](CLAUDE.md).
 

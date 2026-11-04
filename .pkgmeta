@@ -30,6 +30,7 @@ ignore:
   - AGENTS.md
   - CLAUDE.md
   - README.md
+  - README.curseforge.md
   - CHANGELOG.md
   - Media/README.md
   - Media/ART-PROMPTS.md

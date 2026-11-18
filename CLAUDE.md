@@ -327,7 +327,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   `NewGame`, `SetGame` and the window closing stop her. Frames (level 2) and a 3D gnome (level 3) wait
   on art and #20/#21.
   The animation methods are the dump's
-  `SimpleAnim*API`; `test_methods` checks each against its type's group.
+  `SimpleAnim*API`; `test_methods` checks each against its own type's or `Animation`'s.
 - **`Sounds.lua`** (#9, #22): the effects and Gnomeregan's music. **Effects** are client sound
   kits played with the global `PlaySound(kit, "SFX")` (the game's sound toggle and volume apply;
   `PlaySoundFile` refuses game paths here, and `C_Sound.PlaySound`'s second argument is an enum, not
@@ -522,8 +522,8 @@ texture names only grow; instances; upgrade rules). The migration guide is
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
 - `C:\Projects\WoW\References\Forever\api\forever-api-<version>.<build>.md`, **the highest build** —
   the API dump: functions, events, **widget methods** and the `_G` walk. Proves a name exists, not
-  that it works. The tests and `MEASURED_ON_BUILD` are on 70338; newer dumps exist (70532 on
-  2026-11-03), and `/client-update` moves the addon to them.
+  that it works. `MEASURED_ON_BUILD` is 70338; the tests check against the build
+  `tests\kit.pin` names (70959, the kit has no older data), and `/client-update` moves the addon on.
 - `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\LibGlass\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
@@ -597,20 +597,34 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 ## Testing
 
 `tests\` follows the Glass* siblings: plain Lua 5.1, `tests\wow_stubs.lua` (driven through the
-`WoW` table), `tests\harness.lua` (`check` / `eq` / `done` / `tocFiles` / `loadAddon`),
-`tests\run.ps1`.
+`WoW` table), `tests\harness.lua` (`tocFiles` / `loadAddon` / `newPureEnv`), `tests\run.ps1`.
+
+The test scaffolding is WowTestKit (`C:\Projects\WoW\WowTestKit`; its README is the reference)
+at the commit and client build `tests\kit.pin` names. `tests\run.ps1` puts that commit in
+`%LOCALAPPDATA%\WowTestKit\<sha>` and hands off to the kit's runner; CI fetches it with
+`tests\fetch_kit.sh`. `tests\kit.lua`, `kit.ps1` and `fetch_kit.sh` are the kit's bootstrap
+copies: never edit them here. A kit need is an issue on the kit, worked around in
+`tests\wow_stubs.lua` with a `-- WowTestKit #N:` comment meanwhile. `tests\run.ps1 -KitDev`
+runs against the `..\WowTestKit` working copy instead of the pin. `check` / `eq` / `done` are the
+kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s build is 70959:
+`MEASURED_ON_BUILD` (70338) is older than any build the kit has data for.
 
 - **Pure files are tested directly**, loaded with `newPureEnv()` / `loadPure()` (the harness): every
   global but a few Lua builtins is forbidden, reads and writes. `test_board.lua`, `test_layout.lua`,
   `test_input.lua`.
-- **The stub is an allowlist**, modelled on `..\GlassRaidFrames\tests\wow_stubs.lua`:
+- **The stub is an allowlist**, on the kit's core:
   - globals are **strict** (reading one the stub doesn't define is an error), so before stubbing one,
     confirm it's in the dump and copy its signature;
-  - `RegisterEvent` throws on an event the client lacks (`tests/events-1.60.1.70338.txt`, made from
-    the dump by `Tools/make_events_fixture.py`; `test_toc` checks it against the dump);
-  - widgets answer **any** method as a recorded no-op, so **`test_methods.lua`** checks every
-    `Type:Method` the addon called against the dump's widget methods (skipped, loudly, without the
-    dump: set `GNOMESWEEPER_API_DUMP` to another path);
+  - `RegisterEvent` throws on an event the kit's build lacks;
+  - widgets answer only the build's methods (and the stub's `WoW.Methods`), and record each call;
+    **`test_methods.lua`** exercises the addon, then `Kit.checkMethods` checks every `Type:Method`
+    pair against the build (a model scene's actor is allowed pair by pair until WowTestKit #90), and
+    no error may be swallowed by a `pcall` meanwhile (the addon calls the model scenes' setters
+    through `pcall`, where a missing method would vanish);
+  - `done()` fails on a printed line with a bare `|` (the client reads it as an escape): the help's
+    three known ones (#95) are let through by `acceptKnownStrays()` until that's fixed;
+  - a tick moves `GetTime()` on by its elapsed before `OnUpdate` runs (`WoW.step` also runs the
+    timers due), and hiding a frame runs `OnHide` on its shown descendants, as on the client;
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong
     space can fail. A test double whose scale is always 1 can't catch that.
 - **`test_effects.lua`** is the celebrations: the burst and the smoke following the game, the face while
@@ -650,7 +664,7 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 - **`test_modelprobe.lua`** is the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
   numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
   late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.
-  `test_methods` checks a `ModelSceneActor`'s calls against the dump's `[FrameAPIModelSceneFrameActor*]`.
+  `test_methods` allows a `ModelSceneActor`'s calls by name, each a documented function (WowTestKit #90).
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
   what they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,

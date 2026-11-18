@@ -240,7 +240,9 @@ do
     WoW.modelBoxes[6977] = nil                             -- the bomb streams in late
     for _ = 1, 400 do WoW.tick(0.0125) end                 -- 5 s at 80 fps
     check(s.head._shown and not s.bomb._shown, "then the models load")
-    for _ = 1, 40 do WoW.tick(0.0125) end                  -- while the bomb loads: not counted
+    -- While the bomb loads: not counted. Frames with their timers (the polls run, as on
+    -- the client), 0.5 s of them.
+    for _ = 1, 40 do WoW.step(0.0125) end
     WoW.modelBoxes[6977] = BOMB
     WoW.advance(0.2)
     check(s.head._shown and s.bomb._shown, "then with them")
@@ -254,7 +256,7 @@ do
     check(perf and math.abs(perf.with.fps - 40) < 0.5, "and with: " .. tostring(perf and perf.with.fps))
     eq(perf.board, "30x16", "over the Expert board")
     eq(perf.headLoad, "0.0s", "how long the face took to load")
-    eq(perf.bombLoad, "0.1s", "...and the bomb (found at the first poll after it arrived)")
+    eq(perf.bombLoad, "0.6s", "...and the bomb (0.5 s of frames, found at the first poll after it arrived)")
     check(not s.head._shown and not s.bomb._shown, "the scenes go away after")
     check(chatHas("fps"), "the result is printed")
 end

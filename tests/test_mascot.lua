@@ -141,9 +141,9 @@ do  -- the UI hidden (Alt+Z) with the window still "shown": she doesn't move (re
     UIParent:Show()
     W.Refresh()
     eq(m.playing(), "breathe", "...the UI back: she breathes")
-    UIParent:Hide()
+    UIParent:Hide()                -- the window's OnHide runs, as on the client: she stops
     m.play("nod")
-    eq(m.playing(), "breathe", "...a one-shot asked for while hidden doesn't start")
+    check(m.playing() ~= "nod" and not m.groups.nod:IsPlaying(), "...a one-shot asked for while hidden doesn't start")
     UIParent:Show()
 end
 

@@ -41,7 +41,7 @@ do
     Skin = Gnomesweeper.Skin
     local ui = W._test.ui
     eq(ui.face.state, "ready", "a new game: the mascot is ready")
-    eq(ui.face.face._texture, Skin.TEXTURES.face, "...and her face is the logo's gnome")
+    eq(ui.face.face._file, Skin.TEXTURES.face, "...and her face is the logo's gnome")
     eq(ui.logo, nil, "...and only there: no second portrait in the title bar (owner: redundant)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.ready[1], "...in the ready ring")
     eq(ui.overlay, nil, "...and no overlay has even been built")
@@ -50,19 +50,19 @@ do
     eq(W.game:State(), "playing", "(the first click started the game)")
     eq(ui.face.state, "playing", "playing: the mascot follows the game")
     WoW.advance(0.5)                                     -- (her surprise after the click lingers a moment)
-    eq(ui.face.face._texture, Skin.TEXTURES.facePlaying, "...focused, goggles down (her playing face, #12)")
+    eq(ui.face.face._file, Skin.TEXTURES.facePlaying, "...focused, goggles down (her playing face, #12)")
 
     for i = 1, W.game.total do                          -- end it on a mine
         if W.game._mine[i] then click(i, L); break end
     end
     eq(W.game:State(), "lost", "(a mine was revealed)")
     eq(ui.face.state, "lost", "lost: the mascot follows the game")
-    eq(ui.face.face._texture, Skin.TEXTURES.faceLost, "...her soot-covered face (#12)")
+    eq(ui.face.face._file, Skin.TEXTURES.faceLost, "...her soot-covered face (#12)")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.lost[1], "...in a red ring")
 
     ui.face._scripts.OnClick(ui.face)
     eq(ui.face.state, "ready", "the face starts a new game, and goes back to ready")
-    eq(ui.face.face._texture, Skin.TEXTURES.face, "...and a new game brings back her ready face")
+    eq(ui.face.face._file, Skin.TEXTURES.face, "...and a new game brings back her ready face")
 
     -- She is one character; the state shows in her expression (#12) and her ring, and the
     -- ready, cleared and wiped looks are three different faces, not only three colours.
@@ -102,7 +102,7 @@ do
     eq(o.glass.rim._vertex[3], Skin.COLORS.winRim[3], "(its blue is low)")
     eq(ui.face.state, "won", "the mascot is in her cleared state")
     eq(ui.face.ring._vertex[1], Skin.FACE_RING.won[1], "...in a gold ring")
-    eq(ui.face.face._texture, Skin.TEXTURES.faceWon, "...laughing (her won face, #12)")
+    eq(ui.face.face._file, Skin.TEXTURES.faceWon, "...laughing (her won face, #12)")
     eq(ui.counter:GetText(), "0", "every mine is flagged, so the counter reads 0")
 
     check(o._mouse, "the overlay takes the mouse, so the board under it gets no clicks")
@@ -158,7 +158,7 @@ do   -- the button starts a new game
     check(W.game ~= old, "Try again starts a new game")
     eq(W.game:State(), "ready", "...which is ready")
     check(not o:IsShown(), "...and the overlay goes")
-    eq(tile(1).bg._texture, Skin.TEXTURES.tileCovered, "...with the board covered again")
+    eq(tile(1).bg._file, Skin.TEXTURES.tileCovered, "...with the board covered again")
     for _ = 1, 200 do WoW.tick(0.016) end                -- the new-game wave (#43) lands in three seconds
     eq(tile(1).hl:GetAlpha(), 1, "...and tiles live again once the wave lands")
 end
@@ -171,7 +171,7 @@ do   -- a click on the overlay puts it away, to look at the board
     o._scripts.OnMouseUp(o)
     check(not o:IsShown(), "clicking the overlay puts it away")
     eq(W.game:State(), "lost", "...the game is still over")
-    eq(tile(at(3, 3)).icon._texture, Skin.TEXTURES.mine, "...with the mines on show")
+    eq(tile(at(3, 3)).icon._file, Skin.TEXTURES.mine, "...with the mines on show")
 
     click(at(1, 1), L)
     check(not o:IsShown(), "a click on a finished board doesn't bring it back")

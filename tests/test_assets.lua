@@ -84,7 +84,7 @@ do
         elseif e.key == "laurels" then
             eq(cells[i].picture._texCoord[1], Skin.LAUREL_CROP[1], "the laurels, cropped as the window draws them")
         end
-        eq(cells[i].picture._texture, e.value, "cell " .. i .. " draws " .. e.key)
+        eq(cells[i].picture._file, e.value, "cell " .. i .. " draws " .. e.key)
         eq(cells[i].name:GetText(), e.key, "...and is labelled with its name")
     end
     local byKey = {}

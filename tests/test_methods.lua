@@ -1,45 +1,26 @@
--- Every widget method the addon calls must exist on this client.
+-- Every widget method the addon calls must exist on this client: WowTestKit's
+-- exact Type:Method check (Kit.checkMethods), against the build tests/kit.pin names.
 --
--- The stub answers ANY method call as a recorded no-op, so a call to a method
--- Forever lacks would otherwise pass silently. This exercises the addon, then
--- checks each recorded "Type:Method" against the API dump's widget-method
--- walk. Skipped (loudly) when the dump isn't on this machine.
+-- The kit's widgets answer only the build's methods (and the stub's), so a call to
+-- one the build lacks fails where it's made; one the stub implements but the
+-- widget's type lacks (FontString:SetTexCoord) is recorded, and the check below
+-- fails it. This exercises the addon as widely as is cheap, then checks.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
-local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/WoW/References/Forever/api/forever-api-1.60.1.70338.md"
-local f = io.open(DUMP, "r")
-if not f then
-    io.write("test_methods: SKIPPED (no API dump at " .. DUMP .. ")\n")
-    os.exit(0)
-end
-local widget, globals = {}, {}
--- Animation methods are documented functions tagged with their type's API
--- (SetDegrees(...) [SimpleAnimRotationAPI]), not listed as widget methods.
-local animAPI = {}
--- A model scene's actor (#20): its methods are documented functions tagged
--- [FrameAPIModelSceneFrameActor] or [...ActorBase], not widget methods either.
-local actorAPI = {}
-local inWidgets, inGlobals = false, false
-for line in f:lines() do
-    if line:match("^## ") then
-        inWidgets = line:match("^## Widget methods") ~= nil
-        inGlobals = line:match("^## Documented functions") ~= nil or line:match("^## Global functions") ~= nil
-    elseif inWidgets then
-        local m = line:match("^(%a+:[%w_]+)%s*$")
-        if m then widget[m] = true end
-    elseif inGlobals then
-        local am, api = line:match("^([%a_][%w_]*)%(.-%[(SimpleAnim%w*API)%]")
-        if am then animAPI[api] = animAPI[api] or {}; animAPI[api][am] = true end
-        local acm = line:match("^([%a_][%w_]*)%(.-%[FrameAPIModelSceneFrameActor%w*%]")
-        if acm then actorAPI[acm] = true end
-        -- Documented functions carry a signature; the walk of _G is bare names.
-        local g = line:match("^([%a_][%w_]*)%(") or line:match("^([%a_][%w_]*)%s*$")
-        if g then globals[g] = true end
+-- The addon calls many client methods through pcall (the model scenes' setters,
+-- the templates, the libraries): a method this build lacks reads as nil there, the
+-- call fails inside the pcall, and nothing is recorded for Kit.checkMethods to see.
+-- Every error a pcall catches during the exercise is kept: there must be none.
+local swallowed = {}
+do
+    local corePcall = pcall
+    local function keep(ok, ...)
+        if not ok then swallowed[#swallowed + 1] = tostring((...)) end
+        return ok, ...
     end
+    function pcall(f, ...) return keep(corePcall(f, ...)) end
 end
-f:close()
-check(next(widget) ~= nil, "parsed the dump's widget methods")
 
 -- Exercise everything, so every method is recorded.
 loadAddon()
@@ -172,33 +153,43 @@ WoW.slash("/gsweep reset")
 WoW.slash("/gsweep help")
 WoW.slash("/gsweep")
 
--- The Options page's fallback art, as on a client missing the templates.
+-- The Options page's fallback art, as on a client missing the templates. A new
+-- session resets the client, and with it the calls recorded so far: keep them.
+local recordedSoFar = WoW.methodsCalled
 loadAddon()
+for pair in pairs(recordedSoFar) do WoW.methodsCalled[pair] = true end
 WoW.missingTemplates = { UICheckButtonTemplate = true, UIRadioButtonTemplate = true, UIPanelButtonTemplate = true }
 Gnomesweeper.Options._test.page:Hide()
 Gnomesweeper.Options._test.page:Show()
 
 -- Global functions the addon calls through the strict _G are, by construction,
 -- defined in the stub; confirm each is a real one.
+local functions, globals = Kit.data("functions"), Kit.data("globals")
 for _, name in ipairs({ "GetTime", "IsMouseButtonDown", "CreateFrame", "CreateColor",
         "GetFileIDFromPath", "GetBuildInfo", "UnitName", "GetRealmName", "time", "date",
         "PlaySound", "PlayMusic", "StopMusic", "UnitAffectingCombat", "UnitSex" }) do
-    check(globals[name], "global function exists on Forever: " .. name)
+    check(functions[name] or globals[name], "global function exists on Forever " .. Kit.BUILD .. ": " .. name)
 end
 
-local n = 0
-for name in pairs(WoW.methodsCalled) do
-    n = n + 1
-    -- An animation's method: in its own type's API (Rotation -> SimpleAnimRotationAPI) or
-    -- the generic SimpleAnimAPI; an animation group's, in SimpleAnimGroupAPI too.
-    local wtype, m = name:match("^(%a+):(.+)$")
-    local own = animAPI["SimpleAnim" .. wtype .. "API"]
-    local found = widget[name] or (own and own[m])
-        or ((wtype == "Rotation" or wtype == "Scale" or wtype == "Alpha" or wtype == "Translation")
-            and (animAPI.SimpleAnimAPI or {})[m])
-        or (wtype == "AnimationGroup" and (animAPI.SimpleAnimGroupAPI or {})[m])
-        or (wtype == "ModelSceneActor" and actorAPI[m])
-    check(found, "method exists on Forever: " .. name)
+eq(#swallowed, 0, "no error was swallowed by a pcall during the exercise: " .. tostring(swallowed[1]))
+
+-- WowTestKit #90: a model scene's actor isn't in the build's widget methods (the
+-- dump documents its methods as functions tagged [FrameAPIModelSceneFrameActor] /
+-- [...ActorBase], forever-api-1.60.1.70959.md), so each pair the addon calls is
+-- allowed here, and its name checked against the build's function list.
+local ACTOR = "ModelSceneFrameActorBase in the dump (functions tagged [FrameAPIModelSceneFrameActorBase]); WowTestKit #90"
+local allow = {}
+for _, m in ipairs({ "ClearModel", "GetActiveBoundingBox", "IsLoaded", "SetAnimation",
+        "SetModelByCreatureDisplayID", "SetModelByUnit", "SetParticleOverrideScale", "SetPosition",
+        "SetScale", "SetUseCenterForOrigin" }) do
+    allow["ModelSceneActor:" .. m] = ACTOR
+    check(functions[m], "an actor's method is a documented function on Forever " .. Kit.BUILD .. ": " .. m)
 end
-check(n >= 25, "recorded the addon's method calls (" .. n .. ")")
+local recorded = Kit.checkMethods({ allow = allow })
+-- The floor: what loading and the exercise record today, rounded down, so the
+-- exercise can't quietly shrink.
+check(recorded >= 180, "the exercise reached the windows (" .. recorded .. " recorded)")
+
+-- FINDING (#95): /gsweep help printed once, its three lines with a bare "|".
+eq(acceptKnownStrays(), 3, "the help's known stray | lines (#95), and no other")
 done("test_methods")

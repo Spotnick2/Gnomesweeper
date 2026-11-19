@@ -64,7 +64,7 @@ do  -- synced: a strictly faster N toasts
     eq(c:GetParent(), UIParent, "...on UIParent: whether the board is open or not")
     eq(c._strata, "FULLSCREEN_DIALOG", "...in the board's strata (review of #66: under it, it hid behind the board)")
     check(c:GetFrameLevel() >= 200, "...and above it")
-    eq(c.face._texture, Gnomesweeper.Skin.TEXTURES.faceWon, "...with her laughing face")
+    eq(c.face._file, Gnomesweeper.Skin.TEXTURES.faceWon, "...with her laughing face")
     WoW.advance(600)
     check(shown() ~= nil, "it stays, however long (owner: no timeout)")
     dismiss()

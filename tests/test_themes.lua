@@ -42,41 +42,41 @@ do  -- Classic by default; switching to Modern repaints the board in place
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*..", "...", "..*" }))
     click(2)                                             -- a number
     click(1, "RightButton")                              -- a flag
-    eq(tile(2).bg._texture, T.tileRevealed, "(a revealed tile, Classic)")
-    eq(tile(4).bg._texture, T.tileCovered, "(a covered tile, Classic)")
-    local game, flagIcon = W.game, tile(1).icon and tile(1).icon._texture
+    eq(tile(2).bg._file, T.tileRevealed, "(a revealed tile, Classic)")
+    eq(tile(4).bg._file, T.tileCovered, "(a covered tile, Classic)")
+    local game, flagIcon = W.game, tile(1).icon and tile(1).icon._file
 
     Gnomesweeper.Options.Set("theme", "modern")
     eq(GnomesweeperDB.theme, "modern", "the setting saved")
     eq(W.game, game, "only the look changes: the same game")
     eq(W.game:State(), "playing", "...still in play")
-    eq(tile(2).bg._texture, T.tileModernRevealed, "the revealed tile repainted at once")
-    eq(tile(4).bg._texture, T.tileModernCovered, "...and the covered ones")
+    eq(tile(2).bg._file, T.tileModernRevealed, "the revealed tile repainted at once")
+    eq(tile(4).bg._file, T.tileModernCovered, "...and the covered ones")
     eq(tile(2).text:GetText(), "1", "...the number still there")
-    eq(tile(1).icon._texture, flagIcon, "...the flag the same pennant (both themes keep it)")
+    eq(tile(1).icon._file, flagIcon, "...the flag the same pennant (both themes keep it)")
 
     -- A wipe in Modern: the exploded tile is Modern's, the bomb is WoW's.
     click(9)
     eq(W.game:State(), "lost", "(a wipe)")
-    eq(tile(9).bg._texture, T.tileModernExploded, "the exploded tile: Modern's")
-    eq(tile(9).icon._texture, T.mine, "...with WoW's bomb, as in Classic")
+    eq(tile(9).bg._file, T.tileModernExploded, "the exploded tile: Modern's")
+    eq(tile(9).icon._file, T.mine, "...with WoW's bomb, as in Classic")
 
     -- And back.
     Gnomesweeper.Options.Set("theme", "classic")
-    eq(tile(9).bg._texture, T.tileExploded, "back to Classic: repainted again")
-    eq(tile(4).bg._texture, T.tileCovered, "...every tile")
+    eq(tile(9).bg._file, T.tileExploded, "back to Classic: repainted again")
+    eq(tile(4).bg._file, T.tileCovered, "...every tile")
 end
 
 do  -- saved as Modern: the board is built in Modern; a new game keeps it
     local W = fresh({ theme = "modern" })
-    eq(tile(1).bg._texture, T.tileModernCovered, "saved Modern: the board opens in Modern")
+    eq(tile(1).bg._file, T.tileModernCovered, "saved Modern: the board opens in Modern")
     W.NewGame("expert")
-    eq(tile(480).bg._texture, T.tileModernCovered, "...an Expert board too, every tile")
+    eq(tile(480).bg._file, T.tileModernCovered, "...an Expert board too, every tile")
 end
 
 do  -- the setting refuses a theme that doesn't exist; damaged data shows Classic
     local W = fresh({ theme = "neon" })
-    eq(tile(1).bg._texture, T.tileCovered, "a damaged theme: Classic tiles")
+    eq(tile(1).bg._file, T.tileCovered, "a damaged theme: Classic tiles")
     check(not Gnomesweeper.Options.Set("theme", "neon"), "Options.Set refuses an unknown theme")
 end
 
@@ -85,7 +85,7 @@ do  -- set from the settings page before the window exists: used when it's built
     Gnomesweeper.Options.Set("theme", "modern")
     check(Gnomesweeper.Window.win == nil, "(the window not built by the setting)")
     WoW.slash("/gsweep")
-    eq(tile(1).bg._texture, T.tileModernCovered, "chosen before the first open: the board opens in Modern")
+    eq(tile(1).bg._file, T.tileModernCovered, "chosen before the first open: the board opens in Modern")
 end
 
 do  -- the settings page has the choice

@@ -199,6 +199,10 @@ do
     -- The best times shown when the window comes back follow the rule changed here.
     c.safeZone.radios[2]._scripts.OnClick(c.safeZone.radios[2])
     WoW.slash("/gsweep scores")
+    -- Settings is still open, so the window waits for it: the panel shows (and is filled)
+    -- when it comes back.
+    SettingsPanel:Hide()
+    check(W.win:IsShown() and W._test.ui.bests:IsVisible(), "(the window back, with the best times)")
     eq(W._test.ui.bests.rule:GetText(), "First click: one safe tile (Windows XP's rule).", "the best times follow the rule changed here")
 
     -- The About sub-page, under this one.
@@ -264,9 +268,9 @@ do  -- a client without the templates: our own art, nothing missing
     local page = Gnomesweeper.Options._test.page
     page:Hide(); page:Show()
     local c = page.controls
-    eq(c.questionMarks.check:GetNormalTexture()._texture, "Interface\\Buttons\\UI-CheckBox-Up", "a check box from the client's art")
-    eq(c.questionMarks.check:GetCheckedTexture()._texture, "Interface\\Buttons\\UI-CheckBox-Check", "...with its tick")
-    eq(c.safeZone.radios[1]:GetNormalTexture()._texture, "Interface\\Buttons\\UI-RadioButton", "a radio from the client's art")
+    eq(c.questionMarks.check:GetNormalTexture()._file, "Interface\\Buttons\\UI-CheckBox-Up", "a check box from the client's art")
+    eq(c.questionMarks.check:GetCheckedTexture()._file, "Interface\\Buttons\\UI-CheckBox-Check", "...with its tick")
+    eq(c.safeZone.radios[1]:GetNormalTexture()._file, "Interface\\Buttons\\UI-RadioButton", "a radio from the client's art")
     c.questionMarks.check:SetChecked(true)
     c.questionMarks.check._scripts.OnClick(c.questionMarks.check)
     eq(GnomesweeperDB.questionMarks, true, "...and it still works")

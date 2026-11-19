@@ -35,12 +35,11 @@ Branch `build-<build>` from `main`:
 1. `Compat.lua` — `Gnomesweeper.MEASURED_ON_BUILD = "<version>.<build>"`.
 2. `CLAUDE.md`, `AGENTS.md`, `docs/REFERENCES.md`, `.claude/skills/codex-consult/SKILL.md` — the
    dump file name they cite.
-3. `tests/wow_stubs.lua` — the dump file name in the header, and `GetBuildInfo` if it is stubbed.
-4. The event list the stub validates against: `python Tools/make_events_fixture.py` writes
-   `tests/events-<build>.txt` from the new dump. Point `EVENTS_FIXTURE` (`tests/wow_stubs.lua`) and the
-   default dump path (`tests/test_toc.lua`, `tests/test_methods.lua`) at the new build, and delete the old
-   fixture. `test_methods.lua` then re-checks every widget method the addon calls against the new dump,
-   which is the real answer to "did this build remove something we use".
+3. `tests/wow_stubs.lua` — `GetBuildInfo`'s build.
+4. The tests' build: WowTestKit's data for it comes from the `forever-api-dump` skill (its step 4).
+   Set `build=` in `tests/kit.pin` to it (and `sha=` to a kit commit on `main` that has it). The
+   events the stub accepts and the widget methods `test_methods.lua` checks every call against are
+   then the new build's, which is the real answer to "did this build remove something we use".
 
 Then `pwsh tests\run.ps1` green, `pwsh Tools\deploy.ps1`, and a `/reload` in game. Commit, push and
 open the PR (`Closes #N`) **only when the owner asks** — the owner runs every review.

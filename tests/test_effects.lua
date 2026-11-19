@@ -46,7 +46,7 @@ do
     check(ui.burst.pop._playing, "...the glow swells in")
     check(ui.burst.breathe._playing, "...then breathes")
     eq(ui.burst.breathe._looping, "REPEAT", "...for as long as the win shows")
-    eq(ui.burst.tex._texture, Gnomesweeper.Skin.TEXTURES.glow, "...a soft glow, not the spiky starburst")
+    eq(ui.burst.tex._file, Gnomesweeper.Skin.TEXTURES.glow, "...a soft glow, not the spiky starburst")
     eq(ui.burst.tex._blend, "ADD", "...glowing (ADD)")
     eq(ui.burst.tex._points[1][2], ui.face, "...centred on the face")
     check(ui.burst.tex._width <= 72, "...small enough to stay off the difficulty button")
@@ -80,14 +80,14 @@ do
     local T = Gnomesweeper.Skin.TEXTURES
     down(41)
     check(face.pressed, "a tile held down: the gnome reacts")
-    eq(face.face._texture, T.facePressed, "...surprised (the art, #12)")
+    eq(face.face._file, T.facePressed, "...surprised (the art, #12)")
     up(41)
     check(face.pressed, "a quick click: she stays surprised a moment, so it's seen (owner)")
     WoW.advance(0.2)
     check(face.pressed, "...still at 0.2 s")
     WoW.advance(0.2)
     check(not face.pressed, "let go: she's back after FACE_PRESS_MIN")
-    eq(face.face._texture, T.facePlaying, "...with the face of the game in progress")
+    eq(face.face._file, T.facePlaying, "...with the face of the game in progress")
 
     -- Held longer than the minimum: back at once on the release.
     down(41)
@@ -201,10 +201,10 @@ do  -- a game ended by a left+right chord: her ending face, not the surprised on
         down(2, L); down(2, R)
         up(2, L)                                         -- the chord fires on the first release
         eq(W.game:State(), case.state, "(the chord ends the game: " .. case.state .. ")")
-        eq(W._test.ui.face.face._texture, Gnomesweeper.Skin.TEXTURES[case.face],
+        eq(W._test.ui.face.face._file, Gnomesweeper.Skin.TEXTURES[case.face],
             "a chord that ends the game (" .. case.state .. "): her ending face at once, with the right button still down")
         up(2, R)
-        eq(W._test.ui.face.face._texture, Gnomesweeper.Skin.TEXTURES[case.face], "...and still after it's up")
+        eq(W._test.ui.face.face._file, Gnomesweeper.Skin.TEXTURES[case.face], "...and still after it's up")
     end
 end
 

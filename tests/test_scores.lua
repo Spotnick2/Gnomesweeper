@@ -202,7 +202,7 @@ do  -- the first win, then slower, then faster
     eq(o.newBest._textColor[1], Skin.COLORS.gold[1], "...in gold")
     check(o.pulse.isPlaying(), "...with a beat (#10)")
     check(o.laurels:IsShown(), "...in laurels (#12)")
-    eq(o.laurels._texture, Skin.TEXTURES.laurels, "...the gold branches")
+    eq(o.laurels._file, Skin.TEXTURES.laurels, "...the gold branches")
     eq(o.laurels._points[1][1], "RIGHT", "...a badge (#21, the owner's mockup: no longer a wreath around the time)")
     eq(o.laurels._points[1][2], o.newBest, "...beside the line")
     eq(o.laurels._texCoord[1], Skin.LAUREL_CROP[1], "...cropped to the drawn branches, so their size is what shows")
@@ -284,7 +284,7 @@ do  -- the best times panel: the trophy, /gsweep scores
     local W = fresh()
     local ui = W._test.ui
     local Skin = Gnomesweeper.Skin
-    eq(ui.trophy.icon._texture, Skin.TEXTURES.trophy, "the title bar has a trophy")
+    eq(ui.trophy.icon._file, Skin.TEXTURES.trophy, "the title bar has a trophy")
     local pt = ui.trophy._points[1]
     eq(pt[1], "RIGHT", "...with the icons")
     eq(pt[2], ui.help, "...left of the ? (which is left of the gear)")

@@ -17,7 +17,9 @@ local function click(i)
     t._scripts.OnMouseDown(t, "LeftButton")
     t._scripts.OnMouseUp(t, "LeftButton", true)
 end
-local function at(t) WoW.now = t; WoW.tick(0.2) end      -- the clock's tick at time t
+-- The clock's tick at time t: the frame that ends at t (a tick moves GetTime() on by
+-- its elapsed before OnUpdate runs, as on the client).
+local function at(t) WoW.now = t - 0.2; WoW.tick(0.2) end
 
 do
     local W = fresh({ scores = { version = 1, ["beginner:area"] = { played = 3, won = 1, best = { time = 60 } } } })

@@ -183,7 +183,7 @@ do  -- the sounds button (#55, owner): the speaker beside the note mutes the eff
     local W = Gnomesweeper.Window
     local ui, C = W._test.ui, Gnomesweeper.Skin.COLORS
     eq(ui.sound._points[1][2], ui.music, "the speaker sits left of the music note")
-    eq(ui.sound.icon._texture, Gnomesweeper.Skin.TEXTURES.sound, "...a speaker")
+    eq(ui.sound.icon._file, Gnomesweeper.Skin.TEXTURES.sound, "...a speaker")
     check(not ui.sound.slash:IsShown(), "on: no slash")
     eq(ui.sound.icon._vertex[1], C.musicOn[1], "...lit like the note")
     ui.sound._scripts.OnClick(ui.sound)

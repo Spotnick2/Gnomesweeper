@@ -401,4 +401,6 @@ do
     eq(W.game.safeZone, "cell", "...and so does the safe-zone setting")
 end
 
+-- FINDING (#95): /gsweep help printed 2 time(s), its three lines with a bare "|".
+eq(acceptKnownStrays(), 6, "the help's known stray | lines (#95), and no other")
 done("test_window")

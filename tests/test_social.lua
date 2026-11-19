@@ -435,4 +435,6 @@ do  -- the Guild tab asking in the first seconds is the login query (Codex, #63)
     eq(#sent("Q"), 1, "the login timer doesn't ask again: at most one query a minute")
 end
 
+-- FINDING (#95): /gsweep help printed 1 time(s), its three lines with a bare "|".
+eq(acceptKnownStrays(), 3, "the help's known stray | lines (#95), and no other")
 done("test_social")

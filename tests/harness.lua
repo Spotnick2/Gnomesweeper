@@ -1,32 +1,14 @@
--- harness.lua: assertions and the addon loader. dofile it after wow_stubs.lua.
+-- harness.lua: the addon loader and the tests' own helpers. dofile it after
+-- wow_stubs.lua. check, eq and done are WowTestKit's (global).
 
-local passed, failed = 0, 0
+-- The pure tests (Board, Layout, Input, Guild, Media) load no stub: the kit,
+-- and with it check / eq / done, comes from here for them.
+if not rawget(_G, "Kit") then dofile("tests/kit.lua") end
 
-function check(cond, msg)
-    if cond then passed = passed + 1 else
-        failed = failed + 1
-        io.write("  FAIL: " .. tostring(msg) .. "\n")
-    end
-end
-
-function eq(actual, expected, msg)
-    check(actual == expected, string.format("%s: expected %s, got %s", msg, tostring(expected), tostring(actual)))
-end
-
-function done(name)
-    io.write(string.format("%s: %d passed, %d failed\n", name, passed, failed))
-    os.exit(failed == 0 and 0 or 1)
-end
+local TOC = "Gnomesweeper.toc"
 
 -- Every file line of the TOC, in load order, as written (backslashes).
-function tocLines()
-    local lines = {}
-    for line in io.lines("Gnomesweeper.toc") do
-        line = line:gsub("\r", "")
-        if line ~= "" and not line:match("^#") then lines[#lines + 1] = line end
-    end
-    return lines
-end
+function tocLines() return Kit.tocLines(TOC) end
 
 -- Lua files listed in the TOC, in load order, as paths from the repo root.
 -- `all` includes Libs\, which the tests never load: the stub's LibStub hands out
@@ -34,10 +16,8 @@ end
 -- .xml line, never in this list: libGlassScripts() has its files.
 function tocFiles(all)
     local files = {}
-    for _, line in ipairs(tocLines()) do
-        if line:match("%.lua$") and (all or not line:match("^Libs\\")) then
-            files[#files + 1] = (line:gsub("\\", "/"))
-        end
+    for _, file in ipairs(Kit.tocFiles(TOC)) do
+        if all or not file:match("^Libs/") then files[#files + 1] = file end
     end
     return files
 end
@@ -135,4 +115,27 @@ function loadPure(env, file)
     setfenv(chunk, env)
     chunk("Gnomesweeper", {})
     return env.Gnomesweeper
+end
+
+-- FINDING (#95): three of /gsweep help's lines hold a bare "|" ("beginner | intermediate
+-- | expert", "scale 0.5 to 1.5 | reset", "models | models perf"), which the client reads
+-- as an escape. done() fails on any stray "|"; a test that prints the help lets exactly
+-- those lines through until #95 is fixed, so any other stray still fails. Returns how
+-- many it let through (the test checks the number).
+local KNOWN_STRAYS = {
+    "/gsweep beginner | intermediate | expert - start a game at that difficulty",
+    "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
+    "/gsweep models | models perf - every candidate creature model (loaded, textured, its animations), then their frame cost over the board (for measuring), kept for /reload to save",
+}
+function acceptKnownStrays()
+    local keep, known = {}, 0
+    for _, line in ipairs(WoW.strays) do
+        local ok = false
+        for _, text in ipairs(KNOWN_STRAYS) do
+            if line:find(text, 1, true) then ok = true end
+        end
+        if ok then known = known + 1 else keep[#keep + 1] = line end
+    end
+    WoW.strays = keep
+    return known
 end

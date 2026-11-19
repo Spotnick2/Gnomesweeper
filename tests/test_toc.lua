@@ -3,8 +3,10 @@ dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
 local toc = io.open("Gnomesweeper.toc"):read("*a")
-check(toc:find("## Interface: 16001", 1, true), "interface 16001 (1.60.1; 11601 is the transposed-digit bug)")
-check(toc:find("## Version: @project-version@", 1, true), "packager version token kept")
+-- The kit's: interface 16001, the packager's version token, every listed .lua file
+-- exists, every line is listed once (the library XML line too). The XML is the
+-- packager's (gitignored): libGlassScripts() below checks the checkout has it.
+Kit.checkToc("Gnomesweeper.toc")
 
 -- ...and the packager substitutes keywords in EVERY file it ships, Lua included, not
 -- only the TOC (Priestly #83, #75 here): a Lua comparison against the whole
@@ -34,12 +36,7 @@ do
     check(#shipped >= 25, "(every shipped Lua file was read: " .. #shipped .. ")")
 end
 check(toc:find("## SavedVariables: GnomesweeperDB", 1, true), "saved variables declared")
-local files, seen = tocFiles(), {}
-for _, f in ipairs(files) do
-    check(io.open(f, "r") ~= nil, "TOC file exists: " .. f)
-    check(not seen[f], "TOC lists each file once: " .. f)
-    seen[f] = true
-end
+local files = tocFiles()
 -- The embedded material loads before anything: Glass.lua calls
 -- LibStub("LibGlass-1.0") at file scope (#71).
 eq(tocLines()[1], LIBGLASS_XML, "LibGlass-1.0 loads first")
@@ -61,33 +58,6 @@ for _, cmd in ipairs({ "/gnomesweeper", "/gsweep", "/minewipe" }) do
     local before = #WoW.chat
     WoW.slash(cmd .. " help")
     check(#WoW.chat > before, cmd .. " help answers")
-end
-
--- The event list the stub validates against is checked in; it must be the
--- dump's, exactly (regenerate with Tools/make_events_fixture.py).
-do
-    local DUMP = os.getenv("GNOMESWEEPER_API_DUMP") or "C:/Projects/WoW/References/Forever/api/forever-api-1.60.1.70338.md"
-    local f = io.open(DUMP, "r")
-    if f then
-        local inEvents, dumpEvents, n = false, {}, 0
-        for line in f:lines() do
-            if line:match("^## ") then
-                inEvents = line:match("^## Documented events") ~= nil
-            elseif inEvents then
-                local name = line:match("^([A-Z][A-Z0-9_]+)%s+%(")
-                if name then dumpEvents[name] = true; n = n + 1 end
-            end
-        end
-        f:close()
-        local missing, extra = {}, {}
-        for e in pairs(dumpEvents) do if not WoW.KNOWN_EVENTS[e] then missing[#missing + 1] = e end end
-        for e in pairs(WoW.KNOWN_EVENTS) do if not dumpEvents[e] then extra[#extra + 1] = e end end
-        eq(#missing, 0, "every dump event is in the fixture (regenerate it): " .. table.concat(missing, ","))
-        eq(#extra, 0, "no fixture event is missing from the dump: " .. table.concat(extra, ","))
-        check(n > 1000, "the dump's event list was read (" .. n .. ")")
-    else
-        io.write("  (events fixture check skipped: no API dump at " .. DUMP .. ")\n")
-    end
 end
 
 -- Every texture the material names ships with the library (Libs\LibGlass-1.0\Media
@@ -146,4 +116,6 @@ do
     check(n > 30 or listed == "", "(the text files were read: " .. n .. ")")
 end
 
+-- FINDING (#95): /gsweep help printed 3 time(s), its three lines with a bare "|".
+eq(acceptKnownStrays(), 9, "the help's known stray | lines (#95), and no other")
 done("test_toc")

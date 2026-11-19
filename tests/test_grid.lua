@@ -70,7 +70,7 @@ do
     check(p[4] == 192 and p[5] == -192, "cell 81 is the bottom-right corner")
 
     local t = tile(1)
-    eq(t.bg._texture, Skin.TEXTURES.tileCovered, "a fresh tile is covered")
+    eq(t.bg._file, Skin.TEXTURES.tileCovered, "a fresh tile is covered")
     eq(t.hl:GetAlpha(), 1, "...with its hover glow on")
     eq(t.icon, nil, "...no icon is created for a covered tile")
     eq(t.text, nil, "...and no number text")
@@ -113,14 +113,14 @@ do
     click(at(1, 1), L)
     eq(paints() - before, 8, "revealing a region repaints the 8 cells it changed, no more")
     eq(game.revealed, 8, "(the board agrees: 8 cells)")
-    eq(tile(at(1, 1)).bg._texture, Skin.TEXTURES.tileRevealed, "a revealed tile is flat")
+    eq(tile(at(1, 1)).bg._file, Skin.TEXTURES.tileRevealed, "a revealed tile is flat")
     eq(tile(at(1, 1)).hl:GetAlpha(), 0, "...and has no hover glow")
     check(tile(at(1, 1)).text == nil or not tile(at(1, 1)).text:IsShown(), "a zero shows no number")
     eq(tile(at(2, 1)).text:GetText(), "2", "a border cell shows its count")
     eq(tile(at(2, 1)).text._textColor[1], Skin.NUMBER_COLORS[2][1], "...in that number's colour")
     eq(tile(at(2, 2)).text:GetText(), "3", "(a 3)")
     eq(tile(at(2, 2)).text._textColor[3], Skin.NUMBER_COLORS[3][3], "...in its colour")
-    eq(tile(at(4, 1)).bg._texture, Skin.TEXTURES.tileCovered, "the far side is still covered")
+    eq(tile(at(4, 1)).bg._file, Skin.TEXTURES.tileCovered, "the far side is still covered")
     eq(ui.counter:GetText(), "4", "the HUD still shows all 4 mines")
     check(W.win._scripts.OnUpdate ~= nil, "the clock is running")
 
@@ -128,7 +128,7 @@ do
     before = paints()
     click(at(4, 1), R)
     eq(paints() - before, 1, "a flag repaints one tile")
-    eq(tile(at(4, 1)).icon._texture, Skin.TEXTURES.flag, "it shows the flag")
+    eq(tile(at(4, 1)).icon._file, Skin.TEXTURES.flag, "it shows the flag")
     check(tile(at(4, 1)).icon:IsShown(), "...visibly")
     eq(ui.counter:GetText(), "3", "the counter follows the flag")
     click(at(4, 1), R)
@@ -173,8 +173,8 @@ do
     eq(paints() - before, 0, "pressing both buttons changes nothing yet")
     up(at(2, 2), L, true)
     eq(paints() - before, 7, "left+right on a satisfied number reveals its neighbours: 7 cells")
-    eq(tile(at(1, 3)).bg._texture, Skin.TEXTURES.tileRevealed, "...flooding the region")
-    eq(tile(at(3, 1)).icon._texture, Skin.TEXTURES.flag, "...and leaving the flags")
+    eq(tile(at(1, 3)).bg._file, Skin.TEXTURES.tileRevealed, "...flooding the region")
+    eq(tile(at(3, 1)).icon._file, Skin.TEXTURES.flag, "...and leaving the flags")
     up(at(2, 2), R, true)
     eq(paints() - before, 7, "the second release does nothing more")
     eq(game:State(), "playing", "the game goes on")
@@ -193,7 +193,7 @@ do   -- a wrong flag loses
     click(at(3, 1), R); click(at(3, 2), R); click(at(1, 3), R)      -- (1,3) is safe
     down(at(2, 2), R); down(at(2, 2), L); up(at(2, 2), R, true); up(at(2, 2), L, true)
     eq(game:State(), "lost", "a chord with a wrong flag loses")
-    eq(tile(at(3, 3)).bg._texture, Skin.TEXTURES.tileExploded, "...on the unflagged mine")
+    eq(tile(at(3, 3)).bg._file, Skin.TEXTURES.tileExploded, "...on the unflagged mine")
     eq(tile(at(1, 3)).text:GetText(), "X", "...and the wrong flag is crossed")
 end
 
@@ -205,11 +205,11 @@ do   -- the option: a left click on a satisfied number chords
     click(at(2, 2), L)
     click(at(3, 1), R); click(at(3, 2), R); click(at(3, 3), R)
     click(at(2, 2), L)
-    eq(tile(at(1, 3)).bg._texture, Skin.TEXTURES.tileRevealed, "chordOnLeft: a left click on a satisfied number chords")
+    eq(tile(at(1, 3)).bg._file, Skin.TEXTURES.tileRevealed, "chordOnLeft: a left click on a satisfied number chords")
 
     local W2, game2 = setUpChord()
     click(at(2, 2), L)
-    eq(tile(at(1, 3)).bg._texture, Skin.TEXTURES.tileCovered, "without the option, the same click does nothing")
+    eq(tile(at(1, 3)).bg._file, Skin.TEXTURES.tileCovered, "without the option, the same click does nothing")
 end
 
 ----------------------------------------------------------------------------
@@ -220,7 +220,7 @@ do
     down(at(1, 1), L)
     up(at(1, 1), L, false)
     eq(game.revealed, 0, "dragging off the tile and releasing reveals nothing")
-    eq(tile(at(1, 1)).bg._texture, Skin.TEXTURES.tileCovered, "...and the tile stays covered")
+    eq(tile(at(1, 1)).bg._file, Skin.TEXTURES.tileCovered, "...and the tile stays covered")
 
     -- The client may not pass upInside: then the frame is asked.
     local t = tile(at(1, 1))
@@ -266,14 +266,14 @@ do
     eq(game:State(), "lost", "revealing a mine loses")
 
     local boom = tile(at(3, 1))
-    eq(boom.bg._texture, Skin.TEXTURES.tileExploded, "the mine you hit is on a red tile")
-    eq(boom.icon._texture, Skin.TEXTURES.mine, "...with the bomb on it")
+    eq(boom.bg._file, Skin.TEXTURES.tileExploded, "the mine you hit is on a red tile")
+    eq(boom.icon._file, Skin.TEXTURES.mine, "...with the bomb on it")
     local other = tile(at(3, 3))
-    eq(other.bg._texture, Skin.TEXTURES.tileRevealed, "the other mines are shown on flat tiles")
-    eq(other.icon._texture, Skin.TEXTURES.mine, "...with their bombs")
-    eq(tile(at(3, 2)).icon._texture, Skin.TEXTURES.flag, "a correct flag stays a flag")
+    eq(other.bg._file, Skin.TEXTURES.tileRevealed, "the other mines are shown on flat tiles")
+    eq(other.icon._file, Skin.TEXTURES.mine, "...with their bombs")
+    eq(tile(at(3, 2)).icon._file, Skin.TEXTURES.flag, "a correct flag stays a flag")
     check(tile(at(3, 2)).text == nil or not tile(at(3, 2)).text:IsShown(), "...uncrossed")
-    eq(tile(at(4, 4)).icon._texture, Skin.TEXTURES.flag, "a wrong flag still shows its flag")
+    eq(tile(at(4, 4)).icon._file, Skin.TEXTURES.flag, "a wrong flag still shows its flag")
     eq(tile(at(4, 4)).text:GetText(), "X", "...with a red X over it")
     eq(tile(at(4, 4)).text._textColor[1], Skin.COLORS.wrongFlag[1], "(red)")
     eq(tile(at(4, 4)).icon._desaturated, true, "...over a greyed flag, so the red X shows (red on the red banner was invisible)")
@@ -291,7 +291,7 @@ do
     -- The face starts again.
     ui.face._scripts.OnClick(ui.face)
     eq(W.game:State(), "ready", "the face starts a new game")
-    eq(tile(at(3, 1)).bg._texture, Skin.TEXTURES.tileCovered, "...with every tile covered again")
+    eq(tile(at(3, 1)).bg._file, Skin.TEXTURES.tileCovered, "...with every tile covered again")
     for _ = 1, 200 do WoW.tick(0.016) end                -- the new-game wave (#43) lands in three seconds
     eq(tile(at(1, 1)).hl:GetAlpha(), 1, "...and the hover glow back once the wave lands")
 end
@@ -301,7 +301,7 @@ do   -- a win
     click(at(1, 1), L)
     click(at(5, 1), L)
     eq(game:State(), "won", "revealing every safe cell wins")
-    for y = 1, 4 do eq(tile(at(3, y)).icon._texture, Skin.TEXTURES.flag, "mine (3," .. y .. ") is flagged") end
+    for y = 1, 4 do eq(tile(at(3, y)).icon._file, Skin.TEXTURES.flag, "mine (3," .. y .. ") is flagged") end
     eq(W._test.ui.counter:GetText(), "0", "the counter reads 0")
     eq(tile(at(4, 2)).hl:GetAlpha(), 0, "no hover glow after a win")
 end
@@ -320,7 +320,7 @@ do
     check(chatHas("a loss, every mine shown"), "...a loss")
     check(chatHas("10 difficulty switches"), "...and switching difficulty")
     eq(W.game, game, "the real game is untouched by the benchmark")
-    eq(tile(1).bg._texture, Skin.TEXTURES.tileCovered, "...and the board is put back")
+    eq(tile(1).bg._file, Skin.TEXTURES.tileCovered, "...and the board is put back")
     check(tile(81):IsShown() and not tile(82):IsShown(), "...at the right size")
 
     WoW.chat = {}

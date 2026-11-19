@@ -121,15 +121,15 @@ do
     eq(ui.diff.border._slice[1], 8, "...and its rim")
     eq(ui.close.fill._slice, nil, "the 22-unit close button is not sliced")
     eq(ui.gear.border._slice, nil, "...nor the gear")
-    eq(ui.diff.fill._texture, T.uiFill, "all of them use the same glass body")
-    eq(ui.close.fill._texture, T.uiFill, "(the close button too)")
-    eq(ui.gear.border._texture, T.uiBorder, "...and the same rim")
+    eq(ui.diff.fill._file, T.uiFill, "all of them use the same glass body")
+    eq(ui.close.fill._file, T.uiFill, "(the close button too)")
+    eq(ui.gear.border._file, T.uiBorder, "...and the same rim")
     eq(ui.diff.hover._blend, "ADD", "hover is a glow")
     check(ui.diff.hover._vertex[4] > 0 and ui.diff.hover._vertex[4] < 1, "...a translucent one")
 
-    eq(ui.close.icon._texture, T.close, "the close button wears the X")
+    eq(ui.close.icon._file, T.close, "the close button wears the X")
     same(ui.close.accent, Skin.COLORS.closeAccent, "...with a soft red rim, so it reads as close")
-    eq(ui.gear.icon._texture, T.gear, "the gear is still the gear")
+    eq(ui.gear.icon._file, T.gear, "the gear is still the gear")
     same(ui.gear.accent, Skin.COLORS.accent, "...with the standard rim")
     check(ui.close._width == 22 and ui.gear._height == 22, "both are comfortable 22-unit targets")
 
@@ -164,12 +164,12 @@ do
     check(T.flag:find("icon_flag", 1, true), "the flag is our own red pennant, not a faction crest")
     -- The title is the gold lettering (#12), cropped to its drawn part, at its own shape.
     local title = ui.title
-    eq(title._texture, T.title, "the title is the lettering, not text")
+    eq(title._file, T.title, "the title is the lettering, not text")
     eq(title._texCoord[1], Skin.TITLE_CROP[1], "...cropped to what is drawn (it lines up with the tagline)")
     local ratio = title._width / title._height
     check(math.abs(ratio - (459 - 53) / (124 - 4)) < 0.05, "...at its own shape, not stretched (" .. string.format("%.2f", ratio) .. ")")
     click(at(4, 4), R)
-    eq(tile(at(4, 4)).icon._texture, T.flag, "a flagged tile shows it")
+    eq(tile(at(4, 4)).icon._file, T.flag, "a flagged tile shows it")
     eq(tile(at(4, 4)).icon._texCoord[1], 0, "...whole (our texture has no border to cut off)")
     eq(tile(at(4, 4)).icon._width, Skin.FLAG_ICON, "...at the flag size")
     eq(ui.counter:GetText(), "3", "(the counter follows)")
@@ -178,7 +178,7 @@ do
     click(at(3, 1), L)
     eq(W.game:State(), "lost", "(a mine was revealed)")
     local boom, other = tile(at(3, 1)), tile(at(3, 3))
-    eq(boom.bg._texture, T.tileExploded, "the detonated tile is on the red tile")
+    eq(boom.bg._file, T.tileExploded, "the detonated tile is on the red tile")
     check(boom.burst ~= nil and boom.burst:IsShown(), "...with a starburst behind it, so it isn't told apart by colour alone")
     eq(boom.burst._blend, "ADD", "(the burst is additive light)")
     eq(boom.icon._width, 14, "...and the bomb on it is smaller, so the red and the burst show round it")
@@ -245,7 +245,7 @@ do
     local before = {}
     for i = 1, 20 do
         local t = tile(i)
-        before[i] = (t.bg._texture or "") .. "|" .. (t.icon and t.icon._texture or "") .. "|" .. (t.text and t.text:GetText() or "")
+        before[i] = (t.bg._file or "") .. "|" .. (t.icon and t.icon._file or "") .. "|" .. (t.text and t.text:GetText() or "")
     end
     o.view._scripts.OnClick(o.view)
     check(not o:IsShown(), "See the field puts the overlay away")
@@ -256,7 +256,7 @@ do
     check(ui.help:IsShown(), "(the ? stays in the title bar)")
     for i = 1, 20 do
         local t = tile(i)
-        eq((t.bg._texture or "") .. "|" .. (t.icon and t.icon._texture or "") .. "|" .. (t.text and t.text:GetText() or ""),
+        eq((t.bg._file or "") .. "|" .. (t.icon and t.icon._file or "") .. "|" .. (t.text and t.text:GetText() or ""),
             before[i], "the finished board is exactly as it was: tile " .. i)
     end
     eq(W.game:State(), "lost", "(and the game is still lost)")
@@ -393,8 +393,8 @@ do   -- the difficulty list is opaque enough that the HUD can't show through it
     check(menu.mask ~= nil, "...inside a rounded mask, so its corners match the rim")
     check(menu.backing._color[1] < 0.1 and menu.backing._color[3] < 0.2, "...dark navy")
     -- the stock glass body (0.90) is still there on top, with the rim
-    eq(menu.fill._texture, Gnomesweeper.Skin.TEXTURES.uiFill, "(the glass body and its rim are kept)")
-    eq(menu.border._texture, Gnomesweeper.Skin.TEXTURES.uiBorder, "(and the rim)")
+    eq(menu.fill._file, Gnomesweeper.Skin.TEXTURES.uiFill, "(the glass body and its rim are kept)")
+    eq(menu.border._file, Gnomesweeper.Skin.TEXTURES.uiBorder, "(and the rim)")
 end
 
 do   -- the list opens ABOVE the result overlay, including the glass rim that overlay draws

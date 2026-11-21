@@ -141,9 +141,10 @@ local function menuBest(ui, key)
     return text
 end
 
+-- The lines under the title (the title is line 1, as on the client: the kit's tooltip).
 local function tipLines(widget)
     widget._scripts.OnEnter(widget)
-    return GameTooltip._lines or {}
+    return { select(2, unpack(GameTooltip._lines or {})) }
 end
 
 do  -- played: counted on the first successful reveal

@@ -163,7 +163,7 @@ do
     check(ui.music.slash:IsShown(), "...the red slash shows")
     eq(ui.music.icon._vertex[1], Gnomesweeper.Skin.COLORS.musicOff[1], "...over a greyed note")
     ui.music._scripts.OnEnter(ui.music)
-    check(GameTooltip._lines[1]:find("^Off") ~= nil, "its tooltip says off")
+    check(GameTooltip._lines[2]:find("^Off") ~= nil, "its tooltip says off (under its title)")
     ui.music._scripts.OnClick(ui.music)
     eq(WoW.music, S.MUSIC, "...and on again")
     eq(ui.music._points[1][2], ui.trophy, "the note sits left of the trophy")
@@ -191,7 +191,7 @@ do  -- the sounds button (#55, owner): the speaker beside the note mutes the eff
     check(ui.sound.slash:IsShown(), "...the red slash shows")
     eq(ui.sound.icon._vertex[1], C.musicOff[1], "...over a greyed speaker")
     ui.sound._scripts.OnEnter(ui.sound)
-    check(GameTooltip._lines[1]:find("^Muted") ~= nil, "its tooltip says muted")
+    check(GameTooltip._lines[2]:find("^Muted") ~= nil, "its tooltip says muted (under its title)")
     WoW.sounds = {}
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "*.." }))
     local t = Gnomesweeper.Grid._test.tiles[2]
@@ -302,7 +302,7 @@ do
     eq(#WoW.sounds, n, "every candidate plays, one by one")
     for i, c in ipairs(S.CANDIDATES) do eq(WoW.sounds[i].kit, c[1], "...in order: " .. c[1]) end
     local probe = GnomesweeperDB.soundProbe
-    eq(probe.build, "1.60.1.70338", "the results are saved with the build")
+    eq(probe.build, "1.60.1.71037", "the results are saved with the build")
     eq(probe.kits[8959].willPlay, true, "...each kit's willPlay")
     eq(probe.kits[18871].willPlay, false, "...including a kit the client refuses")
     check(chatHas("18871") and chatHas("won't play"), "chat says which one won't play")

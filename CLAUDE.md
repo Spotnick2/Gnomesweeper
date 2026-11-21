@@ -530,8 +530,8 @@ texture names only grow; instances; upgrade rules). The migration guide is
   (tiles are small!), "Addon-to-addon transports" (for leaderboards).
 - `C:\Projects\WoW\References\Forever\api\forever-api-<version>.<build>.md`, **the highest build** —
   the API dump: functions, events, **widget methods** and the `_G` walk. Proves a name exists, not
-  that it works. `MEASURED_ON_BUILD` is 70338; the tests check against the build
-  `tests\kit.pin` names (70959, the kit has no older data), and `/client-update` moves the addon on.
+  that it works. `MEASURED_ON_BUILD` is 71037, the build the tests check against
+  (`tests\kit.pin`), and `/client-update` moves the addon on.
 - `C:\Projects\WoW\wow-ui-source` — Blizzard's UI source on the **`forever`** branch (check the branch
   first; other sessions share it). Use it to find atlas names (`SetAtlas("...")`) and templates.
 - `..\LibGlass\docs\GLASS-MATERIAL.md` — the material's recipe and its limits.
@@ -615,8 +615,8 @@ at the commit and client build `tests\kit.pin` names. `tests\run.ps1` puts that 
 copies: never edit them here. A kit need is an issue on the kit, worked around in
 `tests\wow_stubs.lua` with a `-- WowTestKit #N:` comment meanwhile. `tests\run.ps1 -KitDev`
 runs against the `..\WowTestKit` working copy instead of the pin. `check` / `eq` / `done` are the
-kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s build is 70959:
-`MEASURED_ON_BUILD` (70338) is older than any build the kit has data for.
+kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s build is `MEASURED_ON_BUILD`'s,
+71037.
 
 - **Pure files are tested directly**, loaded with `newPureEnv()` / `loadPure()` (the harness): every
   global but a few Lua builtins is forbidden, reads and writes. `test_board.lua`, `test_layout.lua`,
@@ -627,7 +627,7 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
   - `RegisterEvent` throws on an event the kit's build lacks;
   - widgets answer only the build's methods (and the stub's `WoW.Methods`), and record each call;
     **`test_methods.lua`** exercises the addon, then `Kit.checkMethods` checks every `Type:Method`
-    pair against the build (a model scene's actor is allowed pair by pair until WowTestKit #90), and
+    pair against the build (a model scene's actor's too: the kit has its methods, WowTestKit #90), and
     no error may be swallowed by a `pcall` meanwhile (the addon calls the model scenes' setters
     through `pcall`, where a missing method would vanish);
   - `done()` fails on a printed line with a bare `|` (the client reads it as an escape): the help's
@@ -646,8 +646,8 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
   ChatThrottleLib (ported from AltStable's, #138 there) and sends Gnomesweeper's own messages through
   it: a throttled send (result 3) retried and delivered once, a burst in order, a non-throttle refusal
   reported through its callback, a reused pipe. The stub models what v32 needs: `hooksecurefunc`,
-  `securecallfunction`, `geterrorhandler` (reports land in `WoW.reportedErrors`), an `xpcall` passing
-  extra arguments, `table.wipe`, `GetFramerate`, `issecretvalue`, `Enum.SendAddonMessageResult`, and
+  `securecallfunction`, `geterrorhandler` (reports land in `WoW.reportedErrors`) (the kit's `xpcall`
+  passes extra arguments), `table.wipe`, `GetFramerate`, `issecretvalue`, `Enum.SendAddonMessageResult`, and
   `WoW.sendResults` (the next sends' results, in order).
 - **`test_sounds.lua`** is the sounds and music on the stub's recorded `PlaySound`/`PlayMusic`/
   `StopMusic` and its clock (`WoW.advance` runs `C_Timer`s): every effect, the delayed gnome and its
@@ -673,7 +673,7 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
 - **`test_modelprobe.lua`** is the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
   numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
   late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.
-  `test_methods` allows a `ModelSceneActor`'s calls by name, each a documented function (WowTestKit #90).
+  `test_methods` checks a `ModelSceneActor`'s calls against the build like any widget's (WowTestKit #90).
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
   what they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,

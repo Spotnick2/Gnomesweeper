@@ -121,40 +121,13 @@ function Methods.SetJustifyH(w, j) w._justifyH = j end
 
 function Methods.GetNumPoints(w) return #w._points end
 
--- WowTestKit #89: the scale chain, so a test can catch the "compared in the
--- wrong space" class of mistake (porting guide: GetCenter is in the frame's OWN
--- space). The core has no SetScale / GetScale, and its GetEffectiveScale reads
--- a test's _escale.
-function Methods.SetScale(w, s) w._scale = s end
-function Methods.GetScale(w) return w._scale or 1 end
-function Methods.GetEffectiveScale(w)
-    local s, p = 1, w
-    while p do s = s * (p._scale or 1); p = p._parent end
-    return s
-end
-
--- A tooltip: SetText starts it again with its title (its lines cleared), and
--- taking an owner clears what it said, as in the client. WowTestKit #89
--- (tooltip lines).
-do
-    local setText = Methods.SetText
-    function Methods.SetText(w, t)
-        if w._type == "GameTooltip" then w._lines = {} end
-        return setText(w, t)
-    end
-end
-function Methods.AddLine(w, text) w._lines = w._lines or {}; w._lines[#w._lines + 1] = text end
-function Methods.SetOwner(w, owner) w._owner = owner; w._lines = {} end
 -- An edit box's selection: HighlightText() selects all, (0, 0) none.
 function Methods.HighlightText(w, a, b) w._selected = not (a == 0 and b == 0) end
 function Methods.SetTextureSliceMargins(w, ...) w._slice = { ... } end
 function Methods.SetTexCoord(w, ...) w._texCoord = { ... } end
--- WowTestKit #89 (drag state).
-function Methods.SetMovable(w, v) w._movable = v end
-function Methods.IsMovable(w) return w._movable == true end
+-- WowTestKit #104: the core keeps no clamp state (its #89 drag state covers the rest).
 function Methods.SetClampedToScreen(w, v) w._clamped = v end
-function Methods.StartMoving(w) w._moving = true end
-function Methods.StopMovingOrSizing(w) w._moving = false end
+function Methods.IsClampedToScreen(w) return w._clamped == true end
 
 --------------------------------------------------------------------------------
 -- Driving
@@ -171,30 +144,6 @@ function WoW.slash(line)
         end
     end
     error("unknown slash command " .. cmd)
-end
-
--- WowTestKit #86: the core's advance moves the clock to the end first, so every
--- timer it runs reads that from GetTime(), and a timer scheduled inside one counts
--- from it: the probes' and the end panel's polls (C_Timer.After every 0.1 s, a
--- timeout after 3 s) then poll once per advance, and stamp the wrong time. On the
--- client each runs at its due time. So step the clock from one due time to the
--- next, letting the core run what is due there.
-do
-    local coreAdvance = WoW.advance
-    function WoW.advance(dt)
-        local target = (WoW.now or 0) + dt
-        while true do
-            local due
-            for _, t in ipairs(WoW.timers) do
-                local at = t.at or t.s or 0
-                if not t.cancelled and at <= target and (not due or at < due) then due = at end
-            end
-            if not due then break end
-            WoW.now = math.max(WoW.now or 0, due)
-            coreAdvance(0)
-        end
-        WoW.now = target
-    end
 end
 
 -- The screen is UIParent's size, in UIParent units (the unit the addon's
@@ -347,7 +296,7 @@ Settings = {
 }
 -- The client's file table: WoW.fileIDs[path] = id; anything else answers nil, as for a path it lacks.
 function GetFileIDFromPath(path) return WoW.fileIDs[path] end
-function GetBuildInfo() return "1.60.1", "70338", "Oct 10 2026", 16001 end
+function GetBuildInfo() return "1.60.1", "71037", "Nov 18 2026", 16001 end
 -- WoW.mouseDown: true (every button down) or one button's name ("RightButton").
 function IsMouseButtonDown(button) return WoW.mouseDown == true or WoW.mouseDown == button end
 function debugprofilestop() return os.clock() * 1000 end
@@ -361,8 +310,8 @@ Enum = {
 }
 
 -- What the REAL ChatThrottleLib (v32) needs, as AltStable's stubs model it (tests/test_ctl.lua
--- loads it): the client's error handler and securecallfunction, an xpcall that passes extra
--- arguments (WoW's does; Lua 5.1's doesn't), table.wipe, the frame rate, and the send
+-- loads it): the client's error handler and securecallfunction, table.wipe, the frame rate
+-- (the kit's xpcall passes extra arguments, as WoW's does, WowTestKit #91), and the send
 -- functions it hooks. Nothing else loads the library: Libs\ is skipped in the other tests.
 WoW.reportedErrors = {}
 function geterrorhandler() return function(e) table.insert(WoW.reportedErrors, e) end end
@@ -370,15 +319,6 @@ function securecallfunction(fn, ...)
     local r = { pcall(fn, ...) }
     if not r[1] then geterrorhandler()(r[2]); return end
     return unpack(r, 2)
-end
--- WowTestKit #91: the core's xpcall (which counts a swallowed secret error) drops
--- the extra arguments, as stock Lua 5.1 does; the client's passes them on.
-do
-    local coreXpcall = xpcall
-    function xpcall(fn, handler, ...)
-        local args, n = { ... }, select("#", ...)
-        return coreXpcall(function() return fn(unpack(args, 1, n)) end, handler)
-    end
 end
 function table.wipe(t) for k in pairs(t) do t[k] = nil end return t end
 wipe = table.wipe

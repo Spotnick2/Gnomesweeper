@@ -18,13 +18,14 @@ doesn't cover something, check how those handle it before you invent a new idiom
   face as the reset button (the classic smiley), gnomish bombs as mines, red flags, a stopwatch.
   The storyboard is `docs/storyboard.png`; the design and roadmap are `docs/PLAN.md`.
 
-**Status: v1.0.0** (v0.1.0-beta was the first, #11). M1 made it playable; M2 polished
+**Status: v1.0.1** (v0.1.0-beta was the first, #11). M1 made it playable; M2 polished
 it: personal bests and the best times panel, the settings, sounds and music, the celebrations, the
 generated art and two board themes, the clock's warning, hiding in combat, the mascot's motion, a
 minimap button, a key binding. v0.2.0 added French (#36) and the guild's best times and toasts
 (#15, #17); v0.2.1 the embedded LibGlass (#71); v0.3.0 the end panel's live models (#21: the
 Walking Bomb, Tally's cheer) and its redesign; v1.0.0 LibGlass r11's **Pearl** material and a
-GitHub Release for every tag (#81). Left: a live 3D face (the rest of #21), the mascot's frames and
+GitHub Release for every tag (#81); v1.0.1 the guild's keys by name, the realm hidden (#98), every
+developer probe out of the release (#87) and LibGlass r13. Left: a live 3D face (the rest of #21), the mascot's frames and
 living gnome (#48's levels 2 and 3), and friends' leaderboards (#16). **Bugs come from players** (one owner, one setup): GitHub issues, through the
 templates in `.github/ISSUE_TEMPLATE/` and the About page's "Report a bug" link.
 
@@ -511,7 +512,8 @@ texture names only grow; instances; upgrade rules). The migration guide is
   Glass suite's theme (r11): clean with a softer wash and gloss, thin rims (`Apply`'s `"large"` /
   `"small"` resolve to `"thin"` / `"thin_small"`, same masks), no grain, a clear body. The window and
   the panels keep their own dark backings under it. `test_window` checks the preset and the thin rim.
-- **The pin:** `.pkgmeta` pins a tag (`tag: r11`), **never `tag: latest`**. Bump it only in a release
+- **The pin:** `.pkgmeta` pins a tag (`tag: r13` since v1.0.1: r12's fonts follow the client's
+  locale, r13 adds `Glass.Button`, unused here), **never `tag: latest`**. Bump it only in a release
   made anyway: players get library fixes earlier through whichever glass addon ships the newest
   copy (LibStub runs that one). `tests\run.ps1` and the deploy warn when the checkout isn't at the
   pin. CI reads the pin (`tests/fetch_libglass.sh`), tests against it, and asserts the zip's

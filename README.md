@@ -31,6 +31,8 @@ itself the moment combat starts.
   messages, never in chat. The **Guild** tab of Best times shows the guild's best at each difficulty, who
   set it and when, and where you stand; hover a difficulty for the top five. A new guild record gets a
   small toast (never in combat), until you click it. Resetting your best times reaches your guild too.
+  Times are kept by character name (the game no longer tells addons the realm), and the times you had
+  before v1.0.1 carry over.
 - **The gnome.** She's your new-game button, and she reacts: focused while you play, surprised while you
   hold a tile, laughing when you clear the field, sooty after a wipe. She bounces, shudders and nods.
 - **The end of a game.** The result panel stands out over the dimmed board. Clear the field ("Clean

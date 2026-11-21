@@ -64,14 +64,8 @@ New-Item -ItemType Directory -Force -Path $dest | Out-Null
 
 $files = @("Gnomesweeper.toc", "LICENSE") + (Get-ChildItem -LiteralPath $RepoRoot -File |
     Where-Object { $_.Extension -in ".lua", ".xml" } | Select-Object -ExpandProperty Name)
-# The client reads the TOC and finds new files (Bindings.xml, a texture) only at start:
-# say so when this deploy brings either (review of #58).
-$restart = @()
-$tocDest = Join-Path $dest "Gnomesweeper.toc"
-$tocWas = if (Test-Path -LiteralPath $tocDest) { Get-Content -LiteralPath $tocDest -Raw } else { $null }
 foreach ($f in $files) {
     $src = Join-Path $RepoRoot $f
-    if (-not (Test-Path -LiteralPath (Join-Path $dest $f))) { $restart += $f }
     if ($f -like "*.toc") {
         (Get-Content -LiteralPath $src -Raw) -replace '## Version: @project-version@', '## Version: dev' |
             Set-Content -LiteralPath (Join-Path $dest $f) -NoNewline
@@ -103,14 +97,10 @@ if (Test-Path -LiteralPath $libsSrc) {
     Write-Host "  Libs\  ($(($vendored | Get-ChildItem -Recurse -File).Count) vendored files, and LibGlass-1.0)"
 }
 
-# Locales (#36): the language files, mirrored exactly like Libs (a new one is a new
-# file: the client needs a restart to see it).
+# Locales (#36): the language files, mirrored exactly like Libs.
 $locSrc = Join-Path $RepoRoot "Locales"
 $locDest = Join-Path $dest "Locales"
 if (Test-Path -LiteralPath $locSrc) {
-    foreach ($f in Get-ChildItem -LiteralPath $locSrc -File -Filter *.lua) {
-        if (-not (Test-Path -LiteralPath (Join-Path $locDest $f.Name))) { $restart += "Locales\$($f.Name)" }
-    }
     if (Test-Path -LiteralPath $locDest) { Remove-Item -LiteralPath $locDest -Recurse -Force }
     Copy-Item -LiteralPath $locSrc -Destination $locDest -Recurse -Force
     Write-Host "  Locales\  ($((Get-ChildItem -LiteralPath $locDest -File).Count) files)"
@@ -122,7 +112,6 @@ New-Item -ItemType Directory -Force -Path $media | Out-Null
 $art = Get-ChildItem -LiteralPath (Join-Path $RepoRoot "Media") -File |
     Where-Object { $_.Extension -in ".tga", ".blp", ".ogg" }
 foreach ($t in $art) {
-    if (-not (Test-Path -LiteralPath (Join-Path $media $t.Name))) { $restart += "Media\$($t.Name)" }
     Copy-Item -LiteralPath $t.FullName -Destination (Join-Path $media $t.Name) -Force
 }
 Write-Host "  Media\  ($($art.Count) files)"
@@ -148,10 +137,7 @@ if ($missing) {
 Write-Host "  every TOC file is in place" -ForegroundColor DarkGray
 
 Write-Host ""
-if ($tocWas -ne $null -and $tocWas -ne (Get-Content -LiteralPath $tocDest -Raw)) { $restart += "Gnomesweeper.toc (changed)" }
-if ($restart.Count -gt 0) {
-    Write-Host "RESTART the client (a /reload won't see these): $($restart -join ', ')" -ForegroundColor Red
-} else {
-    Write-Host "Changed files only: /reload is enough." -ForegroundColor Yellow
-}
+# /reload loads everything a deploy brings: new files, new textures, a changed TOC
+# (re-measured 2026-11-16, GuildSpy #97; porting guide section 5; #93).
+Write-Host "/reload in game to load it." -ForegroundColor Yellow
 Write-Host "In game:  /console scriptErrors 1   then   /gsweep" -ForegroundColor Green

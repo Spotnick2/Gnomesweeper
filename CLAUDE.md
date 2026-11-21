@@ -397,9 +397,17 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   it, so a late message can't bring an old best back. The reset is account-wide,
   so each other character of the account sends its own `R` at its next login, once
   (`social.resetAt` / `resetSent`). Older clients ignore `R` as an unknown type.
+- **Keys are names, never realms (#98):** since the 2026-11-20 server hotfix the client hides the
+  realm (`GetRealmName()` is `""`, on purpose). A member's key is the full name the guild sends
+  (`Guild.Key(sender)`, a `-Realm` dropped), ours `API.PlayerFullName()`, a guild's its name. A
+  `social` table at version 1 (keys `Name-Realm`, `Guild-Realm`) is migrated once on its first read
+  (`Guild.Rekey`, `Guild.Join`: every key of a name joined at once, the latest reset applied as the
+  cutoff BEFORE the better time is chosen, the latest `seen`, damaged values dropped). A late `N` from
+  before a member's reset toasts nothing (Merge refuses it anyway). `API.RealmName()` is the
+  realm or nil, never an identity.
 - **`Social.lua`** (#15, `docs/SOCIAL.md`): the live half. **Each character's own bests**
   (`GnomesweeperDB.social.mine[memberKey]`, beside the account's `scores`, seeded once from the records
-  this character set, name AND realm); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the
+  this character set, by its full name); `Social.RecordWin` (called by Window **before** `Scores.Won`, or the
   seeding would read the win it's recording) updates it and sends an `N`. A `Q` once a session at login
   (5 s after the first `PLAYER_ENTERING_WORLD`) and from the Guild tab when stale, at most one a minute;
   a received `Q` schedules ONE `B`, deferred 1-6 s and past a minute after our last reply, coalesced,
@@ -429,7 +437,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   (the leaderboards, #15, build on it): `{ version = 1, [category] = { best = record, played = n,
   won = n } }`, `category = difficulty .. ":" .. ruleset` (`area` or `cell`, the first-click safe zone:
   the two starts aren't comparable), `record = { time = precise active seconds, at = time(), name =
-  full name with surname, realm }`. Shown seconds are derived, never stored; a tie keeps the
+  full name with surname, realm (only when the client gives one: hidden since 2026-11-20, #98) }`. Shown seconds are derived, never stored; a tie keeps the
   **earlier** record. **played** counts on a game's first successful reveal (abandoned games count),
   **won** on the win. The window (`recordScores` in `Dispatch`, before the refresh) takes the category
   when the board is made, so a setting changed mid-game can't misfile it. Reading never creates the

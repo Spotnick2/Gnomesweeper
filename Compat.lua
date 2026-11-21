@@ -39,6 +39,16 @@ function API.AddOnVersion(addon)
     return v
 end
 
+-- The realm's name, or nil: Forever hides it since the 2026-11-20 server hotfix
+-- (GetRealmName() answers "", on purpose; porting guide, #98). Never an identity.
+function API.RealmName()
+    local get = rawget(_G, "GetRealmName")
+    if type(get) ~= "function" then return nil end
+    local ok, r = pcall(get)
+    if ok and type(r) == "string" and r ~= "" then return r end
+    return nil
+end
+
 -- The player's full name, with the surname every Forever character has.
 -- Lifted from AltStable's API.PlayerFullName (measured there on 69977 and 70009):
 -- through 69977 UnitName("player") returned "First Surname" as one string; on

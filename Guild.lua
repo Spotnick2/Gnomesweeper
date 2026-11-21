@@ -26,8 +26,11 @@
 --   Guild.Merge(entry, records, seen) -> entry (created if nil), keeping the better per category
 --   Guild.Prune(bucket, now, maxAge)  -> members dropped
 --   Guild.Ranking(bucket, cat, own)   -> { {key, cs, at}... }, sorted, our own best merged in
---   Guild.Key(sender, realm)          -> the member key: the sender, with our realm if it has none
---   Guild.Display(key, realm)         -> the name to show: the key without our realm
+--   Guild.Key(sender)                 -> the member key: the full name, never a realm (#98)
+--   Guild.Display(key)                -> the name to show: the key
+--   Guild.Unrealm(key)                -> a key saved before #98 ("Name-Realm", "Guild-Realm"), bare
+--   Guild.Join(entries)               -> one member's entries under several keys, as one (#98)
+--   Guild.Rekey(t, join)              -> t's "-Realm" keys renamed bare, a name's values joined
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -190,7 +193,7 @@ function Guild.Ranking(bucket, cat, own)
     local list = {}
     for key, entry in pairs(type(bucket) == "table" and bucket or {}) do
         local b = type(entry) == "table" and type(entry.bests) == "table" and entry.bests[cat]
-        if b and not (own and key == own.key) and validNumber(b.cs, Guild.MIN_CS, Guild.MAX_CS)
+        if type(b) == "table" and not (own and key == own.key) and validNumber(b.cs, Guild.MIN_CS, Guild.MAX_CS)
             and validNumber(b.at, Guild.MIN_AT, Guild.MAX_AT) then
             list[#list + 1] = { key = key, cs = b.cs, at = b.at }
         end
@@ -203,18 +206,75 @@ function Guild.Ranking(bucket, cat, own)
     return list
 end
 
--- The member key (measured, 70205: a guild sender is "Name Surname", no realm).
-function Guild.Key(sender, realm)
-    if type(sender) ~= "string" or sender == "" then return nil end
-    if sender:find("-", 1, true) then return sender end
-    return sender .. "-" .. (realm or "")
+-- The member key: the full name the guild sends ("Name Surname", measured on 70205: no realm).
+-- Never the realm (#98): Forever hides it since the 2026-11-20 hotfix, and a name is unique
+-- region-wide. A "-Realm" on a sender, should one ever come, is dropped (names have no "-").
+function Guild.Unrealm(key)
+    if type(key) ~= "string" then return nil end
+    return key:match("^(.*)%-[^-]*$") or key
 end
 
-function Guild.Display(key, realm)
-    if type(key) ~= "string" then return "?" end
-    local suffix = "-" .. (realm or "")
-    if #key > #suffix and key:sub(-#suffix) == suffix then return key:sub(1, #key - #suffix) end
+function Guild.Key(sender)
+    if type(sender) ~= "string" or sender == "" then return nil end
+    local key = Guild.Unrealm(sender)
+    if key == "" then return nil end
     return key
+end
+
+function Guild.Display(key)
+    if type(key) ~= "string" then return "?" end
+    return key
+end
+
+-- One member saved under several keys (two realms, or a realm then none): one entry. The cutoff is
+-- the latest reset of them all, applied BEFORE the better time is chosen (Codex, #98: a faster time
+-- from before the reset must not push out a slower one after it); the latest seen. Damaged records go.
+function Guild.Join(list)
+    local e = { bests = {} }
+    for _, src in ipairs(list) do
+        if type(src) == "table" then
+            if type(src.seen) == "number" and (not e.seen or src.seen > e.seen) then e.seen = src.seen end
+            if validNumber(src.resetAt, Guild.MIN_AT, Guild.MAX_AT) and (not e.resetAt or src.resetAt > e.resetAt) then
+                e.resetAt = src.resetAt
+            end
+        end
+    end
+    local cutoff = e.resetAt or 0
+    for _, src in ipairs(list) do
+        if type(src) == "table" and type(src.bests) == "table" then
+            for cat, r in pairs(src.bests) do
+                local held = e.bests[cat]
+                if KNOWN[cat] and type(r) == "table" and validNumber(r.cs, Guild.MIN_CS, Guild.MAX_CS)
+                    and validNumber(r.at, Guild.MIN_AT, Guild.MAX_AT) and r.at >= cutoff
+                    and (not held or Guild.Better(r, held)) then
+                    e.bests[cat] = { cs = r.cs, at = r.at }
+                end
+            end
+        end
+    end
+    return e
+end
+
+-- Renames t's keys saved with a realm to the bare name, in place: every key of one name (the bare
+-- one too, if there) is replaced by join(values), the values in key order (the same result whatever
+-- pairs' order); join answering nil drops the name. Keys that aren't strings are left alone.
+function Guild.Rekey(t, join)
+    if type(t) ~= "table" then return t end
+    local groups, names = {}, {}
+    for key in pairs(t) do
+        local bare = type(key) == "string" and Guild.Unrealm(key)
+        if bare then
+            if not groups[bare] then groups[bare] = {}; names[#names + 1] = bare end
+            table.insert(groups[bare], key)
+        end
+    end
+    for _, bare in ipairs(names) do
+        local keys, values = groups[bare], {}
+        table.sort(keys)
+        for _, key in ipairs(keys) do values[#values + 1] = t[key]; t[key] = nil end
+        if bare ~= "" then t[bare] = join(values) end
+    end
+    return t
 end
 
 Guild._test = { split = split, integer = integer }

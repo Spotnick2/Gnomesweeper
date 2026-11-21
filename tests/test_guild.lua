@@ -141,14 +141,51 @@ eq(r[4].key, "Ann Gear-R", "...then the slowest")
 eq(#G.Ranking(guild, "expert:area", { key = "Me Myself-R" }), 3, "with no best of our own, we're not ranked (and our stale echo isn't)")
 eq(#G.Ranking(nil, "expert:area"), 0, "no guild data: an empty ranking")
 
--- Keys (measured on 70205: a guild sender is "Name Surname", no realm)
-eq(G.Key("Kaleid Sumner", "ClassicBetaPvE"), "Kaleid Sumner-ClassicBetaPvE", "a sender without a realm gets ours")
-eq(G.Key("Kaleid Sumner-OtherRealm", "ClassicBetaPvE"), "Kaleid Sumner-OtherRealm", "one with a realm keeps it")
-eq(G.Key("", "R"), nil, "an empty sender has no key")
-eq(G.Key(nil, "R"), nil, "...nor nil")
-eq(G.Display("Kaleid Sumner-ClassicBetaPvE", "ClassicBetaPvE"), "Kaleid Sumner", "our realm isn't shown")
-eq(G.Display("Kaleid Sumner-OtherRealm", "ClassicBetaPvE"), "Kaleid Sumner-OtherRealm", "another realm is")
-eq(G.Display("Zoë Écrou-R", "R"), "Zoë Écrou", "UTF-8 names are kept as they are")
+-- Keys (measured on 70205: a guild sender is "Name Surname", no realm). Never a realm (#98).
+eq(G.Key("Kaleid Sumner"), "Kaleid Sumner", "a sender is keyed by its full name")
+eq(G.Key("Kaleid Sumner-OtherRealm"), "Kaleid Sumner", "...a realm on it is dropped")
+eq(G.Key(""), nil, "an empty sender has no key")
+eq(G.Key(nil), nil, "...nor nil")
+eq(G.Key("-Realm"), nil, "...nor a realm alone")
+eq(G.Display("Kaleid Sumner"), "Kaleid Sumner", "the name shown is the key")
+eq(G.Display("Zoë Écrou"), "Zoë Écrou", "UTF-8 names are kept as they are")
+eq(G.Display(nil), "?", "...and a damaged one shows as ?")
+
+-- The migration (#98): keys saved with a realm, made bare
+eq(G.Unrealm("Kaleid Sumner-CAMWOWUS2Realm1PvE"), "Kaleid Sumner", "a key saved with a realm, bare")
+eq(G.Unrealm("Kaleid Sumner-"), "Kaleid Sumner", "...one saved with a blank realm (since the hotfix)")
+eq(G.Unrealm("Parse Partout"), "Parse Partout", "...one without, as it is")
+do
+    local a = { seen = T - 10, bests = { ["expert:area"] = { cs = 9000, at = T - 500 }, ["beginner:area"] = { cs = 1500, at = T - 400 } } }
+    local b = { seen = T - 20, resetAt = T - 450, bests = { ["expert:area"] = { cs = 8000, at = T - 300 }, ["intermediate:area"] = { cs = 5000, at = T - 600 } } }
+    local j = G.Join({ a, b })
+    eq(j.bests["expert:area"].cs, 8000, "joined: the better time per category")
+    eq(j.bests["beginner:area"].cs, 1500, "...one after the latest reset kept, whichever key held it")
+    eq(j.bests["intermediate:area"], nil, "...one from before it gone")
+    eq(j.seen, T - 10, "...the later seen")
+    eq(j.resetAt, T - 450, "...the reset kept as the cutoff")
+    -- Codex, #98: the cutoff comes first, so a faster time from before the reset can't push out a slower one after it
+    local fast = { seen = T, bests = { ["expert:area"] = { cs = 1000, at = T - 500 } } }
+    local slow = { seen = T, bests = { ["expert:area"] = { cs = 2000, at = T - 300 } } }
+    local reset = { seen = T, resetAt = T - 450, bests = {} }
+    eq(G.Join({ fast, slow, reset }).bests["expert:area"].cs, 2000, "a reset on a third key: the slower time after it stays")
+    eq(G.Join({ reset, fast, slow }).bests["expert:area"].cs, 2000, "...in any order")
+    local d = G.Join({ "x", { seen = T, bests = { ["expert:area"] = 5, ["nope:area"] = { cs = 900, at = T }, ["beginner:area"] = { cs = 50, at = T } } } })
+    eq(next(d.bests), nil, "damaged records go (a number, an unknown category, a time under 1 s)")
+    local t = { ["Ann Gear-R1"] = 1, ["Ann Gear-R7"] = 2, ["Bob Cog"] = 3, ["Cal Bolt-"] = 4, [5] = "x" }
+    local seen = {}
+    G.Rekey(t, function(values) seen[#seen + 1] = #values; local n = 0; for _, v in ipairs(values) do n = n + v end; return n end)
+    eq(t["Ann Gear"], 3, "rekeyed: two realms of one name joined")
+    eq(t["Ann Gear-R1"], nil, "...the old keys gone")
+    eq(t["Bob Cog"], 3, "...a bare key kept")
+    eq(t["Cal Bolt"], 4, "...a blank realm dropped")
+    eq(t[5], "x", "...a key that isn't a string left alone")
+    local held = { ["Ann Gear"] = 10, ["Ann Gear-R"] = 1, ["Bad-R"] = 0 }
+    G.Rekey(held, function(values) if values[1] == 0 then return nil end return values end)
+    eq(held["Ann Gear"][1], 10, "...joined with the bare key already there, in key order")
+    eq(held["Ann Gear"][2], 1, "...and the one moved")
+    eq(held["Bad"], nil, "...a join answering nil drops the name")
+end
 
 -- R: forget my times from before <at> (a reset); after Q, B, N shipped, so older clients ignore it
 eq(G.Encode("R", nil, T), "1\tR\t" .. T, "R: the reset's time, no records")

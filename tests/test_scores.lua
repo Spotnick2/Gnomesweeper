@@ -186,6 +186,15 @@ do  -- a hand-built board keeps no scores unless told where
     check(not W._test.ui.overlay.best:IsShown(), "...and the overlay has no best line")
 end
 
+do  -- the realm hidden (2026-11-20 hotfix, #98): GetRealmName() answers "", and no realm is saved
+    local W = fresh()
+    WoW.realm = ""
+    winWall(W, "beginner:area", 42.7)
+    local best = GnomesweeperDB.scores["beginner:area"].best
+    eq(best.realm, nil, "a blank realm isn't saved")
+    eq(best.name, "Fizzle Sprocketwhistle", "...the full name is")
+end
+
 do  -- the first win, then slower, then faster
     local W = fresh()
     local ui = W._test.ui

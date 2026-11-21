@@ -11,7 +11,9 @@ release). Until #87 these were `/gsweep` commands marked "(for measuring)", ship
    (`-ProbeOnly` for just the probe). `/reload`. `_forever_` is the live client: deploy it only for a
    test session the owner is running.
 2. `/fp` opens the console **before** an experiment. The probe's lines land there and in
-   `GnomesweeperProbeDB.log`, never in chat. `/fp sweep` lists the commands.
+   `GnomesweeperProbeDB.log`, not in chat: that's the default. The host's `/fp mirror on` copies
+   every line to chat as well for the session (`/fp mirror off` stops it); the probe itself never
+   writes to chat. `/fp sweep` lists the commands.
 3. `/reload` writes `WTF\Account\<account>\SavedVariables\GnomesweeperProbe.lua`: the log, and what each
    command measured (below). A Claude session reads it from disk; nothing needs pasting.
 

@@ -36,7 +36,7 @@ do  -- in a guild: the identity, the send, the echo, Ambiguate, the saved lines
 
     -- Another addon's message, or another prefix: not ours.
     local before = #GnomesweeperDB.guildProbe
-    WoW.fire("CHAT_MSG_ADDON", "OTHER", "x", "GUILD", "Someone-Forever", "", 0, 0, "", 0)
+    WoW.fire("CHAT_MSG_ADDON", "OTHER", "x", "GUILD", "Someone", "", 0, 0, "", 0)
     eq(#GnomesweeperDB.guildProbe, before, "another prefix's message is ignored")
 
     -- The prefix is registered once, however many probes.
@@ -70,7 +70,7 @@ end
 ----------------------------------------------------------------------------
 local G = nil
 local GUILD = "Gnomeregan Exiles"
-local GKEY = "Gnomeregan Exiles-Forever"         -- GetGuildInfo's realm is nil in the stub: ours
+local GKEY = "Gnomeregan Exiles"                 -- the guild's name: never a realm (#98)
 local function sent(kind)
     local list = {}
     for _, m in ipairs(WoW.addonSent) do
@@ -82,6 +82,7 @@ local function from(sender, msg) WoW.fire("CHAT_MSG_ADDON", "GSWEEP", msg, "GUIL
 local function cache() return GnomesweeperDB.social and GnomesweeperDB.social.guilds[GKEY] end
 local function login() WoW.fire("PLAYER_ENTERING_WORLD", true, false); WoW.advance(5.5) end
 local T = 1790000000
+local function S_rank(cat) local r = Gnomesweeper.Social.Ranking(cat)[1]; return r and r.cs end
 
 do  -- login: one query, once a session
     loadAddon()
@@ -107,7 +108,7 @@ do  -- this character's own bests, and N
     WoW.guild = GUILD
     local S = Gnomesweeper.Social
     eq(S.RecordWin("expert:area", 84.129), true, "a win: this character's best")
-    local mine = GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"]
+    local mine = GnomesweeperDB.social.mine["Fizzle Sprocketwhistle"]
     eq(mine["expert:area"].cs, 8412, "...kept per character, in centiseconds")
     eq(#sent("N"), 1, "...and a new best goes to the guild as an N")
     eq(sent("N")[1].message, "1\tN\texpert:area=8412@" .. T, "...exactly")
@@ -123,7 +124,7 @@ do  -- this character's own bests, and N
     eq(#sent("N"), 2, "...but nothing is sent")
 end
 
-do  -- seeding: only the account's records this character set (name AND realm)
+do  -- seeding: only the account's records this character set (its full name: unique region-wide, #98)
     loadAddon({ db = { scores = { version = 1,
         ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } },
         ["beginner:area"] = { played = 9, won = 3, best = { time = 9.5, at = T - 100, name = "Ann Gear", realm = "Forever" } },
@@ -134,13 +135,13 @@ do  -- seeding: only the account's records this character set (name AND realm)
     local r = S.Ranking("expert:area")
     eq(#r, 1, "our record from the account's scores is ours before anything is written")
     eq(r[1].cs, 7050, "...its time")
-    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"],
+    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle"],
         "...and kept at once: a record of this character's is never left to a preview (review of #63)")
     S.RecordWin("expert:area", 90)
-    local mine = GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"]
+    local mine = GnomesweeperDB.social.mine["Fizzle Sprocketwhistle"]
     eq(mine["expert:area"].cs, 7050, "seeded on the first write: the account record this character set")
     eq(mine["beginner:area"], nil, "...not another character's")
-    eq(mine["intermediate:area"], nil, "...nor a same-named character's on another realm")
+    eq(mine["intermediate:area"] and mine["intermediate:area"].cs, 4000, "...whatever realm the record names (the realm is hidden since the 2026-11-20 hotfix)")
 end
 
 do  -- replies: deferred, coalesced, never dropped
@@ -181,26 +182,26 @@ do  -- receiving: B and N fill the cache; the ranking; what's ignored
     S.RecordWin("expert:area", 85)
     from("Ann Gear", "1\tB\texpert:area=9000@" .. T .. "\tbeginner:area=1500@" .. T)
     from("Bob Cog", "1\tN\texpert:area=8000@" .. T)
-    eq(cache()["Ann Gear-Forever"].bests["expert:area"].cs, 9000, "a B fills the cache, keyed by the sender with our realm")
-    eq(cache()["Ann Gear-Forever"].seen, T, "...seen by our clock")
-    eq(cache()["Bob Cog-Forever"].bests["expert:area"].cs, 8000, "an N too")
+    eq(cache()["Ann Gear"].bests["expert:area"].cs, 9000, "a B fills the cache, keyed by the sender's name")
+    eq(cache()["Ann Gear"].seen, T, "...seen by our clock")
+    eq(cache()["Bob Cog"].bests["expert:area"].cs, 8000, "an N too")
     local r = S.Ranking("expert:area")
     eq(#r, 3, "the ranking: both guildmates and us")
-    eq(r[1].name, "Bob Cog", "...best first, shown without our realm")
+    eq(r[1].name, "Bob Cog", "...best first, by name")
     check(r[2].mine, "...us second")
     eq(r[3].name, "Ann Gear", "...then Ann")
     from("Bob Cog", "1\tB\texpert:area=9500@" .. (T - 50))
-    eq(cache()["Bob Cog-Forever"].bests["expert:area"].cs, 8000, "an older, slower B after an N doesn't replace it")
+    eq(cache()["Bob Cog"].bests["expert:area"].cs, 8000, "an older, slower B after an N doesn't replace it")
     from("Eve Spring", "1\tN\texpert:area=0800@" .. T)
-    eq(cache()["Eve Spring-Forever"], nil, "a malformed message is dropped whole")
+    eq(cache()["Eve Spring"], nil, "a malformed message is dropped whole")
     from("Eve Spring", "2\tN\texpert:area=800@" .. T)
-    eq(cache()["Eve Spring-Forever"], nil, "...a version we don't know is ignored")
+    eq(cache()["Eve Spring"], nil, "...a version we don't know is ignored")
     WoW.fire("CHAT_MSG_ADDON", "GSWEEP", "1\tN\texpert:area=800@" .. T, "WHISPER", "Eve Spring", "", 0, 0, "", 0)
-    eq(cache()["Eve Spring-Forever"], nil, "...a whisper is ignored (guild only, in phase 1)")
+    eq(cache()["Eve Spring"], nil, "...a whisper is ignored (guild only, in phase 1)")
     from("Fizzle Sprocketwhistle", "1\tN\texpert:area=100@" .. T)
-    eq(cache()["Fizzle Sprocketwhistle-Forever"], nil, "...and so is our own echo")
+    eq(cache()["Fizzle Sprocketwhistle"], nil, "...and so is our own echo")
     from("Gus Far-OtherRealm", "1\tN\texpert:area=7000@" .. T)
-    eq(S.Ranking("expert:area")[1].name, "Gus Far-OtherRealm", "another realm's guildmate keeps the realm in the name")
+    eq(S.Ranking("expert:area")[1].name, "Gus Far", "a sender with a realm is keyed by the name alone (#98)")
 end
 
 do  -- a guild change cancels what was pending for the old one
@@ -221,17 +222,140 @@ end
 
 do  -- pruning at login, reset
     loadAddon({ db = { social = { version = 1, mine = {}, guilds = { [GKEY] = {
-        ["Old Timer-Forever"] = { seen = T - 31 * 86400, bests = { ["expert:area"] = { cs = 5000, at = T - 31 * 86400 } } },
-        ["New Comer-Forever"] = { seen = T - 86400, bests = { ["expert:area"] = { cs = 6000, at = T - 86400 } } },
+        ["Old Timer"] = { seen = T - 31 * 86400, bests = { ["expert:area"] = { cs = 5000, at = T - 31 * 86400 } } },
+        ["New Comer"] = { seen = T - 86400, bests = { ["expert:area"] = { cs = 6000, at = T - 86400 } } },
     } } } } })
     WoW.guild = GUILD
     login()
-    eq(cache()["Old Timer-Forever"], nil, "a member silent for 30 days is forgotten at login")
-    check(cache()["New Comer-Forever"] ~= nil, "...a recent one stays")
+    eq(cache()["Old Timer"], nil, "a member silent for 30 days is forgotten at login")
+    check(cache()["New Comer"] ~= nil, "...a recent one stays")
     Gnomesweeper.Social.RecordWin("expert:area", 70)
     Gnomesweeper.Social.Reset()
     eq(next(GnomesweeperDB.social.mine), nil, "Reset best times forgets this account's own bests")
-    check(cache()["New Comer-Forever"] ~= nil, "...not the guildmates' (theirs to keep)")
+    check(cache()["New Comer"] ~= nil, "...not the guildmates' (theirs to keep)")
+end
+
+do  -- the hidden realm (#98): data saved with realms, migrated once to names
+    loadAddon({ db = {
+        scores = { version = 1,
+            ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } } },
+        social = { version = 1,
+            resetSent = { ["Fizzle Sprocketwhistle-Forever"] = T - 5000 },
+            mine = {
+                ["Fizzle Sprocketwhistle-Forever"] = { ["beginner:area"] = { cs = 1456, at = T - 200 } },
+                ["Fizzle Sprocketwhistle-"] = { ["beginner:area"] = { cs = 1600, at = T - 50 }, ["expert:cell"] = { cs = 9000, at = T - 50 } },
+                ["Ann Gear-Forever"] = { ["expert:area"] = { cs = 6000, at = T - 300 } },
+            },
+            guilds = {
+                [GKEY .. "-ForeverTwo"] = { ["Bob Cog-Forever"] = { seen = T - 100, bests = { ["expert:area"] = { cs = 8000, at = T - 400 } } } },
+                [GKEY .. "-Forever"] = {
+                    ["Bob Cog-ForeverTwo"] = { seen = T - 10, bests = { ["expert:area"] = { cs = 8500, at = T - 20 } } },
+                    ["Cal Bolt-Forever"] = { seen = T - 10, bests = { ["expert:area"] = { cs = 9900, at = T - 20 } } },
+                },
+                ["Another Guild-Forever"] = { ["Dee Nut-Forever"] = { seen = T, bests = {} } },
+            },
+        },
+    } })
+    WoW.realm = ""                                       -- GetRealmName() since the hotfix
+    WoW.guild = GUILD
+    local S = Gnomesweeper.Social
+    local r = S.Ranking("expert:area")
+    local s = GnomesweeperDB.social
+    eq(s.version, 2, "a version 1 table is migrated on its first read")
+    eq(s.mine["Fizzle Sprocketwhistle"]["beginner:area"].cs, 1456, "our bests under two realms joined: the better time")
+    eq(s.mine["Fizzle Sprocketwhistle"]["expert:cell"].cs, 9000, "...and what only one had")
+    eq(s.mine["Fizzle Sprocketwhistle-Forever"], nil, "...the old keys gone")
+    eq(s.mine["Ann Gear"]["expert:area"].cs, 6000, "an alt's bests renamed too")
+    eq(s.resetSent["Fizzle Sprocketwhistle"], T - 5000, "the reset already sent stays sent (no second R)")
+    eq(s.guilds[GKEY .. "-Forever"], nil, "the guild's two keys (its realm came late at login)...")
+    eq(s.guilds[GKEY]["Bob Cog"].bests["expert:area"].cs, 8000, "...are one list, each member joined: the better time")
+    eq(s.guilds[GKEY]["Bob Cog"].seen, T - 10, "...the later seen")
+    check(s.guilds["Another Guild"]["Dee Nut"] ~= nil, "another guild renamed, kept apart")
+    eq(#r, 2, "the Guild tab: Bob and Cal, no duplicate")
+    eq(r[1].name, "Bob Cog", "...shown by name, never with a realm")
+    from("Bob Cog", "1	Q")
+    WoW.advance(7)
+    eq(#sent("B"), 1, "a query is answered with our migrated bests...")
+    eq(sent("B")[1].message, "1	B	beginner:area=1456@" .. (T - 200) .. "	expert:cell=9000@" .. (T - 50), "...exactly")
+    eq(#sent("R"), 0, "...and no reset sent again")
+end
+
+do  -- the migration across three keys of one guild (Codex, #98): the cutoff first, read twice, a stale N
+    local function db() return { social = { version = 1, guilds = {
+        [GKEY .. "-ForeverOne"] = { ["Bob Cog"] = { seen = T - 30, bests = { ["expert:area"] = { cs = 1000, at = T - 500 } } } },
+        [GKEY .. "-ForeverTwo"] = { ["Bob Cog-ForeverTwo"] = { seen = T - 20, bests = { ["expert:area"] = { cs = 2000, at = T - 300 } } } },
+        [GKEY .. "-"] = { ["Bob Cog-"] = { seen = T - 10, resetAt = T - 450, bests = {} },
+                          ["Cal Bolt"] = "damaged", [7] = { seen = T } },
+        [GKEY .. "-Forever"] = "damaged",
+    } } } end
+    loadAddon({ db = db() })
+    WoW.guild = GUILD
+    login()
+    local S = Gnomesweeper.Social
+    local bob = cache()["Bob Cog"]
+    eq(bob.bests["expert:area"].cs, 2000, "the slower time after Bob's reset stays; the faster one before it goes")
+    eq(bob.resetAt, T - 450, "...his reset kept as the cutoff")
+    eq(bob.seen, T - 10, "...the latest seen")
+    eq(cache()["Cal Bolt"], nil, "a damaged member goes")
+    eq(cache()[7], nil, "...and a key that isn't a name")
+    local n = 0
+    for _ in pairs(GnomesweeperDB.social.guilds) do n = n + 1 end
+    eq(n, 1, "the guild's four keys are one")
+    S.Ranking("expert:area")
+    eq(cache()["Bob Cog"].bests["expert:area"].cs, 2000, "read again: the same (version 2 isn't migrated twice)")
+    from("Ann Gear", "1\tB\tbeginner:area=1500@" .. T)            -- the guild is heard...
+    WoW.advance(Gnomesweeper.Social.SYNC_WINDOW + 1)                 -- ...and synced
+    check(S._test.synced(GKEY), "(synced)")
+    from("Bob Cog", "1\tN\texpert:area=900@" .. (T - 460))         -- late, from before his reset
+    eq(#S._test.queue(), 0, "a late N from before a guildmate's reset toasts nothing...")
+    check(S._test.current() == nil, "...(nothing showing)")
+    eq(cache()["Bob Cog"].bests["expert:area"].cs, 2000, "...and doesn't come back on the board")
+    from("Bob Cog", "1\tN\texpert:area=900@" .. T)
+    check(S._test.current() ~= nil, "a real new guild best after it still toasts")
+end
+
+do  -- the reset already sent, under two keys (Codex, #98): the latest counts, no second R
+    loadAddon({ db = { social = { version = 1, resetAt = T - 5000,
+        resetSent = { ["Fizzle Sprocketwhistle-ForeverOne"] = T - 6000, ["Fizzle Sprocketwhistle-ForeverTwo"] = T - 5000 },
+        mine = { ["Fizzle Sprocketwhistle-ForeverTwo"] = { ["expert:area"] = { cs = 9000, at = T - 100 } } } } } })
+    WoW.guild = GUILD
+    login()
+    eq(GnomesweeperDB.social.resetSent["Fizzle Sprocketwhistle"], T - 5000, "the latest reset sent is kept")
+    eq(#sent("R"), 0, "...so the reset isn't sent again")
+    loadAddon({ db = { social = { version = 1, resetAt = T - 5000,
+        resetSent = { ["Fizzle Sprocketwhistle-ForeverOne"] = T - 6000, ["Fizzle Sprocketwhistle-ForeverTwo"] = "bad" } } } })
+    WoW.guild = GUILD
+    login()
+    eq(#sent("R"), 1, "an older mark and a damaged one: the reset goes, once")
+end
+
+do  -- a damaged old entry of ours: the scores still seed it (Codex, #99)
+    loadAddon({ db = {
+        scores = { version = 1,
+            ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } } },
+        social = { version = 1, mine = {
+            ["Fizzle Sprocketwhistle-Forever"] = "damaged",
+            ["Ann Gear-Forever"] = { ["expert:area"] = { cs = 5, at = T } },
+        } } } })
+    WoW.guild = GUILD
+    login()
+    local mine = GnomesweeperDB.social.mine
+    local ours = mine["Fizzle Sprocketwhistle"]
+    eq(ours and ours["expert:area"] and ours["expert:area"].cs, 7050,
+        "a damaged entry migrates to nothing, and our best is seeded from the scores")
+    eq(mine["Ann Gear"], nil, "...an alt's entry with nothing usable goes")
+    eq(S_rank("expert:area"), 7050, "...and the Guild tab shows it")
+end
+
+do  -- a fresh table is version 2, never migrated; a damaged version counts as 1
+    loadAddon()
+    WoW.guild = GUILD
+    Gnomesweeper.Social.RecordWin("expert:area", 80)
+    eq(GnomesweeperDB.social.version, 2, "a new table starts at version 2")
+    loadAddon({ db = { social = { version = "x", mine = { ["Ann Gear-Forever"] = { ["expert:area"] = { cs = 9000, at = T } } } } } })
+    WoW.guild = GUILD
+    Gnomesweeper.Social.Ranking("expert:area")
+    check(GnomesweeperDB.social.mine["Ann Gear"] ~= nil and GnomesweeperDB.social.version == 2, "a damaged version is migrated")
 end
 
 do  -- ChatThrottleLib paces sends when it's loaded
@@ -414,7 +538,7 @@ do  -- seeding at login: an alt's new best can't take a record this character ne
     } }
     loadAddon({ db = saved })                           -- A logs in, and out
     WoW.fire("PLAYER_ENTERING_WORLD", true, false)
-    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle-Forever"],
+    check(GnomesweeperDB.social and GnomesweeperDB.social.mine["Fizzle Sprocketwhistle"],
         "logging in keeps this character's record from the scores")
     local afterA = GnomesweeperDB
     afterA.scores["expert:area"].best = { time = 60, at = T, name = "Ann Gear", realm = "Forever" }   -- B (an alt) beats it

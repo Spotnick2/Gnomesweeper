@@ -138,15 +138,15 @@ do  -- a refused reset, a slower win in the same category, the retry: the guildm
     eq(table.concat(kinds), "NRB", "delivered: (the R refused) the N, then the retried R and the bests behind it")
 
     -- The guildmate: Ann, who held Fizzle's old 10 s best from before the reset.
-    loadAddon({ db = { social = { version = 1, mine = {}, guilds = { [GUILD .. "-Forever"] = {
-        ["Fizzle Sprocketwhistle-Forever"] = { seen = T, bests = { ["beginner:area"] = { cs = 1000, at = reset - 100 } } },
+    loadAddon({ db = { social = { version = 1, mine = {}, guilds = { [GUILD] = {
+        ["Fizzle Sprocketwhistle"] = { seen = T, bests = { ["beginner:area"] = { cs = 1000, at = reset - 100 } } },
     } } } } })
     WoW.playerName, WoW.playerSurname = "Ann", "Gear"
     WoW.guild = GUILD
     for _, m in ipairs(delivered) do
         WoW.fire("CHAT_MSG_ADDON", "GSWEEP", m, "GUILD", "Fizzle Sprocketwhistle", "", 0, 0, "", 0)
     end
-    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Fizzle Sprocketwhistle-Forever"]
+    local e = GnomesweeperDB.social.guilds[GUILD]["Fizzle Sprocketwhistle"]
     eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 2000,
         "the guildmate ends with the 20 s win: the old 10 s gone, the post-reset time not lost")
 end
@@ -160,7 +160,7 @@ do  -- a win that publishes a pending reset still toasts on the guildmate (Codex
     pump(2)
     local reset = T - 100
     GnomesweeperDB.social = { version = 1, guilds = {}, resetAt = reset, resetSent = {},
-        mine = { ["Fizzle Sprocketwhistle-Forever"] = { ["expert:area"] = { cs = 9000, at = reset + 10 } } } }
+        mine = { ["Fizzle Sprocketwhistle"] = { ["expert:area"] = { cs = 9000, at = reset + 10 } } } }
     WoW.addonSent = {}
     S.RecordWin("beginner:area", 20)                         -- the win: it sends the pending R first
     pump(3)
@@ -184,7 +184,7 @@ do  -- a win that publishes a pending reset still toasts on the guildmate (Codex
     for _, m in ipairs(delivered) do
         WoW.fire("CHAT_MSG_ADDON", "GSWEEP", m, "GUILD", "Fizzle Sprocketwhistle", "", 0, 0, "", 0)
     end
-    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Fizzle Sprocketwhistle-Forever"]
+    local e = GnomesweeperDB.social.guilds[GUILD]["Fizzle Sprocketwhistle"]
     eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 2000, "the guildmate holds the 20 s win")
     check(Gnomesweeper.Toast.IsShown(), "...and shows the toast: a new guild best, beating Bob's 30 s")
 end

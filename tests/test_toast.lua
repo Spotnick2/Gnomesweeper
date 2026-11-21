@@ -41,7 +41,7 @@ do  -- silence never counts; but in a guild where nobody has a time yet, the fir
     WoW.guild = GUILD
     WoW.fire("PLAYER_ENTERING_WORLD", true, false)
     WoW.advance(200)
-    eq(Gnomesweeper.Social._test.synced(GUILD .. "-Forever"), false, "silence, however long: not synced")
+    eq(Gnomesweeper.Social._test.synced(GUILD), false, "silence, however long: not synced")
     from("Bob Cog", N("expert:area", 8000))
     eq(shown(), "Bob Cog cleared Expert in 01:20.0, a new guild best!",
         "a guild where nobody had a time (no B): the first N, after the window, is a guild best")
@@ -231,9 +231,9 @@ do  -- the cap holds when a fight interrupts one, and the interrupted one is kep
     from("D D", N("intermediate:area", 8700))
     WoW.fire("PLAYER_REGEN_DISABLED")                    -- A goes back to the queue
     eq(#S._test.queue(), Gnomesweeper.Social.TOAST_QUEUE, "a fight putting one back: still at most " .. Gnomesweeper.Social.TOAST_QUEUE)
-    eq(S._test.queue()[1].key, "A A-Forever", "...the interrupted one kept, an unseen one dropped")
+    eq(S._test.queue()[1].key, "A A", "...the interrupted one kept, an unseen one dropped")
     from("E E", N("beginner:area", 900))
-    eq(S._test.queue()[1].key, "A A-Forever", "...and still kept when another arrives in the fight")
+    eq(S._test.queue()[1].key, "A A", "...and still kept when another arrives in the fight")
     WoW.fire("PLAYER_REGEN_ENABLED")
 end
 
@@ -257,7 +257,7 @@ do  -- the test seam's reset clears the toasts' state
     from("Cal Bolt", N("expert:area", 7000))
     S._test.reset()
     eq(#S._test.queue(), 0, "reset: no queue")
-    eq(S._test.synced(GUILD .. "-Forever"), false, "...and not synced")
+    eq(S._test.synced(GUILD), false, "...and not synced")
 end
 
 do  -- a real guild change restarts the sync, and asks the new guild (Codex, #66)
@@ -279,7 +279,7 @@ do  -- a real guild change restarts the sync, and asks the new guild (Codex, #66
     dismiss()
     WoW.guild = GUILD
     WoW.fire("PLAYER_GUILD_UPDATE", "player")
-    eq(S._test.synced(GUILD .. "-Forever"), false, "rejoining a guild: not synced from before")
+    eq(S._test.synced(GUILD), false, "rejoining a guild: not synced from before")
     from("Eve Spring", N("expert:area", 5000))
     eq(shown(), nil, "...so no toast until it's heard again")
 end
@@ -327,7 +327,7 @@ do  -- leaving, then joining: the new guild is asked and synced (Codex, #66 foll
     asked = 0
     for _, m in ipairs(WoW.addonSent) do if m.message == "1\tQ" then asked = asked + 1 end end
     eq(asked, 1, "leaving and rejoining the same guild: asked again")
-    eq(S._test.synced("Another Guild-Forever"), false, "...and heard afresh, not synced from before")
+    eq(S._test.synced("Another Guild"), false, "...and heard afresh, not synced from before")
 end
 
 do  -- a slow /reload with no guild event after it: the login query retries (the owner's missing toast)
@@ -370,7 +370,7 @@ do  -- the social log: every decision, with its reason
     from("Dee Nut", N("expert:area", 7000))              -- a guild best
     local log = table.concat(GnomesweeperDB.socialLog, "\n")
     check(log:find("login (initial true", 1, true) ~= nil, "the log has the login")
-    check(log:find("Q to " .. GUILD .. "-Forever (forced): sent", 1, true) ~= nil, "...the query and its result")
+    check(log:find("Q to " .. GUILD .. " (forced): sent", 1, true) ~= nil, "...the query and its result")
     check(log:find("no toast: not synced (heard true, first query", 1, true) ~= nil, "...why an early N didn't toast")
     check(log:find("no toast: expert:area 9500 cs isn't faster than the best known, 8000 cs", 1, true) ~= nil, "...why a slow one didn't")
     check(log:find("toast queued: expert:area 7000 cs", 1, true) ~= nil, "...and the one that did")
@@ -403,12 +403,12 @@ do  -- receiving an R: that guildmate's times, and any toast of theirs waiting, 
     from("Bob Cog", N("expert:area", 8000))              -- on screen
     from("Cal Bolt", N("intermediate:area", 9000))       -- waiting
     from("Cal Bolt", "1\tR\t" .. (T + 60))               -- a reset after those times
-    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    local cal = GnomesweeperDB.social.guilds[GUILD]["Cal Bolt"]
     eq(cal and next(cal.bests), nil, "an R drops that guildmate's times")
     eq(#S._test.queue(), 0, "...and their waiting toast")
-    check(GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Bob Cog-Forever"] ~= nil, "...nobody else's")
+    check(GnomesweeperDB.social.guilds[GUILD]["Bob Cog"] ~= nil, "...nobody else's")
     local log = table.concat(GnomesweeperDB.socialLog, "\n")
-    check(log:find("R from Cal Bolt-Forever", 1, true) ~= nil, "...logged")
+    check(log:find("R from Cal Bolt", 1, true) ~= nil, "...logged")
 end
 
 do  -- the account's other characters send their own R at their next login, once
@@ -448,7 +448,7 @@ do  -- a win after the reset survives the R, whatever order they arrive in
     from("Cal Bolt", N("expert:area", 7000))             -- (at T) a time from before Cal's reset
     from("Cal Bolt", "1\tN\tbeginner:area=900@" .. (T + 120))   -- a win after it...
     from("Cal Bolt", "1\tR\t" .. (T + 60))               -- ...and the reset, arriving after
-    local e = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    local e = GnomesweeperDB.social.guilds[GUILD]["Cal Bolt"]
     eq(e and e.bests["expert:area"], nil, "the R drops the time from before the reset")
     eq(e and e.bests["beginner:area"] and e.bests["beginner:area"].cs, 900, "...and keeps the win after it, though the R came later")
 end
@@ -519,13 +519,13 @@ do  -- the receiver: a slower post-reset win in the same category survives; a la
     from("Cal Bolt", B("beginner:area", 1000))           -- Cal's 10 s, at T
     from("Cal Bolt", "1\tR\t" .. (T + 60))               -- Cal resets
     from("Cal Bolt", "1\tN\tbeginner:area=2000@" .. (T + 120))   -- a slower win after it
-    local cal = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Cal Bolt-Forever"]
+    local cal = GnomesweeperDB.social.guilds[GUILD]["Cal Bolt"]
     eq(cal.bests["beginner:area"].cs, 2000, "the slower win after the reset is kept (the old best is gone first)")
     from("Cal Bolt", B("beginner:area", 1000))           -- a late B from before the reset
     eq(cal.bests["beginner:area"].cs, 2000, "a late message from before the reset doesn't bring the old best back")
     from("Dee Nut", "1\tR\t" .. (T + 60))                -- an R before anything is cached
     from("Dee Nut", B("expert:area", 5000))              -- then an older B
-    local dee = GnomesweeperDB.social.guilds[GUILD .. "-Forever"]["Dee Nut-Forever"]
+    local dee = GnomesweeperDB.social.guilds[GUILD]["Dee Nut"]
     eq(dee and dee.bests["expert:area"], nil, "an R arriving first still refuses an older message after it")
 end
 

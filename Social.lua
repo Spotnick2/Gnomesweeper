@@ -70,27 +70,81 @@ local function slog(fmt, ...)
     table.insert(d.socialLog, string.format("%s t=%.1f  %s", date("%H:%M:%S"), GetTime(), ok and line or fmt))
     while #d.socialLog > Social.LOG_KEEP do table.remove(d.socialLog, 1) end
 end
-local function realm() return GetNormalizedRealmName() or "" end
-local function ownKey() return Guild.Key(GS.API.PlayerFullName(), realm()) end
+-- Keys are names, never realms (#98): Forever hides the realm since the 2026-11-20 hotfix,
+-- and a character's full name is unique region-wide.
+local function ownKey() return Guild.Key(GS.API.PlayerFullName()) end
 
--- The guild: its name, and its key (its name and ITS realm: measured, it can differ
--- from ours). nil, nil out of a guild, or just after login before the client knows it.
+-- The guild: its name, and its key (the name too: #98; its realm came late at login and
+-- split the cache in two). nil, nil out of a guild, or just after login before the client knows it.
 local function guildInfo()
     if not IsInGuild() then return nil, nil end
-    local name, _, _, grealm = GetGuildInfo("player")
+    local name = GetGuildInfo("player")
     if type(name) ~= "string" or name == "" then return nil, nil end
-    return name, name .. "-" .. ((type(grealm) == "string" and grealm ~= "") and grealm or realm())
+    return name, name
 end
 local function guildKey() return (select(2, guildInfo())) end
+
+-- Version 2 (#98): the keys saved with a realm ("Name-Realm", "Guild-Realm"), renamed to the
+-- bare name once, every key of one name joined at once (Codex, #98: pairwise, a reset known only to
+-- a third key could drop the time that should stay), damaged values dropped. Run on the first read
+-- of a version 1 table.
+local function whole(n, lo, hi) return type(n) == "number" and n == math.floor(n) and n >= lo and n <= hi end
+local function keepBetter(list)                    -- mine: a character's bests
+    local m = {}
+    for _, src in ipairs(list) do
+        if type(src) == "table" then
+            for cat, r in pairs(src) do
+                local held = m[cat]
+                if type(r) == "table" and whole(r.cs, Guild.MIN_CS, Guild.MAX_CS) and whole(r.at, Guild.MIN_AT, Guild.MAX_AT)
+                    and (not held or Guild.Better(r, held)) then m[cat] = { cs = r.cs, at = r.at } end
+            end
+        end
+    end
+    -- Nothing usable: no entry at all, so the name-based seed from the scores still runs (Codex, #99).
+    return next(m) and m or nil
+end
+local function latest(list)                        -- resetSent: the latest reset already sent
+    local v
+    for _, x in ipairs(list) do if type(x) == "number" and (not v or x > v) then v = x end end
+    return v
+end
+local function migrate(s)
+    if type(s.mine) == "table" then Guild.Rekey(s.mine, keepBetter) end
+    if type(s.resetSent) == "table" then Guild.Rekey(s.resetSent, latest) end
+    if type(s.guilds) == "table" then
+        -- Every alias of a member, across every alias of its guild, joined once.
+        local byGuild, guilds = {}, {}
+        for gk, bucket in pairs(s.guilds) do
+            local g = type(gk) == "string" and Guild.Unrealm(gk)
+            if g and g ~= "" and type(bucket) == "table" then
+                byGuild[g] = byGuild[g] or {}
+                for mk, entry in pairs(bucket) do
+                    local m = type(mk) == "string" and Guild.Unrealm(mk)
+                    if m and m ~= "" and type(entry) == "table" then
+                        byGuild[g][m] = byGuild[g][m] or {}
+                        table.insert(byGuild[g][m], entry)
+                    end
+                end
+            end
+        end
+        for g, members in pairs(byGuild) do
+            guilds[g] = {}
+            for m, entries in pairs(members) do guilds[g][m] = Guild.Join(entries) end
+        end
+        s.guilds = guilds
+    end
+    s.version = 2
+end
 
 -- GnomesweeperDB.social: reading never creates it (as Scores), writing does.
 local function social(create)
     local s = db().social
     if type(s) ~= "table" then
         if not create then return nil end
-        s = { version = 1 }
+        s = { version = 2 }
         db().social = s
     end
+    if (tonumber(s.version) or 1) < 2 then migrate(s) end
     if create then
         if type(s.mine) ~= "table" then s.mine = {} end
         if type(s.guilds) ~= "table" then s.guilds = {} end
@@ -102,16 +156,17 @@ end
 -- This character's own bests (docs/SOCIAL.md: per character, beside the account's scores)
 ------------------------------------------------------------
 
--- Seeded once from the account's scores: only the records this character set
--- (its full name AND its realm, as the scores keep them: GetRealmName()).
+-- Seeded once from the account's scores: only the records this character set (its full name,
+-- unique region-wide; not its realm, which the client hides since the 2026-11-20 hotfix, #98).
 local function seed(mine)
     local scores = db().scores
     if type(scores) ~= "table" then return end
-    local name, rname = GS.API.PlayerFullName(), GetRealmName()
+    local name = GS.API.PlayerFullName()
+    if not name then return end
     for _, cat in ipairs(Guild.CATEGORIES) do
         local e = scores[cat]
         local best = type(e) == "table" and e.best
-        if type(best) == "table" and best.name == name and best.realm == rname and not mine[cat] then
+        if type(best) == "table" and best.name == name and not mine[cat] then
             local cs = Guild.Cs(best.time)
             local at = math.floor(tonumber(best.at) or 0)
             if cs and at >= Guild.MIN_AT and at <= Guild.MAX_AT then mine[cat] = { cs = cs, at = at } end
@@ -320,10 +375,10 @@ function Social.View()
     end
     local s = social(false)
     local bucket = s and type(s.guilds) == "table" and s.guilds[gk]
-    local key, r, m = ownKey(), realm(), mine(false)
+    local key, m = ownKey(), mine(false)
     view.ranking = function(category)
         local list = Guild.Ranking(bucket, category, { key = key, best = m and m[category] })
-        for _, e in ipairs(list) do e.name = Guild.Display(e.key, r) end
+        for _, e in ipairs(list) do e.name = Guild.Display(e.key) end
         return list
     end
     return view
@@ -368,7 +423,7 @@ local function difficultyLabel(cat)
 end
 
 local function toastText(t)
-    return string.format(GS.L["%s cleared %s in %s, a new guild best!"], Guild.Display(t.key, realm()),
+    return string.format(GS.L["%s cleared %s in %s, a new guild best!"], Guild.Display(t.key),
         difficultyLabel(t.cat), GS.Window.GuildTime(t.cs))
 end
 
@@ -429,7 +484,7 @@ end
 
 local function receive(text, channel, sender)
     if channel ~= "GUILD" then return end
-    local key = Guild.Key(sender, realm())
+    local key = Guild.Key(sender)
     if not key or key == ownKey() then return end      -- our own echo
     local msg = Guild.Parse(text)
     if not msg then return end
@@ -463,8 +518,13 @@ local function receive(text, channel, sender)
     if msg.type == "N" then
         local r = msg.records[1]
         local known = fastestKnown(gk, r.cat, nil)
+        local s = social(false)
+        local held = s and type(s.guilds) == "table" and type(s.guilds[gk]) == "table" and s.guilds[gk][key]
+        local cutoff = type(held) == "table" and type(held.resetAt) == "number" and held.resetAt
         if db().guildToasts == false then
             slog("  no toast: the setting is off")
+        elseif cutoff and r.at < cutoff then
+            slog("  no toast: from before their reset (%d)", cutoff)
         elseif not synced(gk) then
             slog("  no toast: not synced (heard %s, first query %s)", tostring(heard[gk]),
                 firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never")

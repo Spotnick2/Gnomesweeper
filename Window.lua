@@ -179,7 +179,7 @@ local function recordScores(was, state)
             time = game:Elapsed(GetTime()),
             at = time(),
             name = API.PlayerFullName(),
-            realm = GetRealmName(),
+            realm = API.RealmName(),          -- nil since the realm is hidden (#98)
         })
         lastWin = { new = isNew, previous = previous }
     end

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The guild's best times survive the realm going dark**: since a server change on November 20 the game no longer tells addons which realm you're on. Your guild times, and your guildmates', are now kept by character name, and the times you already had are carried over on your next login. A guildmate no longer shows twice in the Guild tab, or with a realm stuck to their name.
+
 ## v1.0.0
 
 Gnomesweeper 1.0: a new coat of glass.

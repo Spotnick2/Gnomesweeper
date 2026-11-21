@@ -57,12 +57,13 @@ the account's best. So a new store, kept from now on:
   that clears the board at 0 s is a real best for the "You" tab, but not one to rank a guild by)
   to **9,999,999** (about 27 hours: a bound for the wire, not a rule of the game; 999 s is only the
   clock's display).
-- **Seeded once:** an existing account record whose `name` is this character's full name **and**
-  whose `realm` is this character's realm becomes its first entry (two same-named characters on
-  different realms must not inherit each other's record). Other characters' past wins can't be split out after the fact; they start
+- **Seeded once:** an existing account record whose `name` is this character's full name becomes
+  its first entry. (It also matched the realm until the client hid it, #98: a full name is unique
+  region-wide.) Other characters' past wins can't be split out after the fact; they start
   when this ships.
-- **Reset best times** clears these too. It can't retract copies peers already hold (their caches
-  forget a member after 30 days of silence).
+- **Reset best times** clears these too, and an `R` tells the guildmates online to drop this
+  character's times from before it (each other character of the account sends its own at its next
+  login). A guildmate offline then never hears it, and keeps its copy.
 
 ## The wire format (v1)
 
@@ -129,7 +130,31 @@ phases 1 and 2). Our own echo is recognised by identity and dropped.
 | `GetRealmName()`, `GetNormalizedRealmName()` | `"Classic Beta PvE"`, `"ClassicBetaPvE"` |
 | `GetGuildInfo("player")` | `"Parse Partout", "Veteran", 4, "ClassicBetaPvE2"`: the 4th is the **guild's realm, not ours** |
 
-So:
+**Measured again after the hotfix (2026-11-20, `/gsweep guildprobe` on Drucida Komakino in Parse
+Partout, v1.0.0 deployed):**
+
+| Asked | Answer |
+|---|---|
+| `GetRealmName()`, `GetNormalizedRealmName()` | `""`, `""` |
+| `GetGuildInfo("player")` | `"Parse Partout", "Member", 5, nil`: the guild's realm is gone too |
+| `UnitName("player")`, `UnitFullName("player")` | `"Drucida", "Komakino"` both, as before |
+| The echo's sender (and target), `Ambiguate` | `"Drucida Komakino"`, unchanged by every context: as before |
+| `SendAddonMessage(..., "GUILD")` | `0`, and the echo arrives |
+
+v1.0.0 keyed that guild `"Parse Partout-"` (the realm blank): the split #98 fixes.
+
+**Since the 2026-11-20 server hotfix the realm is hidden (#98):** `GetRealmName()` answers `""` and
+`GetRealmID()` `0`, on purpose (porting guide, "The realm is hidden since the 2026-11-20 server
+hotfix"). And the realm never told anyone apart here: guild senders carry none, even across two realms,
+and the guild key switched between two realms at login (`GetGuildInfo`'s 4th answer arrives late).
+**Keys are names now:** a member is the full name the guild sends (a `-Realm` on one is dropped), we are
+`API.PlayerFullName()`, a guild is its name (two same-named guilds on two realms of one account would
+share a list: accepted). A `social` table at version 1 is migrated once to version 2 on its first read:
+every `Name-Realm` / `Guild-Realm` key renamed bare, same names joined (the better time per category,
+the later `seen`, the later reset as the cutoff). The wire format doesn't change. What follows is the
+design before it, kept for the measurements.
+
+So (until #98):
 
 - **The member key** is the sender as received, with `"-" .. GetNormalizedRealmName()` added when
   it carries no realm: `"Kaleid Sumner-ClassicBetaPvE"`. A sender that carries a `-Realm` is kept as
@@ -157,12 +182,12 @@ So:
 
 ```lua
 GnomesweeperDB.social = {
-    version = 1,
+    version = 2,                              -- 2 since #98: keys are names, no realm
     mine = {                                  -- our characters' own bests (the store above)
         [memberKey] = { ["expert:area"] = { cs = 8412, at = 1791234567 }, ... },
     },
     guilds = {
-        [guildKey] = {                        -- the guild's name and our realm; renames leave an old bucket to expire
+        [guildKey] = {                        -- the guild's name; renames leave an old bucket to expire
             [memberKey] = { seen = <local epoch>, bests = { [category] = { cs =, at = } } },
         },
     },

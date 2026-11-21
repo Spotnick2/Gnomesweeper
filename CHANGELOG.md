@@ -1,8 +1,11 @@
 # Changelog
 
-## Unreleased
+## v1.0.1
+
+A hotfix for the guild's best times.
 
 - **The guild's best times survive the realm going dark**: since a server change on November 20 the game no longer tells addons which realm you're on. Your guild times, and your guildmates', are now kept by character name, and the times you already had are carried over on your next login. A guildmate no longer shows twice in the Guild tab, or with a realm stuck to their name.
+- **No more toasts for old times**: a guildmate's time from before they reset their best times no longer pops up as a new guild record.
 
 ## v1.0.0
 

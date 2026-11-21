@@ -100,7 +100,8 @@ local function keepBetter(list)                    -- mine: a character's bests
             end
         end
     end
-    return m
+    -- Nothing usable: no entry at all, so the name-based seed from the scores still runs (Codex, #99).
+    return next(m) and m or nil
 end
 local function latest(list)                        -- resetSent: the latest reset already sent
     local v

@@ -82,6 +82,7 @@ local function from(sender, msg) WoW.fire("CHAT_MSG_ADDON", "GSWEEP", msg, "GUIL
 local function cache() return GnomesweeperDB.social and GnomesweeperDB.social.guilds[GKEY] end
 local function login() WoW.fire("PLAYER_ENTERING_WORLD", true, false); WoW.advance(5.5) end
 local T = 1790000000
+local function S_rank(cat) local r = Gnomesweeper.Social.Ranking(cat)[1]; return r and r.cs end
 
 do  -- login: one query, once a session
     loadAddon()
@@ -328,12 +329,30 @@ do  -- the reset already sent, under two keys (Codex, #98): the latest counts, n
     eq(#sent("R"), 1, "an older mark and a damaged one: the reset goes, once")
 end
 
+do  -- a damaged old entry of ours: the scores still seed it (Codex, #99)
+    loadAddon({ db = {
+        scores = { version = 1,
+            ["expert:area"] = { played = 9, won = 3, best = { time = 70.5, at = T - 100, name = "Fizzle Sprocketwhistle", realm = "Forever" } } },
+        social = { version = 1, mine = {
+            ["Fizzle Sprocketwhistle-Forever"] = "damaged",
+            ["Ann Gear-Forever"] = { ["expert:area"] = { cs = 5, at = T } },
+        } } } })
+    WoW.guild = GUILD
+    login()
+    local mine = GnomesweeperDB.social.mine
+    local ours = mine["Fizzle Sprocketwhistle"]
+    eq(ours and ours["expert:area"] and ours["expert:area"].cs, 7050,
+        "a damaged entry migrates to nothing, and our best is seeded from the scores")
+    eq(mine["Ann Gear"], nil, "...an alt's entry with nothing usable goes")
+    eq(S_rank("expert:area"), 7050, "...and the Guild tab shows it")
+end
+
 do  -- a fresh table is version 2, never migrated; a damaged version counts as 1
     loadAddon()
     WoW.guild = GUILD
     Gnomesweeper.Social.RecordWin("expert:area", 80)
     eq(GnomesweeperDB.social.version, 2, "a new table starts at version 2")
-    loadAddon({ db = { social = { version = "x", mine = { ["Ann Gear-Forever"] = {} } } } })
+    loadAddon({ db = { social = { version = "x", mine = { ["Ann Gear-Forever"] = { ["expert:area"] = { cs = 9000, at = T } } } } } })
     WoW.guild = GUILD
     Gnomesweeper.Social.Ranking("expert:area")
     check(GnomesweeperDB.social.mine["Ann Gear"] ~= nil and GnomesweeperDB.social.version == 2, "a damaged version is migrated")

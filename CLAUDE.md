@@ -630,8 +630,8 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
     pair against the build (a model scene's actor's too: the kit has its methods, WowTestKit #90), and
     no error may be swallowed by a `pcall` meanwhile (the addon calls the model scenes' setters
     through `pcall`, where a missing method would vanish);
-  - `done()` fails on a printed line with a bare `|` (the client reads it as an escape): the help's
-    three known ones (#95) are let through by `acceptKnownStrays()` until that's fixed;
+  - `done()` fails on a printed line with a bare `|` (the client reads it as an escape): write
+    alternatives in words ("beginner, intermediate or expert", #95), never with a `|`;
   - a tick moves `GetTime()` on by its elapsed before `OnUpdate` runs (`WoW.step` also runs the
     timers due), and hiding a frame runs `OnHide` on its shown descendants, as on the client;
   - the stub models the scale chain (`GetEffectiveScale`), so a position compared in the wrong

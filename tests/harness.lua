@@ -117,25 +117,3 @@ function loadPure(env, file)
     return env.Gnomesweeper
 end
 
--- FINDING (#95): three of /gsweep help's lines hold a bare "|" ("beginner | intermediate
--- | expert", "scale 0.5 to 1.5 | reset", "models | models perf"), which the client reads
--- as an escape. done() fails on any stray "|"; a test that prints the help lets exactly
--- those lines through until #95 is fixed, so any other stray still fails. Returns how
--- many it let through (the test checks the number).
-local KNOWN_STRAYS = {
-    "/gsweep beginner | intermediate | expert - start a game at that difficulty",
-    "/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)",
-    "/gsweep models | models perf - every candidate creature model (loaded, textured, its animations), then their frame cost over the board (for measuring), kept for /reload to save",
-}
-function acceptKnownStrays()
-    local keep, known = {}, 0
-    for _, line in ipairs(WoW.strays) do
-        local ok = false
-        for _, text in ipairs(KNOWN_STRAYS) do
-            if line:find(text, 1, true) then ok = true end
-        end
-        if ok then known = known + 1 else keep[#keep + 1] = line end
-    end
-    WoW.strays = keep
-    return known
-end

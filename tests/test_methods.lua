@@ -180,5 +180,4 @@ local recorded = Kit.checkMethods()
 check(recorded >= 180, "the exercise reached the windows (" .. recorded .. " recorded)")
 
 -- FINDING (#95): /gsweep help printed once, its three lines with a bare "|".
-eq(acceptKnownStrays(), 3, "the help's known stray | lines (#95), and no other")
 done("test_methods")

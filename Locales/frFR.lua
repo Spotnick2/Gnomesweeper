@@ -175,8 +175,8 @@ local T = {
     -- The slash commands' help (the commands themselves stay English)
     ["/gsweep - open or close the board (also /gnomesweeper, /minewipe)"] =
         "/gsweep - ouvre ou ferme le plateau (aussi /gnomesweeper, /minewipe)",
-    ["/gsweep beginner | intermediate | expert - start a game at that difficulty"] =
-        "/gsweep beginner | intermediate | expert - lance une partie à cette difficulté",
+    ["/gsweep beginner, intermediate or expert - start a game at that difficulty"] =
+        "/gsweep beginner, intermediate ou expert - lance une partie à cette difficulté",
     ["/gsweep scores - your best times (also the trophy in the title bar)"] =
         "/gsweep scores - vos meilleurs temps (aussi le trophée dans la barre de titre)",
     ["/gsweep settings - open the settings (Options > AddOns > Gnomesweeper; also the gear)"] =
@@ -188,8 +188,8 @@ local T = {
     ["/gsweep minimap - show or hide the minimap button"] = "/gsweep minimap - affiche ou masque le bouton de la minicarte",
     ["/gsweep reset - put the window back in the middle of the screen"] =
         "/gsweep reset - remet la fenêtre au milieu de l'écran",
-    ["/gsweep scale 0.5 to 1.5 | reset - resize the window (it never grows past the screen)"] =
-        "/gsweep scale 0.5 à 1.5 | reset - redimensionne la fenêtre (jamais plus grande que l'écran)",
+    ["/gsweep scale 0.5 to 1.5, or scale reset - resize the window (it never grows past the screen)"] =
+        "/gsweep scale 0.5 à 1.5, ou scale reset - redimensionne la fenêtre (jamais plus grande que l'écran)",
 
     -- Chat
     ["Gnomeregan's music on."] = "musique de Gnomeregan activée.",

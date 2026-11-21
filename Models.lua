@@ -53,7 +53,7 @@ Models.HEIGHT = 104
 Models.FRAME = 180
 Models.WAIT = 0.5              -- a model not in by then is skipped: the panel is drawn without it
 local POLL = 0.1
-local FOV, CAMERA = 0.15, 40   -- AltStable's framing (ModelProbe uses the same)
+local FOV, CAMERA = 0.15, 40   -- AltStable's framing (the probe's models sheet uses the same)
 
 local function db() return GnomesweeperDB end
 

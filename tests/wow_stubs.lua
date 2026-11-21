@@ -334,4 +334,5 @@ WoW.reset()
 -- LibStub: read by its own loader before it exists (the harness clears it for
 -- each load, so the embedded LibGlass-1.0 starts fresh). ChatThrottleLib: read
 -- before it exists, by the library itself and by Social (rawget).
-Kit.strict({ Gnomesweeper = true, GnomesweeperDB = true, LibStub = true, ChatThrottleLib = true })
+Kit.strict({ Gnomesweeper = true, GnomesweeperDB = true, LibStub = true, ChatThrottleLib = true,
+    GnomesweeperProbeDB = true })   -- the probe's (#87): read at its ADDON_LOADED, before it exists

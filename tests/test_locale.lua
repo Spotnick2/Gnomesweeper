@@ -274,7 +274,7 @@ do
         WoW.slash("/gsweep " .. cmd)
     end
     for _, line in ipairs(WoW.chat) do
-        if not line:find("(for measuring)", 1, true) then look("chat", line) end   -- the probes stay English
+        look("chat", line)
     end
 
     eq(BINDING_NAME_GNOMESWEEPER_TOGGLE:sub(1, #OPEN), OPEN, "the key binding's name goes through L")

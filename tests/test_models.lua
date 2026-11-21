@@ -324,30 +324,4 @@ do
     eq(GnomesweeperDB.models, false, "a bad value is refused")
 end
 
-----------------------------------------------------------------------------
--- /gsweep bomb (for measuring): the panel's model again
-----------------------------------------------------------------------------
-do
-    local W, ui = board()
-    W.win:Hide()
-    WoW.slash("/gsweep bomb")
-    check(said("open the board first"), "it needs the board open")
-    W.win:Show()
-    WoW.slash("/gsweep bomb")
-    check(said("end a game first"), "...and an end panel")
-    wipe()
-    WoW.advance(2)
-    local actor = ui.slot._test.actor()
-    eq(actor._anim, 6, "(lying there)")
-    WoW.slash("/gsweep bomb")
-    eq(actor._anim, 1, "it goes off again")
-    check(said("display 6977: 1 (1.50 s), 6 (held, lift 24); drawn " .. Gnomesweeper.Models.HEIGHT .. " units tall"), "the chat says what it plays")
-    Gnomesweeper.Options.Set("models", false)
-    WoW.slash("/gsweep bomb")
-    check(said("3D models are off"), "with the setting off, it says so")
-    local found
-    for _, line in ipairs(Gnomesweeper.HELP) do if line:find("/gsweep bomb", 1, true) then found = line end end
-    check(found and found:find("(for measuring)", 1, true), "in the help, as a measuring command")
-end
-
 done("test_models")

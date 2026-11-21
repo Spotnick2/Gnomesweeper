@@ -1,16 +1,10 @@
--- Assets.lua: /gsweep assets, the contact sheet of every texture (#6).
+-- The probe's Assets.lua (Tools/GnomesweeperProbe, #87): /fp sweep assets, the contact
+-- sheet of every texture (#6). Loads ForeverProbe from its checkout: local only.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
-local function chatHas(text)
-    for _, line in ipairs(WoW.chat) do
-        if line:find(text, 1, true) then return true end
-    end
-    return false
-end
-
-loadAddon()
-local A, Skin = Gnomesweeper.Assets, Gnomesweeper.Skin
+local NS = loadProbe()
+local A, Skin = NS.Assets, Gnomesweeper.Skin
 local T = Skin.TEXTURES
 
 ----------------------------------------------------------------------------
@@ -56,6 +50,7 @@ do   -- a GetFileIDFromPath that throws is a failed check, not a crash
         if e.kind == "path" then eq(e.checked, false, "a throwing check is recorded as not checked") end
     end
     eq(#A.Missing(entries), 0, "...and is not reported as missing")
+    check(probeSaid("GetFileIDFromPath: ERROR"), "...and the log says which call failed (Probe:Try, Codex review of #104)")
     GetFileIDFromPath = real
 end
 
@@ -63,13 +58,13 @@ end
 -- The sheet
 ----------------------------------------------------------------------------
 do
-    loadAddon()
-    A, Skin, T = Gnomesweeper.Assets, Gnomesweeper.Skin, Gnomesweeper.Skin.TEXTURES
+    NS = loadProbe()
+    A, Skin, T = NS.Assets, Gnomesweeper.Skin, Gnomesweeper.Skin.TEXTURES
     WoW.fileIDs = { [T.gear] = 136243 }
     check(rawget(_G, "GnomesweeperAssets") == nil, "nothing is built until it is asked for")
-    WoW.slash("/gsweep assets")
+    probeSlash("assets")
     local sheet = A._test.sheet()
-    check(sheet ~= nil and sheet:IsShown(), "/gsweep assets shows the sheet")
+    check(sheet ~= nil and sheet:IsShown(), "/fp sweep assets shows the sheet")
     eq(sheet:GetFrameStrata(), "FULLSCREEN_DIALOG", "...over the game")
     local special = 0
     for _, name in ipairs(UISpecialFrames) do if name == "GnomesweeperAssets" then special = special + 1 end end
@@ -93,33 +88,35 @@ do
     eq(byKey.mine.state:GetText(), "client id " .. tostring(T.mine), "a file ID says so")
     eq(byKey.flag.state:GetText(), "ours", "our own file says so")
 
-    check(chatHas("textures on the sheet"), "it reports in chat")
-    check(chatHas("Client paths it doesn't have: none"), "...that no client path is missing")
+    check(probeSaid("textures on the sheet"), "it reports in the probe's log")
+    check(probeSaid("Client paths it doesn't have: none"), "...that no client path is missing")
+    eq(#WoW.chat, 0, "...and never in chat")
 
     -- Saved, for a /reload to write out.
-    local probe = GnomesweeperDB.assetProbe
+    local probe = GnomesweeperProbeDB.assets
+    eq(GnomesweeperDB.assetProbe, nil, "(nothing in the addon's own saved table)")
     eq(probe.build, "1.60.1.71037", "the results are saved with the build")
     eq(probe.entries.gear.fileID, 136243, "...and each texture's result")
     eq(probe.entries.mine.kind, "fileID", "...and its kind")
     eq(probe.entries.flag.value, T.flag, "...and its value")
 
-    WoW.slash("/gsweep assets")
+    probeSlash("assets")
     check(not sheet:IsShown(), "again hides it")
 
     -- A missing path, the next time it opens.
     WoW.fileIDs = {}
-    WoW.chat = {}
-    WoW.slash("/gsweep assets")
+    NS.P:ClearLog()
+    probeSlash("assets")
     eq(byKey.gear.state:GetText(), "path: MISSING", "a path the client lacks says MISSING")
     eq(byKey.gear.state._textColor[1], Skin.COLORS.boom[1], "...in red")
-    check(chatHas("Client paths it doesn't have: gear"), "...and chat names it")
-    check(chatHas("/reload saves the results"), "...and says how to keep the results")
+    check(probeSaid("Client paths it doesn't have: gear"), "...and the log names it")
+    check(probeSaid("/reload saves the results"), "...and says how to keep the results")
     local frames = #WoW.frames
-    WoW.slash("/gsweep assets"); WoW.slash("/gsweep assets")
+    probeSlash("assets"); probeSlash("assets")
     eq(#WoW.frames, frames, "reopening builds nothing new")
 
     sheet.close._scripts.OnClick(sheet.close)
     check(not sheet:IsShown(), "the close button closes it")
 end
 
-done("test_assets")
+done("test_probe_assets")

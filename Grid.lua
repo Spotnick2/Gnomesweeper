@@ -34,7 +34,6 @@ local T = Skin.TEXTURES
 local host, act, game, input
 local tiles = {}              -- the pool: tiles[i] is cell i's button
 local interactive = true
-local logging = false
 local paints = 0              -- tiles actually repainted (tests count this)
 
 ------------------------------------------------------------
@@ -160,36 +159,6 @@ end
 -- Mouse
 ------------------------------------------------------------
 
--- Printed to chat AND kept in GnomesweeperDB.inputLog (the last MAX_LOG lines), so
--- a /reload writes them to the SavedVariables file and they can be read without
--- copying them out of the chat window. Debug data: it exists only after
--- /gsweep input has been used.
-local MAX_LOG = 300
-
-local function log(fmt, ...)
-    if not logging then return end
-    local line = string.format(fmt, ...)
-    print("|cff7fd4ffGnome|rsweeper input: " .. line)
-    local db = GnomesweeperDB
-    if type(db) == "table" then
-        local lines = db.inputLog
-        if type(lines) ~= "table" then lines = {}; db.inputLog = lines end
-        lines[#lines + 1] = string.format("%.3f  %s", GetTime(), line)
-        if #lines > MAX_LOG then table.remove(lines, 1) end
-    end
-end
-
--- Turning it on starts a fresh log.
--- For Window.Dispatch: it records what an action did, beside the raw events.
-function Grid.Log(fmt, ...) log(fmt, ...) end
-
-function Grid.SetLogging(on)
-    on = on and true or false
-    if on and not logging and type(GnomesweeperDB) == "table" then GnomesweeperDB.inputLog = {} end
-    logging = on
-end
-function Grid.Logging() return logging end
-
 local shuffling              -- seconds into the new-game wave, or nil
 local swallowed = {}         -- buttons held since a press that ended the wave
 local held = {}              -- buttons down on a tile right now (the face looks surprised, #10)
@@ -203,14 +172,12 @@ local function release(button)
 end
 
 local function onDown(self, button)
-    log("tile %d  down  %s", self.index, tostring(button))
     -- A press during the wave finishes it and is not a click, and neither is any
     -- other button pressed before all of them are up again: a left+right begun
     -- in the wave must not plant a flag on the new board.
     if shuffling or next(swallowed) then
         if shuffling then
             Grid.FinishShuffle()
-            log("tile %d  %s ended the new-game wave (not a click)", self.index, tostring(button))
         end
         swallowed[button] = true
         return
@@ -226,10 +193,6 @@ local function onUp(self, button, upInside)
     -- passes upInside); if it doesn't, ask the frame.
     local inside = upInside
     if inside == nil then inside = self:IsMouseOver() end
-    if logging then
-        log("tile %d  up    %s  upInside=%s  IsMouseOver=%s", self.index, tostring(button),
-            tostring(upInside), tostring(self:IsMouseOver()))
-    end
     if swallowed[button] then swallowed[button] = nil; return end   -- the gesture that ended the wave
     release(button)
     input:Up(self.index, button, inside)
@@ -378,51 +341,6 @@ function Grid.Rebuild(board)
         t:Show()
     end
     for i = board.total + 1, #tiles do tiles[i]:Hide() end
-end
-
-------------------------------------------------------------
--- Timing (/gsweep perf)
-------------------------------------------------------------
-
-local function timed(fn)
-    local t0 = debugprofilestop()
-    local n = fn()
-    return debugprofilestop() - t0, n
-end
-
--- Times the heavy operations on a scratch Expert board, then the caller puts
--- the real game back (Window.Benchmark does). Returns lines of text.
-function Grid.Benchmark()
-    local out = {}
-    local ex, bg = Board.PRESETS.expert, Board.PRESETS.beginner
-    local big = Board.New(ex.w, ex.h, ex.mines)
-    local small = Board.New(bg.w, bg.h, bg.mines)
-    local created = #tiles
-    local ms, n = timed(function() Grid.Rebuild(big); return math.max(0, big.total - created) end)
-    out[#out + 1] = string.format("build Expert: %.1f ms (%d new tiles)", ms, n)
-    ms, n = timed(function()
-        local list = big:Reveal(15, 8, GetTime())
-        Grid.Refresh(list)
-        return #list
-    end)
-    out[#out + 1] = string.format("first reveal and repaint: %.1f ms (%d cells)", ms, n)
-    for i = 1, big.total do                               -- find a mine (the scratch board's own field)
-        if big._mine[i] then
-            local x, y = big:XY(i)
-            ms, n = timed(function()
-                local list = big:Reveal(x, y, GetTime())
-                Grid.Refresh(list)
-                return #list
-            end)
-            out[#out + 1] = string.format("a loss, every mine shown: %.1f ms (%d cells)", ms, n)
-            break
-        end
-    end
-    ms = timed(function()
-        for _ = 1, 5 do Grid.Rebuild(small); Grid.Rebuild(big) end
-    end)
-    out[#out + 1] = string.format("10 difficulty switches: %.1f ms", ms)
-    return out
 end
 
 Grid._test = {

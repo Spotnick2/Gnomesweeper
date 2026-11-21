@@ -1,4 +1,5 @@
--- ModelProbe.lua: /gsweep models, the model probe (#20). Which creature models
+-- Models.lua: /fp sweep models, the model probe (GnomesweeperProbe, #87; was
+-- /gsweep models, #20). Which creature models
 -- render on this client, how long they take, which animations they have, and
 -- what a scene costs over the board: what #21 (live models) builds on.
 --
@@ -18,17 +19,16 @@
 -- (declared, unmeasured) and a DressUpModel's SetUnit("player") (measured in
 -- AltStable: textured).
 --
--- /gsweep models perf: the frame rate over the open board for 5 s, then 5 s with
+-- /fp sweep modelperf: the frame rate over the open board for 5 s, then 5 s with
 -- a head over the face and a bomb over the tiles, as #21 would draw them.
 --
--- Everything is kept in GnomesweeperDB.modelProbe, so a /reload writes it to the
+-- Everything is kept in GnomesweeperProbeDB.models, so a /reload writes it to the
 -- SavedVariables file to be read from disk. A probe: its text stays English.
 
-local ADDON = ...
-Gnomesweeper = Gnomesweeper or {}
+local ADDON, NS = ...
 local GS = Gnomesweeper
 local Probe = {}
-GS.ModelProbe = Probe
+NS.Models = Probe
 
 local Glass, Skin, Widgets = GS.Glass, GS.Skin, GS.Widgets
 local C = Skin.COLORS
@@ -95,14 +95,14 @@ Probe.ANIMS = {
 local sheet, viewer, perf
 local cells = {}
 
-local function Print(msg) print("|cff7fd4ffGnome|rsweeper: " .. msg) end
+local function Print(msg) NS.say(msg) end
 
 local function record()
-    local probe = type(GnomesweeperDB.modelProbe) == "table" and GnomesweeperDB.modelProbe or {}
-    local version, build = GetBuildInfo()
-    probe.build = tostring(version) .. "." .. tostring(build)
+    local db = NS.db()
+    local probe = type(db.models) == "table" and db.models or {}
+    probe.build = NS.build()
     probe.candidates = probe.candidates or {}
-    GnomesweeperDB.modelProbe = probe
+    db.models = probe
     return probe
 end
 
@@ -113,7 +113,7 @@ end
 -- The box as Forever returns it: six numbers (measured in AltStable), or Retail's
 -- two vectors should a later build switch. nil until the model has loaded.
 function Probe.ReadBox(actor)
-    local r = { pcall(actor.GetActiveBoundingBox, actor) }
+    local r = { NS.P:Try("actor.GetActiveBoundingBox", actor.GetActiveBoundingBox, actor) }
     if not r[1] then return nil end
     local x0, y0, z0, x1, y1, z1
     if type(r[2]) == "table" and type(r[3]) == "table" then
@@ -131,19 +131,19 @@ end
 
 -- A scene with one actor, set up as AltStable's pets are. nil without ModelScene.
 local function newScene(parent, size)
-    local ok, scene = pcall(CreateFrame, "ModelScene", nil, parent)
+    local ok, scene = NS.P:Try("CreateFrame", CreateFrame, "ModelScene", nil, parent)
     local okA, actor
-    if ok and scene then okA, actor = pcall(scene.CreateActor, scene) end
+    if ok and scene then okA, actor = NS.P:Try("scene.CreateActor", scene.CreateActor, scene) end
     if not (okA and actor) then return nil end
     scene:SetSize(size, size)
-    pcall(scene.SetCameraFieldOfView, scene, FOV)
-    pcall(scene.SetCameraNearClip, scene, 0.1)
-    pcall(scene.SetCameraFarClip, scene, 100)
-    pcall(scene.SetCameraPosition, scene, CAMERA, 0, 0)
-    pcall(scene.SetCameraOrientationByYawPitchRoll, scene, math.pi, 0, 0)
-    pcall(actor.SetUseCenterForOrigin, actor, true, true, true)
-    pcall(actor.SetPosition, actor, 0, 0, 0)
-    pcall(actor.SetParticleOverrideScale, actor, 0)
+    NS.P:Try("scene.SetCameraFieldOfView", scene.SetCameraFieldOfView, scene, FOV)
+    NS.P:Try("scene.SetCameraNearClip", scene.SetCameraNearClip, scene, 0.1)
+    NS.P:Try("scene.SetCameraFarClip", scene.SetCameraFarClip, scene, 100)
+    NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, 0)
+    NS.P:Try("scene.SetCameraOrientationByYawPitchRoll", scene.SetCameraOrientationByYawPitchRoll, scene, math.pi, 0, 0)
+    NS.P:Try("actor.SetUseCenterForOrigin", actor.SetUseCenterForOrigin, actor, true, true, true)
+    NS.P:Try("actor.SetPosition", actor.SetPosition, actor, 0, 0, 0)
+    NS.P:Try("actor.SetParticleOverrideScale", actor.SetParticleOverrideScale, actor, 0)
     scene:EnableMouse(false)
     scene.actor = actor
     return scene
@@ -159,11 +159,11 @@ local function fit(scene, box, head)
     if head then
         local crop = Probe.headCrop
         local s = span / (box.h * crop.size)
-        pcall(actor.SetScale, actor, s)
-        pcall(scene.SetCameraPosition, scene, CAMERA, 0, s * box.h * (crop.center - 0.5))
+        NS.P:Try("actor.SetScale", actor.SetScale, actor, s)
+        NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, s * box.h * (crop.center - 0.5))
     else
-        pcall(actor.SetScale, actor, span / (box.h * MARGIN))
-        pcall(scene.SetCameraPosition, scene, CAMERA, 0, 0)
+        NS.P:Try("actor.SetScale", actor.SetScale, actor, span / (box.h * MARGIN))
+        NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, 0)
     end
 end
 
@@ -177,12 +177,12 @@ local function load(scene, c, head, done)
     -- could otherwise answer with the previous one's box, or keep drawing it (review).
     scene:Hide()
     scene.box = nil
-    pcall(actor.ClearModel, actor)
+    NS.P:Try("actor.ClearModel", actor.ClearModel, actor)
     local ok, set
     if c.unit then
-        ok, set = pcall(actor.SetModelByUnit, actor, c.unit)
+        ok, set = NS.P:Try("actor.SetModelByUnit", actor.SetModelByUnit, actor, c.unit)
     else
-        ok, set = pcall(actor.SetModelByCreatureDisplayID, actor, c.display)
+        ok, set = NS.P:Try("actor.SetModelByCreatureDisplayID", actor.SetModelByCreatureDisplayID, actor, c.display)
     end
     result.set = ok and set ~= false
     if not ok then result.error = tostring(set) end
@@ -198,7 +198,7 @@ local function load(scene, c, head, done)
         local box = Probe.ReadBox(actor)
         if box then
             result.box, result.seconds = box, GetTime() - t0
-            local okL, loaded = pcall(actor.IsLoaded, actor)
+            local okL, loaded = NS.P:Try("actor.IsLoaded", actor.IsLoaded, actor)
             result.loaded = okL and loaded or nil
             fit(scene, box, head)
             scene:Show()
@@ -234,7 +234,7 @@ local function showAnim()
     viewer.anim = a[1]
     viewer.label:SetText(string.format("%s%s  -  %d/%d: %s (%d)", viewer.c.name,
         viewer.c.display and (" (" .. viewer.c.display .. ")") or "", viewer.animIndex, #Probe.ANIMS, a[2], a[1]))
-    for _, s in ipairs(viewer.scenes) do pcall(s.actor.SetAnimation, s.actor, viewer.anim) end
+    for _, s in ipairs(viewer.scenes) do NS.P:Try("s.actor.SetAnimation", s.actor.SetAnimation, s.actor, viewer.anim) end
 end
 
 local function step(by)
@@ -247,7 +247,7 @@ end
 local function setParticles(on)
     viewer.particles = on
     viewer.sparks.label:SetText(on and "Particles: on" or "Particles: off")
-    for _, s in ipairs(viewer.scenes) do pcall(s.actor.SetParticleOverrideScale, s.actor, on and 1 or 0) end
+    for _, s in ipairs(viewer.scenes) do NS.P:Try("s.actor.SetParticleOverrideScale", s.actor.SetParticleOverrideScale, s.actor, on and 1 or 0) end
 end
 
 -- Tune the head crop by eye (#20: the first guess was off): the two head scenes are
@@ -359,7 +359,7 @@ local function buildCell(i, c)
     cell.bg:SetPoint("TOP", cell, "TOP", 0, 0)
     cell.bg:SetColorTexture(0.10, 0.12, 0.17, 1)
     if c.dressUp then
-        local ok, m = pcall(CreateFrame, "DressUpModel", nil, cell)
+        local ok, m = NS.P:Try("CreateFrame", CreateFrame, "DressUpModel", nil, cell)
         if ok and m then
             m:SetSize(SCENE, SCENE)
             m:SetPoint("TOP", cell, "TOP", 0, 0)
@@ -454,7 +454,7 @@ local function survey()
         probe.candidates[c.key] = entry
         if c.dressUp then
             if cell.model then
-                local ok, err = pcall(cell.model.SetUnit, cell.model, "player")
+                local ok, err = NS.P:Try("cell.model.SetUnit", cell.model.SetUnit, cell.model, "player")
                 entry.set = ok
                 if not ok then entry.error = tostring(err) end
                 cell.state:SetText(ok and "SetUnit(\"player\")" or "error")
@@ -490,10 +490,10 @@ local function survey()
     finished()
 end
 
--- /gsweep models: show (or hide) the sheet; each show loads everything afresh.
+-- /fp sweep models: show (or hide) the sheet; each show loads everything afresh.
 function Probe.Toggle()
     if sheet and sheet:IsShown() then sheet:Hide(); return end
-    local saved = type(GnomesweeperDB.modelProbe) == "table" and GnomesweeperDB.modelProbe.headCrop
+    local saved = type(NS.db().models) == "table" and NS.db().models.headCrop
     if type(saved) == "table" and tonumber(saved.size) and tonumber(saved.center) then
         Probe.headCrop.size, Probe.headCrop.center = tonumber(saved.size), tonumber(saved.center)
     end
@@ -503,7 +503,7 @@ function Probe.Toggle()
 end
 
 ----------------------------------------------------------------------------
--- /gsweep models perf
+-- /fp sweep modelperf
 ----------------------------------------------------------------------------
 
 -- The two scenes belong to the probe (a frame on UIParent), drawn OVER the face and
@@ -540,9 +540,12 @@ end
 -- sheet is closed first (its own scenes would count in both), and a run is dropped,
 -- unsaved, if the board goes away (Escape, a fight, Settings) before it ends.
 function Probe.Perf()
-    local face, fx = GS.Window.ModelHosts()
+    -- Where #21's models would go: the face button, and the effects layer over the tiles
+    -- (above them, under the end overlay). nil before the window is built.
+    local ui = GS.Window._test.ui
+    local face, fx = ui.face, ui.fx
     if not (GS.Window.IsShown() and face and fx) then
-        Print("open the board first (/gsweep expert is the worst case), then /gsweep models perf.")
+        Print("open the board first (/gsweep expert is the worst case), then /fp sweep modelperf.")
         return
     end
     perf = perf or CreateFrame("Frame", nil, UIParent)
@@ -580,7 +583,7 @@ function Probe.Perf()
             phase, waiting = "loading", 2
             load(scenes.head, byKey(Probe.PERF_FACE), true, function(r) arrived("headLoad", r) end)
             load(scenes.bomb, byKey(Probe.PERF_BOMB), false, function(r)
-                if r.box then pcall(scenes.bomb.actor.SetParticleOverrideScale, scenes.bomb.actor, 1) end
+                if r.box then NS.P:Try("scenes.bomb.actor.SetParticleOverrideScale", scenes.bomb.actor.SetParticleOverrideScale, scenes.bomb.actor, 1) end
                 arrived("bombLoad", r)
             end)
             return
@@ -596,6 +599,11 @@ function Probe.Perf()
 end
 
 function Probe.IsShown() return sheet ~= nil and sheet:IsShown() end
+
+NS.P:Command("models", function() Probe.Toggle() end,
+    "every candidate creature model (loaded, textured, its animations); click one for the viewer")
+NS.P:Command("modelperf", function() Probe.Perf() end,
+    "the frame rate over the open board for 5 s, then 5 s with a head and a bomb over it")
 
 Probe._test = {
     cells = cells,

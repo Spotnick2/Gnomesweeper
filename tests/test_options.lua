@@ -239,7 +239,7 @@ do
     box._scripts.OnTextChanged(box, false)
     eq(box:GetText(), "https://www.curseforge.com/wow/addons/gnomesweeper", "(a change by the code itself is left alone)")
     check(cmds:find("/gsweep perf", 1, true) == nil and cmds:find("/gsweep assets", 1, true) == nil,
-        "...but not the ones for measuring")
+        "...and no measuring command (GnomesweeperProbe's, #87)")
 end
 
 do  -- the first show builds the pages (owner: About was blank the first time, fine the second)

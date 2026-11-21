@@ -1,6 +1,6 @@
 -- Input.lua: mouse gestures to actions. Pure, loaded with every WoW global
 -- forbidden. The live-client matrix (which events Forever actually sends) is
--- measured in game with /gsweep input; this is what the machine does with them.
+-- measured in game with /gsweep input (now /fp sweep input, #87); this is what the machine does with them.
 dofile("tests/harness.lua")
 
 local env = newPureEnv()

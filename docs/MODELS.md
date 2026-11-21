@@ -94,20 +94,22 @@ dropdown's mascot. That's an idea, not a decision.
 
 ## The probe
 
-`ModelProbe.lua` (#20), in the addon as a measuring command:
+The probe's `Models.lua` (#20; `Tools/GnomesweeperProbe` since #87, which moved it out of the
+addon: `docs/FOREVER-PROBE.md`):
 
-1. **`/gsweep models`**: a sheet of every candidate above (23 displays and the player both ways),
+1. **`/fp sweep models`**: a sheet of every candidate above (23 displays and the player both ways),
    each in its own scene. A cell says how long its box took ("0.3s  h 1.20") or "no box in 3s";
    textured or white is judged by eye.
 2. **Click a model**: the viewer shows its whole body, its head at the face button's size (44) and
    a bigger head. `<` `>` walk a short named list (`Probe.ANIMS`: stand, talk, cheer, laugh, death, spell...;
    WoW's numbers, stable since vanilla; stepping every ID was too many to judge); **Particles** turns its effects on or off.
-3. **`/gsweep models perf`**, with the board open (`/gsweep expert` is the worst case): the frame
+3. **`/fp sweep modelperf`**, with the board open (`/gsweep expert` is the worst case): the frame
    rate for 5 s as it is, then 5 s with Tally Berryfizz's head on the face and a Walking Bomb (its
    particles on) over the tiles.
 
-Everything goes to `GnomesweeperDB.modelProbe`; a `/reload` writes it to
-`WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua`, to be read from disk. Record the results here
+Everything goes to `GnomesweeperProbeDB.models`; a `/reload` writes it to
+`WTF\Account\<acct>\SavedVariables\GnomesweeperProbe.lua`, to be read from disk. (The results below
+were measured with `/gsweep models`, before the move.) Record the results here
 (the build, what rendered, textured or not, the animation IDs, the frame cost), and the
 addon-agnostic ones in `C:\Projects\WoW\References\Docs\PORTING-TBC-TO-FOREVER.md`.
 

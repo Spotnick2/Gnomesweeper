@@ -168,7 +168,7 @@ So (until #98):
   entry.
 - **The beta's realms are pooled ("realmless"), which is why names travel without realms** (owner,
   2026-10-04; AltStable goes through Battle.net to bypass it, which a guild can't). **Re-measure on the
-  live client** (`/gsweep guildprobe`): if senders gain a `-Realm` there, a guildmate's key changes once,
+  live client** (the probe's `/fp sweep guild`, was `/gsweep guildprobe`): if senders gain a `-Realm` there, a guildmate's key changes once,
   and the old entry shows beside the new one until it's forgotten (30 days silent). A one-time cosmetic
   duplicate, not worth machinery now.
 - **Our own key** is built the same way from `API.PlayerFullName()` and `GetNormalizedRealmName()`,

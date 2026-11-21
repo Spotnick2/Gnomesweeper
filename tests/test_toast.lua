@@ -375,11 +375,6 @@ do  -- the social log: every decision, with its reason
     check(log:find("no toast: expert:area 9500 cs isn't faster than the best known, 8000 cs", 1, true) ~= nil, "...why a slow one didn't")
     check(log:find("toast queued: expert:area 7000 cs", 1, true) ~= nil, "...and the one that did")
     check(#GnomesweeperDB.socialLog <= Gnomesweeper.Social.LOG_KEEP, "at most LOG_KEEP lines")
-    WoW.chat = {}
-    WoW.slash("/gsweep guildprobe")
-    local said = false
-    for _, line in ipairs(WoW.chat) do if line:find("toasts: guild", 1, true) and line:find("synced true", 1, true) then said = true end end
-    check(said, "/gsweep guildprobe reports the toasts' state")
 end
 
 do  -- Reset best times tells the guild: online guildmates forget our times (the owner's reset)

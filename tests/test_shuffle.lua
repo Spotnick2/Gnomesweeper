@@ -127,18 +127,6 @@ do  -- a left+right begun in the wave plants nothing (review of #44)
     eq(W.game:Cell(41).state, "flag", "after the window closed mid-gesture, the next press counts")
 end
 
-do  -- the input log says a press ended the wave
-    local W, G = fresh()
-    WoW.slash("/gsweep input")
-    W._test.ui.face._scripts.OnClick(W._test.ui.face)
-    local t = tile(41)
-    t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseUp(t, "LeftButton", true)
-    local log = table.concat(GnomesweeperDB.inputLog, "\n")
-    check(log:find("tile 41  LeftButton ended the new-game wave (not a click)", 1, true) ~= nil,
-        "/gsweep input logs the press that ended the wave")
-    WoW.slash("/gsweep input")
-end
-
 do  -- a frame touches only the tiles in flight, not the whole board
     local W, G = fresh()
     W.NewGame("expert")

@@ -34,8 +34,6 @@ Window.lua
 Options.lua
 Minimap.lua
 Sounds.lua
-Assets.lua
-ModelProbe.lua
 Toast.lua
 Social.lua
 Gnomesweeper.lua

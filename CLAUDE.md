@@ -585,12 +585,13 @@ pwsh Tools\deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 - **`_forever_` is the live client** (the beta closed on 2026-10-30): a deploy runs on the owner's
   real characters. Deploy a probe or a measuring build only for a test session the owner is
   actually running, never just to have it there.
-- Deploy ends with **RESTART the client** when it brought a new file or a changed TOC (the client
-  reads those only at start), else "/reload is enough".
+- Deploy ends with **`/reload`**: it loads everything a deploy brings, new files, textures and a
+  changed TOC included (re-measured 2026-11-16, GuildSpy #97; the porting guide's section 5; #93).
+  A full client exit only for a persistence test.
 - Deploy rewrites `## Version: @project-version@` to `dev` **in the deployed copy only**. Never
   commit a literal version over that token (it has happened twice on sibling projects).
-- In game: `/console scriptErrors 1`, then `/reload`. A brand-new addon folder needs a client
-  restart. Check the AddOns list shows it enabled and not out of date.
+- In game: `/console scriptErrors 1`, then `/reload`. Check the AddOns list shows it enabled and
+  not out of date.
 
 ## Addon basics
 
@@ -708,7 +709,10 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
   `release` job publishes the zip CI built and checked, with `release.json` (WowUp) and the tag's
   `CHANGELOG.md` section as its notes, both from `tests/release_files.sh` (the shared template, copied
   unchanged); a failed one is published again from Actions (Run workflow from `main`, the tag). The
-  whole procedure is `C:\Projects\WoW\References\Docs\RELEASING.md`. No Wago upload yet: the TOC has
+  whole procedure is `C:\Projects\WoW\References\Docs\RELEASING.md`. **A release tag (`vX.Y.Z`)
+  updates `README.md` and the untracked `README.curseforge.md` in its prep PR** (RELEASING.md §3):
+  both describe what that release does, and the PR says whether `README.curseforge.md` changed (the
+  owner pastes it into CurseForge after the release). No Wago upload yet: the TOC has
   no `X-Wago-ID`. Check the CurseForge zip by hand after a release: its packager isn't the one CI ran.
 
 ## Conventions

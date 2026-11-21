@@ -54,6 +54,6 @@ folder and is summarised in `LICENSE`):
 ## Forever client
 
 - `C:\Projects\WoW\References\Docs\PORTING-TBC-TO-FOREVER.md` — canonical measured field notes.
-- `C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md` — latest API dump (functions, events,
+- `C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.71037.md` — latest API dump (functions, events,
   widget methods, `_G`).
 - `C:\Projects\WoW\wow-ui-source` (branch `forever`) — Blizzard's FrameXML: atlas names, templates.

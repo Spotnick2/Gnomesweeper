@@ -170,10 +170,8 @@ do
         for _, w in ipairs(WoW.widgets) do
             local enter = w._scripts and w._scripts.OnEnter
             if enter then
-                GameTooltip._lines = {}
-                GameTooltip._text = ""
+                GameTooltip._lines = {}             -- its title is line 1 (the kit's tooltip)
                 pcall(enter, w)
-                look(where .. " tooltip", GameTooltip._text)
                 for _, line in ipairs(GameTooltip._lines or {}) do look(where .. " tooltip", line) end
             end
         end

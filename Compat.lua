@@ -9,12 +9,11 @@ local API = {}
 Gnomesweeper.API = API
 
 -- The client build the notes and stubs describe: the API dump the tests check
--- against (C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.70338.md). Against
--- 70205, where the asset probe ran (every texture draws), 70338 changes only
--- voice chat, Discord and LFG listings, none of which this addon calls, and no
--- widget method (Compare-Dumps, 2026-10-11); measured in game on 70338 by the
--- owner, 2026-10-11.
-Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.70338"
+-- against (C:\Projects\WoW\References\Forever\api\forever-api-1.60.1.71037.md). Against
+-- 70338, 71037 removes or changes nothing this addon calls, and no widget method
+-- (Compare-Dumps, 2026-11-20, #94). The realm is hidden since a server hotfix that
+-- day (#98), not a build change.
+Gnomesweeper.MEASURED_ON_BUILD = "1.60.1.71037"
 
 -- CreateFrame with a template that may be missing on this client. A missing
 -- template doesn't throw, it returns a bare frame (Priestly, FOREVER-PROBE), so

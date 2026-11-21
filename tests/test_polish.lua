@@ -144,10 +144,10 @@ do
     ui.close._scripts.OnClick(ui.close)
     check(not W.win:IsShown(), "the close button closes the window")
     W.win:Show()
-    GameTooltip._text = nil
+    GameTooltip._lines = {}
     ui.gear._scripts.OnEnter(ui.gear)
-    eq(GameTooltip._text, "Settings", "the gear has a tooltip")
-    check(GameTooltip._lines[1] and GameTooltip._lines[1]:find("window size", 1, true), "...that says what the settings hold")
+    eq(GameTooltip._lines[1], "Settings", "the gear has a tooltip (its title is line 1)")
+    check(GameTooltip._lines[2] and GameTooltip._lines[2]:find("window size", 1, true), "...that says what the settings hold")
 
     -- The window is darker than bare glass, and the scenery stays behind it.
     check(W.win.backing ~= nil and W.win.backing._color[4] > 0.3 and W.win.backing._color[4] < 0.6, "the window has a translucent dark backing")
@@ -208,10 +208,10 @@ do
     local a, b = ui.hintKeys._points[#ui.hintKeys._points], ui.hintMid._points[#ui.hintMid._points]
     check(b[5] < a[5], "...the second below the first")
 
-    GameTooltip._text = nil
+    GameTooltip._lines = {}
     ui.help._scripts.OnEnter(ui.help)
-    eq(GameTooltip._text, "How to play", "the ? explains how to play")
-    local body = table.concat(GameTooltip._lines, " ")
+    eq(GameTooltip._lines[1], "How to play", "the ? explains how to play")
+    local body = table.concat(GameTooltip._lines, " ", 2)
     check(body:find("revealed number", 1, true), "...naming a revealed number")
     check(body:find("aren't flagged", 1, true), "...that it reveals the tiles around it that aren't flagged")
     check(body:find("number of flags", 1, true) and body:find("equals the number", 1, true), "...only when the flags match the number")

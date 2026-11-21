@@ -173,19 +173,8 @@ end
 
 eq(#swallowed, 0, "no error was swallowed by a pcall during the exercise: " .. tostring(swallowed[1]))
 
--- WowTestKit #90: a model scene's actor isn't in the build's widget methods (the
--- dump documents its methods as functions tagged [FrameAPIModelSceneFrameActor] /
--- [...ActorBase], forever-api-1.60.1.70959.md), so each pair the addon calls is
--- allowed here, and its name checked against the build's function list.
-local ACTOR = "ModelSceneFrameActorBase in the dump (functions tagged [FrameAPIModelSceneFrameActorBase]); WowTestKit #90"
-local allow = {}
-for _, m in ipairs({ "ClearModel", "GetActiveBoundingBox", "IsLoaded", "SetAnimation",
-        "SetModelByCreatureDisplayID", "SetModelByUnit", "SetParticleOverrideScale", "SetPosition",
-        "SetScale", "SetUseCenterForOrigin" }) do
-    allow["ModelSceneActor:" .. m] = ACTOR
-    check(functions[m], "an actor's method is a documented function on Forever " .. Kit.BUILD .. ": " .. m)
-end
-local recorded = Kit.checkMethods({ allow = allow })
+-- A model scene's actor is checked like any widget: the kit has its methods (WowTestKit #90).
+local recorded = Kit.checkMethods()
 -- The floor: what loading and the exercise record today, rounded down, so the
 -- exercise can't quietly shrink.
 check(recorded >= 180, "the exercise reached the windows (" .. recorded .. " recorded)")

@@ -401,9 +401,9 @@ do  -- the window: a win sends an N; the Guild tab
     check(p.rule:GetText():find(GUILD, 1, true) ~= nil, "the guild's name at the bottom")
     GameTooltip._lines = {}
     row._scripts.OnEnter(row)
-    eq(GameTooltip._text, "Beginner", "a row's tooltip: the difficulty")
-    eq(GameTooltip._lines[1], "1. Ann Gear  00:10.0", "...the guild's top, in order")
-    eq(GameTooltip._lines[2], "2. Fizzle Sprocketwhistle  00:12.5", "...us included")
+    eq(GameTooltip._lines[1], "Beginner", "a row's tooltip: the difficulty (its title, line 1)")
+    eq(GameTooltip._lines[2], "1. Ann Gear  00:10.0", "...the guild's top, in order")
+    eq(GameTooltip._lines[3], "2. Fizzle Sprocketwhistle  00:12.5", "...us included")
     from("Bob Cog", "1\tN\tbeginner:area=900@" .. T)
     eq(row.time:GetText(), "00:09.0", "a time arriving while the tab is open shows at once")
     p.tabs.you._scripts.OnClick(p.tabs.you)

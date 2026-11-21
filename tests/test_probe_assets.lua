@@ -50,6 +50,7 @@ do   -- a GetFileIDFromPath that throws is a failed check, not a crash
         if e.kind == "path" then eq(e.checked, false, "a throwing check is recorded as not checked") end
     end
     eq(#A.Missing(entries), 0, "...and is not reported as missing")
+    check(probeSaid("GetFileIDFromPath: ERROR"), "...and the log says which call failed (Probe:Try, Codex review of #104)")
     GetFileIDFromPath = real
 end
 

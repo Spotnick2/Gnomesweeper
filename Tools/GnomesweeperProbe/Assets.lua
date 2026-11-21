@@ -50,7 +50,7 @@ function Assets.Survey()
         local value = Skin.TEXTURES[key]
         local e = { key = key, value = value, kind = Assets.Kind(value) }
         if type(value) == "string" then
-            local ok, id = pcall(GetFileIDFromPath, value)
+            local ok, id = NS.P:Try("GetFileIDFromPath", GetFileIDFromPath, value)
             e.checked = ok
             e.fileID = ok and id or nil
         end

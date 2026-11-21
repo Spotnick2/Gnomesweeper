@@ -252,10 +252,19 @@ end
 
 local musicWatch = CreateFrame("Frame")
 musicWatch:SetScript("OnEvent", function() stopProbeMusic() end)   -- a fight
-local hookedHide
+local hookedHide, hookedUpdate
 local function watchMusic()
     if not musicWatch.registered then
         musicWatch.registered = P:RegisterEvents(musicWatch, { "PLAYER_REGEN_DISABLED" })
+    end
+    -- The addon taking the music over (its setting on as its check runs): the sample is no
+    -- longer the probe's to stop, even if the setting goes off again and something else plays
+    -- next (Codex, #104).
+    if not hookedUpdate then
+        hookedUpdate = true
+        hooksecurefunc(GS.Sounds, "UpdateMusic", function()
+            if sounds.music and GnomesweeperDB.music == true then sounds.music = false end
+        end)
     end
     local win = GS.Window.win
     if win and not hookedHide then

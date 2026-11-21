@@ -113,7 +113,7 @@ end
 -- The box as Forever returns it: six numbers (measured in AltStable), or Retail's
 -- two vectors should a later build switch. nil until the model has loaded.
 function Probe.ReadBox(actor)
-    local r = { pcall(actor.GetActiveBoundingBox, actor) }
+    local r = { NS.P:Try("actor.GetActiveBoundingBox", actor.GetActiveBoundingBox, actor) }
     if not r[1] then return nil end
     local x0, y0, z0, x1, y1, z1
     if type(r[2]) == "table" and type(r[3]) == "table" then
@@ -131,19 +131,19 @@ end
 
 -- A scene with one actor, set up as AltStable's pets are. nil without ModelScene.
 local function newScene(parent, size)
-    local ok, scene = pcall(CreateFrame, "ModelScene", nil, parent)
+    local ok, scene = NS.P:Try("CreateFrame", CreateFrame, "ModelScene", nil, parent)
     local okA, actor
-    if ok and scene then okA, actor = pcall(scene.CreateActor, scene) end
+    if ok and scene then okA, actor = NS.P:Try("scene.CreateActor", scene.CreateActor, scene) end
     if not (okA and actor) then return nil end
     scene:SetSize(size, size)
-    pcall(scene.SetCameraFieldOfView, scene, FOV)
-    pcall(scene.SetCameraNearClip, scene, 0.1)
-    pcall(scene.SetCameraFarClip, scene, 100)
-    pcall(scene.SetCameraPosition, scene, CAMERA, 0, 0)
-    pcall(scene.SetCameraOrientationByYawPitchRoll, scene, math.pi, 0, 0)
-    pcall(actor.SetUseCenterForOrigin, actor, true, true, true)
-    pcall(actor.SetPosition, actor, 0, 0, 0)
-    pcall(actor.SetParticleOverrideScale, actor, 0)
+    NS.P:Try("scene.SetCameraFieldOfView", scene.SetCameraFieldOfView, scene, FOV)
+    NS.P:Try("scene.SetCameraNearClip", scene.SetCameraNearClip, scene, 0.1)
+    NS.P:Try("scene.SetCameraFarClip", scene.SetCameraFarClip, scene, 100)
+    NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, 0)
+    NS.P:Try("scene.SetCameraOrientationByYawPitchRoll", scene.SetCameraOrientationByYawPitchRoll, scene, math.pi, 0, 0)
+    NS.P:Try("actor.SetUseCenterForOrigin", actor.SetUseCenterForOrigin, actor, true, true, true)
+    NS.P:Try("actor.SetPosition", actor.SetPosition, actor, 0, 0, 0)
+    NS.P:Try("actor.SetParticleOverrideScale", actor.SetParticleOverrideScale, actor, 0)
     scene:EnableMouse(false)
     scene.actor = actor
     return scene
@@ -159,11 +159,11 @@ local function fit(scene, box, head)
     if head then
         local crop = Probe.headCrop
         local s = span / (box.h * crop.size)
-        pcall(actor.SetScale, actor, s)
-        pcall(scene.SetCameraPosition, scene, CAMERA, 0, s * box.h * (crop.center - 0.5))
+        NS.P:Try("actor.SetScale", actor.SetScale, actor, s)
+        NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, s * box.h * (crop.center - 0.5))
     else
-        pcall(actor.SetScale, actor, span / (box.h * MARGIN))
-        pcall(scene.SetCameraPosition, scene, CAMERA, 0, 0)
+        NS.P:Try("actor.SetScale", actor.SetScale, actor, span / (box.h * MARGIN))
+        NS.P:Try("scene.SetCameraPosition", scene.SetCameraPosition, scene, CAMERA, 0, 0)
     end
 end
 
@@ -177,12 +177,12 @@ local function load(scene, c, head, done)
     -- could otherwise answer with the previous one's box, or keep drawing it (review).
     scene:Hide()
     scene.box = nil
-    pcall(actor.ClearModel, actor)
+    NS.P:Try("actor.ClearModel", actor.ClearModel, actor)
     local ok, set
     if c.unit then
-        ok, set = pcall(actor.SetModelByUnit, actor, c.unit)
+        ok, set = NS.P:Try("actor.SetModelByUnit", actor.SetModelByUnit, actor, c.unit)
     else
-        ok, set = pcall(actor.SetModelByCreatureDisplayID, actor, c.display)
+        ok, set = NS.P:Try("actor.SetModelByCreatureDisplayID", actor.SetModelByCreatureDisplayID, actor, c.display)
     end
     result.set = ok and set ~= false
     if not ok then result.error = tostring(set) end
@@ -198,7 +198,7 @@ local function load(scene, c, head, done)
         local box = Probe.ReadBox(actor)
         if box then
             result.box, result.seconds = box, GetTime() - t0
-            local okL, loaded = pcall(actor.IsLoaded, actor)
+            local okL, loaded = NS.P:Try("actor.IsLoaded", actor.IsLoaded, actor)
             result.loaded = okL and loaded or nil
             fit(scene, box, head)
             scene:Show()
@@ -234,7 +234,7 @@ local function showAnim()
     viewer.anim = a[1]
     viewer.label:SetText(string.format("%s%s  -  %d/%d: %s (%d)", viewer.c.name,
         viewer.c.display and (" (" .. viewer.c.display .. ")") or "", viewer.animIndex, #Probe.ANIMS, a[2], a[1]))
-    for _, s in ipairs(viewer.scenes) do pcall(s.actor.SetAnimation, s.actor, viewer.anim) end
+    for _, s in ipairs(viewer.scenes) do NS.P:Try("s.actor.SetAnimation", s.actor.SetAnimation, s.actor, viewer.anim) end
 end
 
 local function step(by)
@@ -247,7 +247,7 @@ end
 local function setParticles(on)
     viewer.particles = on
     viewer.sparks.label:SetText(on and "Particles: on" or "Particles: off")
-    for _, s in ipairs(viewer.scenes) do pcall(s.actor.SetParticleOverrideScale, s.actor, on and 1 or 0) end
+    for _, s in ipairs(viewer.scenes) do NS.P:Try("s.actor.SetParticleOverrideScale", s.actor.SetParticleOverrideScale, s.actor, on and 1 or 0) end
 end
 
 -- Tune the head crop by eye (#20: the first guess was off): the two head scenes are
@@ -359,7 +359,7 @@ local function buildCell(i, c)
     cell.bg:SetPoint("TOP", cell, "TOP", 0, 0)
     cell.bg:SetColorTexture(0.10, 0.12, 0.17, 1)
     if c.dressUp then
-        local ok, m = pcall(CreateFrame, "DressUpModel", nil, cell)
+        local ok, m = NS.P:Try("CreateFrame", CreateFrame, "DressUpModel", nil, cell)
         if ok and m then
             m:SetSize(SCENE, SCENE)
             m:SetPoint("TOP", cell, "TOP", 0, 0)
@@ -454,7 +454,7 @@ local function survey()
         probe.candidates[c.key] = entry
         if c.dressUp then
             if cell.model then
-                local ok, err = pcall(cell.model.SetUnit, cell.model, "player")
+                local ok, err = NS.P:Try("cell.model.SetUnit", cell.model.SetUnit, cell.model, "player")
                 entry.set = ok
                 if not ok then entry.error = tostring(err) end
                 cell.state:SetText(ok and "SetUnit(\"player\")" or "error")
@@ -583,7 +583,7 @@ function Probe.Perf()
             phase, waiting = "loading", 2
             load(scenes.head, byKey(Probe.PERF_FACE), true, function(r) arrived("headLoad", r) end)
             load(scenes.bomb, byKey(Probe.PERF_BOMB), false, function(r)
-                if r.box then pcall(scenes.bomb.actor.SetParticleOverrideScale, scenes.bomb.actor, 1) end
+                if r.box then NS.P:Try("scenes.bomb.actor.SetParticleOverrideScale", scenes.bomb.actor.SetParticleOverrideScale, scenes.bomb.actor, 1) end
                 arrived("bombLoad", r)
             end)
             return

@@ -200,12 +200,14 @@ do  -- the sample stops with the board, or a fight (Codex, #104)
     eq(WoW.music, nil, "closing the board stops it")
     W.win:Show()
     WoW.advance(NS.MUSIC_SECONDS)
+    Gnomesweeper.Options.Set("hideInCombat", false)          -- the board stays open in the fight
     probeSlash("sounds")
     WoW.advance(n * NS.SOUND_GAP + 1)
     eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "(again)")
     WoW.inCombat = true
     WoW.fire("PLAYER_REGEN_DISABLED")
-    eq(WoW.music, nil, "a fight stops it")
+    check(W.win:IsShown(), "(the board still open)")
+    eq(WoW.music, nil, "a fight stops it, the board open or not")
     WoW.inCombat = false
     WoW.fire("PLAYER_REGEN_ENABLED")
     WoW.advance(NS.MUSIC_SECONDS)
@@ -223,6 +225,20 @@ do  -- the setting turned on during the sample: the addon's music plays on after
     WoW.advance(NS.SOUND_GAP)
     probeSlash("sounds")
     eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "...and so does stopping the probe")
+end
+
+do  -- the setting on, then off again, during the sample: the probe owns nothing to stop after (Codex, #104)
+    local NS, W = open()
+    probeSlash("sounds")
+    WoW.advance(#NS.SOUNDS * NS.SOUND_GAP + 1)
+    Gnomesweeper.Options.Set("music", true)                  -- the addon takes the track over
+    Gnomesweeper.Options.Set("music", false)                 -- ...and stops it, as it owned it
+    eq(WoW.music, nil, "(the addon stopped its music)")
+    WoW.music = 777                                          -- another addon's music next
+    local stops = WoW.musicStops
+    WoW.advance(NS.MUSIC_SECONDS)
+    eq(WoW.musicStops, stops, "the sample's end makes no StopMusic: it was no longer the probe's")
+    eq(WoW.music, 777, "...the other music plays on")
 end
 
 do  -- cancelling it never stops music someone else plays

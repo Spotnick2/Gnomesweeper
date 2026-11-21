@@ -425,9 +425,7 @@ local function buildAbout()
     add(aboutLabel(L["Commands"], "GameFontNormalLarge"), 24)
     about.commands = {}
     for _, line in ipairs(GS.HELP or {}) do
-        if not line:find("(for measuring)", 1, true) then
-            about.commands[#about.commands + 1] = add(aboutLabel(line, "GameFontHighlightSmall", 620), 16, 4)
-        end
+        about.commands[#about.commands + 1] = add(aboutLabel(line, "GameFontHighlightSmall", 620), 16, 4)
     end
 end
 

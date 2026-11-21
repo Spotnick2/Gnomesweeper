@@ -1,20 +1,19 @@
--- ModelProbe.lua: /gsweep models, the model probe (#20).
+-- The probe's Models.lua (Tools/GnomesweeperProbe, #87): /fp gs models, the model
+-- probe (#20). Loads ForeverProbe from its checkout: local only.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
 
-local function chatHas(text)
-    for _, line in ipairs(WoW.chat) do
-        if line:find(text, 1, true) then return true end
-    end
-    return false
-end
+local chatHas = probeSaid                              -- its lines go to the probe's log, never chat
+local NS
+local function logLines() return (GnomesweeperProbeDB or {}).log or {} end
+local function hosts() local ui = Gnomesweeper.Window._test.ui; return ui.face, ui.fx end
 
 local BOMB = { -0.5, -0.4, -0.6, 0.5, 0.4, 0.6 }       -- six numbers, as Forever answers (h 1.2)
 
 local function setup()
-    loadAddon()
+    NS = loadProbe()
     WoW.modelSetFails[6977], WoW.modelSetFails[3124] = nil, nil   -- the stub's default: the end panel's models absent
-    return Gnomesweeper.ModelProbe, Gnomesweeper.ModelProbe._test
+    return NS.Models, NS.Models._test
 end
 
 local function indexOf(P, key)
@@ -48,9 +47,9 @@ end
 do
     local P, T = setup()
     WoW.modelSetFails[19139] = true                         -- Boombot: not on this client
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     local sheet = T.sheet()
-    check(sheet and sheet:IsShown(), "/gsweep models shows the sheet")
+    check(sheet and sheet:IsShown(), "/fp gs models shows the sheet")
     eq(#T.cells, #P.CANDIDATES, "one cell per candidate")
     local bomb = T.cells[indexOf(P, "walkingBomb")]
     local scene, actor = bomb.scene, bomb.scene.actor
@@ -77,7 +76,7 @@ do
     eq(far.state:GetText(), "no box in 3s", "a model that never loads says so")
     check(chatHas("loaded a box"), "the summary once every model has answered")
 
-    local probe = GnomesweeperDB.modelProbe
+    local probe = GnomesweeperProbeDB.models
     eq(probe.build, "1.60.1.71037", "the build is recorded")
     local e = probe.candidates.walkingBomb
     eq(e.display, 6977, "the display")
@@ -98,16 +97,16 @@ do
     eq(probe.candidates.playerDressUp.set, true, "...recorded")
 
     -- Closing drops answers still on their way; showing again loads everything afresh.
-    WoW.slash("/gsweep models")
-    check(not sheet:IsShown(), "/gsweep models again closes it")
+    probeSlash("models")
+    check(not sheet:IsShown(), "/fp gs models again closes it")
     WoW.modelBoxes = {}
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     eq(bomb.state:GetText(), "...", "a new survey starts over")
     WoW.advance(0.2)
     sheet:Hide()
     WoW.modelBoxes[6977] = BOMB
     WoW.advance(1)
-    eq(GnomesweeperDB.modelProbe.candidates.walkingBomb.box, nil, "an answer after the sheet closed is dropped")
+    eq(GnomesweeperProbeDB.models.candidates.walkingBomb.box, nil, "an answer after the sheet closed is dropped")
     eq(bomb.state:GetText(), "...", "...and doesn't touch the cell")
 end
 
@@ -116,7 +115,7 @@ end
 ----------------------------------------------------------------------------
 do
     local P, T = setup()
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     local scene = T.cells[1].scene
     local box = { l = 1, w = 1, h = 2 }
     local span = 2 * 40 * math.tan(0.15 / 2)
@@ -143,21 +142,21 @@ do
     check(v.headBig._camera[3] > z, "...the camera rises")
     eq(v.body._camera[3], 0, "the body isn't touched")
     check(chatHas("head crop: 45% of the height, centred 75% up"), "the crop is printed")
-    local saved = GnomesweeperDB.modelProbe.headCrop
+    local saved = GnomesweeperProbeDB.models.headCrop
     check(saved and math.abs(saved.size - 0.45) < 1e-9 and math.abs(saved.center - 0.75) < 1e-9, "...and saved")
     for _ = 1, 30 do v.zoomIn._scripts.OnClick(v.zoomIn); v.down._scripts.OnClick(v.down) end
     check(math.abs(P.headCrop.size - 0.15) < 1e-9 and P.headCrop.center == 0, "clamped")
 
     -- A /reload: the saved crop comes back.
-    local db = GnomesweeperDB
-    db.modelProbe.headCrop = { size = 0.6, center = 0.7 }
-    loadAddon({ db = db })
-    WoW.slash("/gsweep models")
-    local P2 = Gnomesweeper.ModelProbe
+    local pdb = GnomesweeperProbeDB
+    pdb.models.headCrop = { size = 0.6, center = 0.7 }
+    NS = loadProbe({ probeDB = pdb })
+    probeSlash("models")
+    local P2 = NS.Models
     check(math.abs(P2.headCrop.size - 0.6) < 1e-9 and math.abs(P2.headCrop.center - 0.7) < 1e-9, "the saved crop is used again")
-    loadAddon({ db = { modelProbe = { headCrop = { size = "x" } } } })
-    WoW.slash("/gsweep models")
-    eq(Gnomesweeper.ModelProbe.headCrop.size, 0.35, "a damaged one is ignored (the tuned default)")
+    NS = loadProbe({ probeDB = { models = { headCrop = { size = "x" } } } })
+    probeSlash("models")
+    eq(NS.Models.headCrop.size, 0.35, "a damaged one is ignored (the tuned default)")
 end
 
 ----------------------------------------------------------------------------
@@ -166,7 +165,7 @@ end
 do
     local P, T = setup()
     WoW.modelBoxes[6977] = BOMB
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     WoW.advance(0.2)
     local cell = T.cells[indexOf(P, "walkingBomb")]
     cell._scripts.OnClick(cell)
@@ -214,19 +213,19 @@ do
 end
 
 ----------------------------------------------------------------------------
--- /gsweep models perf
+-- /fp gs modelperf
 ----------------------------------------------------------------------------
 do
     local P, T = setup()
-    WoW.slash("/gsweep models perf")
+    probeSlash("modelperf")
     check(chatHas("open the board first"), "it needs the board open")
     eq(T.perf(), nil, "...and does nothing else")
 
     WoW.slash("/gsweep expert")
     WoW.modelBoxes[6977] = BOMB
     WoW.modelBoxes[3124] = { -0.3, -0.3, -0.5, 0.3, 0.3, 0.5 }
-    WoW.slash("/gsweep models perf")
-    local face, fx = Gnomesweeper.Window.ModelHosts()
+    probeSlash("modelperf")
+    local face, fx = hosts()
     local s = T.perf().scenes
     check(not s.head._shown and not s.bomb._shown, "measured without them first")
     eq(s.head._points[1][2], face, "the head is drawn over the face")
@@ -235,7 +234,7 @@ do
     eq(s.head:GetFrameStrata(), face:GetFrameStrata(), "in the window's strata")
     check(s.head:GetFrameLevel() > face:GetFrameLevel() and s.bomb:GetFrameLevel() > fx:GetFrameLevel(), "...above its host")
     check(math.abs(s.head:GetEffectiveScale() - face:GetEffectiveScale()) < 1e-9, "...at the window's scale")
-    WoW.slash("/gsweep models perf")
+    probeSlash("modelperf")
     check(chatHas("already being measured"), "one run at a time")
     WoW.modelBoxes[6977] = nil                             -- the bomb streams in late
     for _ = 1, 400 do WoW.tick(0.0125) end                 -- 5 s at 80 fps
@@ -246,12 +245,12 @@ do
     WoW.modelBoxes[6977] = BOMB
     WoW.advance(0.2)
     check(s.head._shown and s.bomb._shown, "then with them")
-    eq((GnomesweeperDB.modelProbe or {}).perf, nil, "nothing is saved mid-run")
+    eq((GnomesweeperProbeDB.models or {}).perf, nil, "nothing is saved mid-run")
     eq(s.head.actor._model, 3124, "the face model: Tally, the mascot")
     eq(s.bomb.actor._model, 6977, "the bomb model")
     eq(s.bomb.actor._particles, 1, "the bomb with its particles")
     for _ = 1, 200 do WoW.tick(0.025) end                  -- 5 s at 40 fps
-    local perf = GnomesweeperDB.modelProbe.perf
+    local perf = GnomesweeperProbeDB.models.perf
     check(perf and math.abs(perf.without.fps - 80) < 0.5, "the frame rate without: " .. tostring(perf and perf.without.fps))
     check(perf and math.abs(perf.with.fps - 40) < 0.5, "and with: " .. tostring(perf and perf.with.fps))
     eq(perf.board, "30x16", "over the Expert board")
@@ -271,23 +270,21 @@ do
         if ftype == "ModelScene" then error("unknown frame type") end
         return real(ftype, ...)
     end
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     CreateFrame = real
     eq(T.cells[1].state:GetText(), "no ModelScene", "a cell without a scene says so")
     check(chatHas("no ModelScene"), "...and the chat")
-    eq(GnomesweeperDB.modelProbe.candidates.walkingBomb.error, "no ModelScene", "...and the record")
+    eq(GnomesweeperProbeDB.models.candidates.walkingBomb.error, "no ModelScene", "...and the record")
 end
 
 ----------------------------------------------------------------------------
--- Help: listed, and kept off About (a measuring command)
+-- Help: the addon's lists no measuring command; the probe's does (#87)
 ----------------------------------------------------------------------------
 do
     setup()
-    local found
     for _, line in ipairs(Gnomesweeper.HELP) do
-        if line:find("/gsweep models", 1, true) then found = line end
+        check(not line:find("models", 1, true), "the addon's help has no models command: " .. line)
     end
-    check(found and found:find("(for measuring)", 1, true), "/gsweep models is in the help, as a measuring command")
 end
 
 ----------------------------------------------------------------------------
@@ -295,7 +292,7 @@ end
 ----------------------------------------------------------------------------
 local function count(text)
     local n = 0
-    for _, line in ipairs(WoW.chat) do if line:find(text, 1, true) then n = n + 1 end end
+    for _, line in ipairs(logLines()) do if line:find(text, 1, true) then n = n + 1 end end
     return n
 end
 
@@ -305,25 +302,25 @@ do
     for _, c in ipairs(P.CANDIDATES) do if c.display then WoW.modelBoxes[c.display] = BOMB end end
     WoW.modelBoxes["unit:player"] = BOMB
     WoW.modelSetFails[19139] = true
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     eq(count("loaded a box"), 1, "the summary is printed once, not per cached model")
     check(chatHas("23 of 24 models loaded a box"), "...of every model that tried (Boombot, absent, didn't load): "
-        .. tostring(WoW.chat[#WoW.chat]))
+        .. tostring(logLines()[#logLines()]))
 end
 
 -- An absent model says so at once.
 do
     local P, T = setup()
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     local boom = T.cells[indexOf(P, "boombot")]
     eq(boom.state:GetText(), "...", "(Boombot isn't refused here)")
-    loadAddon()
+    NS = loadProbe()
     WoW.modelSetFails[19139] = true
-    WoW.slash("/gsweep models")
-    P, T = Gnomesweeper.ModelProbe, Gnomesweeper.ModelProbe._test
+    probeSlash("models")
+    P, T = NS.Models, NS.Models._test
     boom = T.cells[indexOf(P, "boombot")]
     eq(boom.state:GetText(), "absent", "a refused display says absent, without waiting")
-    local e = GnomesweeperDB.modelProbe.candidates.boombot
+    local e = GnomesweeperProbeDB.models.candidates.boombot
     eq(e.absent, true, "...recorded as absent")
     eq(e.timeout, nil, "...not as a timeout")
 end
@@ -334,7 +331,7 @@ do
     local P, T = setup()
     WoW.modelStale = true                                   -- the client may keep the old box
     WoW.modelBoxes[6977] = BOMB
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     local function click(key) local c = T.cells[indexOf(P, key)]; c._scripts.OnClick(c) end
     click("walkingBomb")
     local v = T.viewer()
@@ -361,7 +358,7 @@ do
     WoW.modelBoxes[6271] = nil
     click("landMine")
     T.sheet():Hide()
-    WoW.slash("/gsweep models")
+    probeSlash("models")
     eq(v.c, nil, "the viewer forgot the model it was loading")
     eq(v.label:GetText(), "Click a model to view it here.", "...and says to pick one")
     check(not v.body._shown, "...with nothing drawn")
@@ -371,21 +368,21 @@ end
 do
     local P, T = setup()
     WoW.slash("/gsweep expert")
-    WoW.slash("/gsweep models")
-    WoW.slash("/gsweep models perf")
+    probeSlash("models")
+    probeSlash("modelperf")
     check(not P.IsShown(), "the models sheet is closed for the run")
     check(chatHas("closed the models sheet"), "...and the chat says why")
     for _ = 1, 100 do WoW.tick(0.0125) end
     Gnomesweeper.Window.win:Hide()                          -- Escape, a fight, Settings
     WoW.tick(0.0125)
     check(chatHas("frame rate run dropped"), "a run without the board is dropped")
-    eq((GnomesweeperDB.modelProbe or {}).perf, nil, "...nothing saved")
+    eq((GnomesweeperProbeDB.models or {}).perf, nil, "...nothing saved")
     eq(T.perf().running, false, "...and it stopped")
     local s = T.perf().scenes
     check(not s.head._shown and not s.bomb._shown, "...its scenes hidden")
     Gnomesweeper.Window.win:Show()
-    WoW.slash("/gsweep models perf")
+    probeSlash("modelperf")
     check(T.perf().running, "a new run can start")
 end
 
-done("test_modelprobe")
+done("test_probe_models")

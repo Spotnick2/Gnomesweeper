@@ -17,9 +17,8 @@
 -- 3), rechecked when shown, never in combat (one showing hides, and comes back after),
 -- cleared by a guild change or the setting turned off. Toast.lua draws it.
 --
--- And phase 0's measuring probe, /gsweep guildprobe: what this character is called (every
--- API's answer), a "P" message (a type no v1 client knows) to the guild, and the server's
--- echo; kept in GnomesweeperDB.guildProbe for a /reload.
+-- Phase 0's measuring probe (what this character is called, a "P" message and its echo) is
+-- GnomesweeperProbe's /fp gs guild (#87), never shipped.
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -29,7 +28,6 @@ GS.Social = Social
 local Guild = GS.Guild
 
 Social.PREFIX = "GSWEEP"
-Social.PROBE_KEEP = 200          -- lines kept in GnomesweeperDB.guildProbe
 Social.LOGIN_DELAY = 5           -- seconds after login before asking the guild
 Social.QUERY_GAP = 60            -- at most one query a minute
 Social.STALE = 300               -- the Guild tab asks again after 5 minutes
@@ -222,7 +220,7 @@ end
 -- (Codex, #69: a throttled BULK B arrived after a NORMAL R).
 -- The result is read (docs/SOCIAL.md): a failure calls onFail (with ChatThrottleLib, when the
 -- message actually leaves, which can be later) and is kept in Social.lastFailure, which
--- /gsweep guildprobe reports. Returns false when it failed at once.
+-- GnomesweeperProbe's /fp gs guild reports. Returns false when it failed at once.
 local function failed(result, onFail)
     Social.lastFailure = tostring(result) .. " at " .. date("%H:%M:%S")
     slog("send FAILED: %s", tostring(result))
@@ -543,68 +541,6 @@ local function receive(text, channel, sender)
 end
 
 ------------------------------------------------------------
--- The probe (phase 0, for measuring)
-------------------------------------------------------------
-
-local function show(v)
-    if v == nil then return "nil" end
-    if type(v) == "string" then return string.format("%q", v) end
-    return tostring(v)
-end
-
-local probing = false
-
-local function log(fmt, ...)
-    local line = string.format(fmt, ...)
-    GS.Print("guildprobe: " .. line)
-    local d = db()
-    if type(d.guildProbe) ~= "table" then d.guildProbe = {} end
-    table.insert(d.guildProbe, date("%H:%M:%S") .. "  " .. line)
-    while #d.guildProbe > Social.PROBE_KEEP do table.remove(d.guildProbe, 1) end
-end
-
-local function identity()
-    local name, second = UnitName("player")
-    log("UnitName = %s, %s", show(name), show(second))
-    local full, server = UnitFullName("player")
-    log("UnitFullName = %s, %s", show(full), show(server))
-    log("GetRealmName = %s, GetNormalizedRealmName = %s", show(GetRealmName()), show(GetNormalizedRealmName()))
-    log("API.PlayerFullName = %s", show(GS.API.PlayerFullName()))
-    log("IsInGuild = %s", show(IsInGuild()))
-    local g = { GetGuildInfo("player") }
-    log("GetGuildInfo = %s, %s, %s, %s", show(g[1]), show(g[2]), show(g[3]), show(g[4]))
-end
-
-local function probeLog(text, channel, sender, target, zoneChannelID, localID, name, instanceID)
-    log("CHAT_MSG_ADDON channel=%s sender=%s target=%s", show(channel), show(sender), show(target))
-    log("  text=%s zone=%s local=%s name=%s instance=%s", show(text), show(zoneChannelID), show(localID), show(name), show(instanceID))
-    for _, ctx in ipairs({ "none", "short", "guild", "mail" }) do
-        local ok, out = pcall(Ambiguate, sender, ctx)
-        log("  Ambiguate(sender, %q) = %s", ctx, ok and show(out) or ("error " .. tostring(out)))
-    end
-end
-
-function Social.Probe()
-    probing = true
-    log("prefix %s registered: %s", Social.PREFIX, show(register()))
-    identity()
-    if not IsInGuild() then
-        log("not in a guild: nothing sent (join one, or use a character in one, and try again)")
-        return
-    end
-    local message = "1\tP\t" .. time()
-    local ok, result = pcall(C_ChatInfo.SendAddonMessage, Social.PREFIX, message, "GUILD")
-    log("SendAddonMessage(GUILD) = %s", ok and show(result) or ("error " .. tostring(result)))
-    log("last guild send failure: %s", show(Social.lastFailure))
-    local gk = guildKey()
-    log("toasts: guild %s, synced %s, heard %s, first query %s, waiting %d, setting %s", show(gk),
-        show(gk and synced(gk)), show(gk and heard[gk]),
-        gk and firstQuery[gk] and string.format("%.0f s ago", GetTime() - firstQuery[gk]) or "never",
-        #queue, show(db().guildToasts))
-    log("waiting for the echo (it should arrive within a second or two); then /reload to save")
-end
-
-------------------------------------------------------------
 -- Events
 ------------------------------------------------------------
 
@@ -616,9 +552,8 @@ frame:RegisterEvent("PLAYER_REGEN_DISABLED")
 frame:RegisterEvent("PLAYER_REGEN_ENABLED")
 frame:SetScript("OnEvent", function(_, event, ...)
     if event == "CHAT_MSG_ADDON" then
-        local prefix, text, channel, sender, target, zone, localID, name, instance = ...
+        local prefix, text, channel, sender = ...
         if prefix ~= Social.PREFIX then return end
-        if probing then probeLog(text, channel, sender, target, zone, localID, name, instance) end
         receive(text, channel, sender)
     elseif event == "PLAYER_ENTERING_WORLD" then
         if loggedIn then return end                    -- once a session, not on every loading screen
@@ -709,7 +644,7 @@ Social._test = {
     firstQuery = function() return firstQuery end,
     heard = function() return heard end,
     reset = function()
-        registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue, probing = nil, nil, nil, nil, nil, nil, nil, nil, false
+        registered, lastQuery, queriedGuild, lastReply, pending, currentGuild, loggedIn, loginDue = nil, nil, nil, nil, nil, nil, nil, nil
         firstQuery, heard, queue, current, inCombat = {}, {}, {}, nil, nil
     end,
 }

@@ -1,4 +1,5 @@
--- ModelProbe.lua: /gsweep models, the model probe (#20). Which creature models
+-- Models.lua: /fp gs models, the model probe (GnomesweeperProbe, #87; was
+-- /gsweep models, #20). Which creature models
 -- render on this client, how long they take, which animations they have, and
 -- what a scene costs over the board: what #21 (live models) builds on.
 --
@@ -18,17 +19,16 @@
 -- (declared, unmeasured) and a DressUpModel's SetUnit("player") (measured in
 -- AltStable: textured).
 --
--- /gsweep models perf: the frame rate over the open board for 5 s, then 5 s with
+-- /fp gs modelperf: the frame rate over the open board for 5 s, then 5 s with
 -- a head over the face and a bomb over the tiles, as #21 would draw them.
 --
--- Everything is kept in GnomesweeperDB.modelProbe, so a /reload writes it to the
+-- Everything is kept in GnomesweeperProbeDB.models, so a /reload writes it to the
 -- SavedVariables file to be read from disk. A probe: its text stays English.
 
-local ADDON = ...
-Gnomesweeper = Gnomesweeper or {}
+local ADDON, NS = ...
 local GS = Gnomesweeper
 local Probe = {}
-GS.ModelProbe = Probe
+NS.Models = Probe
 
 local Glass, Skin, Widgets = GS.Glass, GS.Skin, GS.Widgets
 local C = Skin.COLORS
@@ -95,14 +95,14 @@ Probe.ANIMS = {
 local sheet, viewer, perf
 local cells = {}
 
-local function Print(msg) print("|cff7fd4ffGnome|rsweeper: " .. msg) end
+local function Print(msg) NS.say(msg) end
 
 local function record()
-    local probe = type(GnomesweeperDB.modelProbe) == "table" and GnomesweeperDB.modelProbe or {}
-    local version, build = GetBuildInfo()
-    probe.build = tostring(version) .. "." .. tostring(build)
+    local db = NS.db()
+    local probe = type(db.models) == "table" and db.models or {}
+    probe.build = NS.build()
     probe.candidates = probe.candidates or {}
-    GnomesweeperDB.modelProbe = probe
+    db.models = probe
     return probe
 end
 
@@ -490,10 +490,10 @@ local function survey()
     finished()
 end
 
--- /gsweep models: show (or hide) the sheet; each show loads everything afresh.
+-- /fp gs models: show (or hide) the sheet; each show loads everything afresh.
 function Probe.Toggle()
     if sheet and sheet:IsShown() then sheet:Hide(); return end
-    local saved = type(GnomesweeperDB.modelProbe) == "table" and GnomesweeperDB.modelProbe.headCrop
+    local saved = type(NS.db().models) == "table" and NS.db().models.headCrop
     if type(saved) == "table" and tonumber(saved.size) and tonumber(saved.center) then
         Probe.headCrop.size, Probe.headCrop.center = tonumber(saved.size), tonumber(saved.center)
     end
@@ -503,7 +503,7 @@ function Probe.Toggle()
 end
 
 ----------------------------------------------------------------------------
--- /gsweep models perf
+-- /fp gs modelperf
 ----------------------------------------------------------------------------
 
 -- The two scenes belong to the probe (a frame on UIParent), drawn OVER the face and
@@ -540,9 +540,12 @@ end
 -- sheet is closed first (its own scenes would count in both), and a run is dropped,
 -- unsaved, if the board goes away (Escape, a fight, Settings) before it ends.
 function Probe.Perf()
-    local face, fx = GS.Window.ModelHosts()
+    -- Where #21's models would go: the face button, and the effects layer over the tiles
+    -- (above them, under the end overlay). nil before the window is built.
+    local ui = GS.Window._test.ui
+    local face, fx = ui.face, ui.fx
     if not (GS.Window.IsShown() and face and fx) then
-        Print("open the board first (/gsweep expert is the worst case), then /gsweep models perf.")
+        Print("open the board first (/gsweep expert is the worst case), then /fp gs modelperf.")
         return
     end
     perf = perf or CreateFrame("Frame", nil, UIParent)
@@ -596,6 +599,11 @@ function Probe.Perf()
 end
 
 function Probe.IsShown() return sheet ~= nil and sheet:IsShown() end
+
+NS.P:Command("models", function() Probe.Toggle() end,
+    "every candidate creature model (loaded, textured, its animations); click one for the viewer")
+NS.P:Command("modelperf", function() Probe.Perf() end,
+    "the frame rate over the open board for 5 s, then 5 s with a head and a bomb over it")
 
 Probe._test = {
     cells = cells,

@@ -40,7 +40,7 @@ TOC load order (planned files in brackets): `Libs\LibGlass-1.0\LibGlass-1.0.xml`
 material, #71) → `Libs\*` (LibStub, CallbackHandler-1.0, LibDataBroker-1.1,
 LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Locales\frFR.lua` → `Glass.lua` → `Board.lua` → `Layout.lua` → `Scores.lua` → `Guild.lua` → `Skin.lua` →
 `Widgets.lua` → `Input.lua` → `Grid.lua` → `Models.lua` → `Effects.lua` → `Window.lua` → `Options.lua` → `Minimap.lua` →
-`Sounds.lua` → `Assets.lua` → `ModelProbe.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
+`Sounds.lua` → `Toast.lua` → `Social.lua` → `Gnomesweeper.lua`.
 
 - **`Compat.lua`**: `Gnomesweeper.API`, the only route to client APIs that moved or may be absent,
   and `MEASURED_ON_BUILD`. Lift helpers from `..\GlassPanel\Compat.lua` (`Fail`, `Button`, `Window`)
@@ -52,7 +52,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   `GS.LOCALE` (the decimal mark, the months), `GS.Decimal(fmt, v)` and `GS.FormatDate(t)`; `frFR.lua`
   fills French when `GetLocale()` is `frFR` (the owner reviews it: French is the one verified language)
   and adds French spacing (a non-breaking space before `! ? : ;`). **Stays English:** slash commands and
-  their arguments, the name, the measuring probes ("(for measuring)"), and every saved value (keys,
+  their arguments, the name, the developer probe (`Tools/GnomesweeperProbe`), and every saved value (keys,
   never translated text). The vocabulary is fixed in `frFR.lua`'s header: the field (`le champ`) is
   never the scores (`meilleurs temps`). **`test_locale.lua`** guards it: every `L["..."]` in the code
   has a French entry with the same placeholders, no French entry is stale, and a pseudo-language
@@ -170,8 +170,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   title is **"Clean sweep!"** (was "Field cleared!"; the French keeps "Champ déminé !").
   `Window.EndModel()` starts the model, and `onFail` lays the panel out again without it. The
   panel stops its model when it hides and starts it when it shows (the client hides children with
-  the window: a reopened panel replays it). **`/gsweep bomb`** (for measuring) replays the panel's
-  model.
+  the window: a reopened panel replays it). The probe's **`/fp gs bomb`** replays the panel's model.
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
@@ -238,12 +237,8 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   - **Scale:** `/gsweep scale 0.5 to 1.5` (or `reset`) sets `GnomesweeperDB.scale`; `Layout.FitScale`
     still keeps the window inside 95% of the screen, so the scale wanted and the scale shown can
     differ, and the command says so.
-  - **Measuring commands:** `/gsweep perf` times an Expert build, a first reveal, a loss and ten
-    difficulty switches on a scratch board (then puts your game back); `/gsweep input` logs every
-    tile press and release with `upInside` and `IsMouseOver`, for the live input matrix. The lines
-    are also kept in `GnomesweeperDB.inputLog` (last 300, debug only), so a `/reload` writes them to
-    `WTF\Account\<acct>\SavedVariables\Gnomesweeper.lua` and they can be **read from disk**
-    instead of pasted. The same trick works for any future probe.
+  - **No measuring command ships** (#87): timing the board and logging the tiles' input are the
+    probe's `/fp gs perf` and `/fp gs input` (`Tools/GnomesweeperProbe`, below).
 - **`Options.lua`** (#8): the settings. `Options.ITEMS` lists them (question marks, the first-click
   rule, left-click clearing, the window scale; sounds #9, music #22, models #21 and hiding in combat
   #37 join it with their issues). **`Options.Set(key, value)` is the one place a setting changes**: it
@@ -263,7 +258,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   order (GlassRaidFrames' Click-casting way): **About** (version from `API.AddOnVersion`, "dev"
   unpackaged; how to play; **links** to CurseForge, GitHub and "Report a bug" (the issue templates) in
   read-only edit boxes to copy from,
-  `Options.LINKS`; the commands from `GS.HELP`, minus the "(for measuring)" ones). **The recipe is
+  `Options.LINKS`; the commands from `GS.HELP`). **The recipe is
   shared**, for every Forever addon: the porting guide's "An Options page with sub-pages and an About
   page" (update it there when something new is measured here). Neither
   page is a named frame (no globals). Showing the page never builds the game window: a size set there
@@ -342,27 +337,40 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   shown, not in combat) runs whenever any of them changes (`Sounds.UpdateMusic`: the window's
   show/hide, `PLAYER_REGEN_*`, a setting), and `StopMusic()` only for music this addon started.
   Off by default. The title bar's **note** button (greyed under a red slash when off) and the
-  settings change the same value. **`/gsweep sounds`** plays every candidate, `PROBE_GAP` apart,
-  then the music, and saves each kit's `willPlay` in `GnomesweeperDB.soundProbe` (a probe, to pick
-  by ear; a second `/gsweep sounds` stops it).
-- **`Assets.lua`** (#6): `/gsweep assets`, a contact sheet of every `Skin.TEXTURES` entry with its name
-  and kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
-  by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are judged
-  by eye (getters echo nonsense IDs). What `GetFileIDFromPath` answers for our own files is recorded
-  too. Results go to `GnomesweeperDB.assetProbe` for a `/reload` to write to disk.
-- **`ModelProbe.lua`** (#20): `/gsweep models`, a sheet of every candidate creature model in
-  `docs/MODELS.md` (its `ModelScene`, on AltStable's recipe: far camera, narrow lens, scaled from its
-  box), each cell saying how long its bounding box took or "no box in 3s"; the player both ways
-  (an actor's `SetModelByUnit("player")`, unmeasured, and a `DressUpModel`'s `SetUnit("player")`).
-  Clicking one opens the **viewer**: the body, a head crop at the face button's 44 units and a
-  bigger one (the head raises the **camera**: whether an actor's position scales with it is
-  unmeasured), `<` `>` through `Probe.ANIMS`, ~20 named animation numbers (stepping every ID was too many to judge),
-  particles on or off. **`/gsweep models perf`**: frames over the open board for 5 s, then 5 s with
-  a head on the face and a bomb over the tiles (`Window.ModelHosts()`: the scenes are the probe's,
-  drawn over them, never parented to them), counted from when both have loaded; the models sheet
-  is closed first, and a run is dropped if the board closes. A scene is cleared and hidden before
-  each load (an actor switching models may answer with the old box); an absent display (`false`)
-  ends its load at once. Results go to `GnomesweeperDB.modelProbe` for a `/reload`. English (a probe).
+  settings change the same value. Auditioning the candidates by ear is the probe's `/fp gs sounds`.
+- **`Tools/GnomesweeperProbe`** (#87): **the developer probe, a ForeverProbe module, never packaged**
+  (`.pkgmeta` ignores `Tools`, and CI fails on a `Tools/` path in the zip). The owner's rule: **no
+  probe ships in a release**, and the shipped addon keeps no probe code and no hook for one: the
+  module reads it through its public functions and `_test` seams, and wraps `Window.Dispatch` /
+  `Grid.Refresh` only while `/fp gs input` is on. `## Dependencies: ForeverProbe, Gnomesweeper`;
+  `/fp gs` lists its commands; its lines go to the `/fp` console and `GnomesweeperProbeDB.log`,
+  never chat, and what it measured to `GnomesweeperProbeDB` (`assets`, `models`, `sounds`). The addon
+  drops the old `assetProbe` / `modelProbe` / `soundProbe` / `guildProbe` / `inputLog` keys from
+  `GnomesweeperDB` at load. Deploy: `Tools\deploy.ps1 -Probe` / `-ProbeOnly`; `docs/FOREVER-PROBE.md`
+  has the commands and the results. **Diagnostics the live code writes stay**: `socialLog` and
+  `musicLog` (owner: not probes). English (a probe).
+  - `Core.lua`: `bomb` (the end panel's model again), `perf` (an Expert build, a first reveal, a loss
+    and ten difficulty switches timed on a scratch board, then the game put back), `input` (every
+    tile press and release with `upInside` and `IsMouseOver`, and what each action did), `sounds`
+    (every candidate kit, `SOUND_GAP` apart, then the music under the addon's rule: the board shown,
+    not in combat; again to stop), `guild` (phase 0: every way the client names this character, a v1
+    `P` message to the guild and its echo, `Ambiguate`'s answers; a guildmate's message logged by its
+    shape only).
+  - `Assets.lua` (#6): `assets`, a contact sheet of every `Skin.TEXTURES` entry with its name and
+    kind (`media` = ours, `path` = a client path, `fileID` = a client ID). Only a path can be judged
+    by the client (`GetFileIDFromPath` answers nil for one it lacks); our files and file IDs are
+    judged by eye (getters echo nonsense IDs).
+  - `Models.lua` (#20): `models`, a sheet of every candidate creature model in `docs/MODELS.md` (its
+    `ModelScene`, on AltStable's recipe: far camera, narrow lens, scaled from its box), each cell
+    saying how long its bounding box took or "no box in 3s"; the player both ways (an actor's
+    `SetModelByUnit("player")`, and a `DressUpModel`'s `SetUnit("player")`). Clicking one opens the
+    **viewer**: the body, a head crop at the face button's 44 units and a bigger one (the head raises
+    the **camera**), `<` `>` through `ANIMS`, ~20 named animation numbers, particles on or off.
+    `modelperf`: frames over the open board for 5 s, then 5 s with a head on the face and a bomb over
+    the tiles (scenes of the probe's, drawn over them, never parented to them), counted from when
+    both have loaded; a run is dropped if the board closes. A scene is cleared and hidden before each
+    load (an actor switching models may answer with the old box); an absent display (`false`) ends
+    its load at once.
 - **`Guild.lua`** (#15, `docs/SOCIAL.md`): the guild's best times as **pure** Lua (every global but
   `tonumber` and a few builtins forbidden in `test_guild.lua`): the v1 wire format (`Encode`/`Parse`, the
   exact grammar, a malformed message dropped whole, the longest legal `B` 205 bytes), the one
@@ -417,17 +425,14 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   query **retries every 5 s for up to a minute** while the guild isn't known (after a `/reload` on this
   beta its name can come late, with no `PLAYER_GUILD_UPDATE` after). **`GnomesweeperDB.socialLog`**
   (the last 60 lines) records the login, each query and its result, guild events, every message, and
-  each toast decision with its reason; `/gsweep guildprobe` also reports the toasts' state. Sends go through **ChatThrottleLib** when
+  each toast decision with its reason; the probe's `/fp gs guild` also reports the toasts' state. Sends go through **ChatThrottleLib** when
   loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
   `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
   can never cost the account's best. Reading never creates the table, except a record of this
   character's seeded from the scores, kept at once (a preview could be lost to an alt's new best). Reset best times clears `mine`. **The Guild tab** (Window's Best times: You |
   Guild): per difficulty the guild's best to the tenth, who and when, "you: 2 of 5", the top 5 in a
   row's tooltip, the guild's name at the bottom; it refreshes when a time arrives
-  (`Window.SocialChanged`). And phase 0's **`/gsweep guildprobe`** (for
-  measuring): every way the client names this character, then a v1 `P` message to the guild (a type no
-  v1 client knows); the server echoes it, and every `CHAT_MSG_ADDON` argument and `Ambiguate`'s answers
-  are logged and kept in `GnomesweeperDB.guildProbe` for a `/reload`. **Measured (70205):** the guild
+  (`Window.SocialChanged`). Phase 0's probe is the module's `/fp gs guild` (#87). **Measured (70205):** the guild
   sender is the full name with the surname and **no realm** (`"Kaleid Sumner"`), `Ambiguate` is a no-op,
   `UnitFullName`'s second answer is the surname, and `GetGuildInfo`'s 4th is the guild's own realm
   (`docs/SOCIAL.md`, "Identity"). The stub's `C_ChatInfo` echoes a GUILD message from `WoW.addonSender`,
@@ -564,7 +569,7 @@ Advice citing TBC/Classic APIs is usually stale.
   a plain Button"). **The middle button arrives too, and so do two buttons held at once** (left pressed first,
   right second: both `OnMouseDown`s and both `OnMouseUp`s, with `upInside` correct on each), so
   left+right needs no special client support. Unmeasured: right pressed first, and closing the
-  window with a button held. `/gsweep input` logs the events and what each action did.
+  window with a button held. The probe's `/fp gs input` logs the events and what each action did.
 - `UISpecialFrames` for Escape-to-close. `FULLSCREEN_DIALOG` strata like GlassPanel's `Window`.
 - SavedVariables persist as of 70009. Verify persistence only with a **full client exit**, never
   a `/reload`. Code must still cope when they're absent.
@@ -662,18 +667,22 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
 - **`test_scores.lua`** is personal bests: the model with every global forbidden (categories, ties,
   damaged data), the full name, and in the window: counting, the overlay, the result bar, the list,
   the tooltip, a reload, and the result bar's room for its text on every difficulty.
-- **`test_assets.lua`** is the contact sheet: kinds, the survey, a missing path, a throwing check, the
-  sheet's cells, the saved results.
+- **The probe's tests** (#87) load ForeverProbe from its checkout (`loadProbe()` in the harness:
+  the addon, the host, the module; `probeSlash("models")` runs `/fp gs models`, `probeSaid(text)`
+  reads its log). **Local only**: CI sets `FOREVERPROBE_OPTIONAL=1` and they print `SKIPPED` (the host
+  is private), so run `tests\run.ps1` before any PR that touches the probe. **`test_probe.lua`** is
+  `Core.lua`'s commands, nothing in chat, the old keys dropped, the addon's own surface free of probes,
+  and every widget method the probe calls; **`test_probe_assets.lua`** the contact sheet;
+  **`test_probe_models.lua`** the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
+  numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
+  late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.
 - **`test_models.lua`** is the end panel's models (#21): the bomb on a wipe (its pose after), Tally on a
   win, the panel widened (capped on Beginner) and its words moved, the panel as before when a model
   can't play (absent, the setting off, too slow, no `ModelScene`), a new game or a late load drawing
-  nothing, a panel shown again replaying it, the setting, `/gsweep bomb`. **The stub's end-panel
+  nothing, a panel shown again replaying it, the setting. **The stub's end-panel
   models are absent by default** (`WoW.modelSetFails[6977]` and `[3124]`), so every other test sees
   the panel as before; a test about them brings them in.
-- **`test_modelprobe.lua`** is the model probe on the stub's scenes (`WoW.modelBoxes[display]`, the six
-  numbers, set when a model "streams in"; `WoW.modelSetFails`): both box shapes, loads and timeouts,
-  late answers dropped, the framing, the viewer, the player both ways, the perf run, no `ModelScene`.
-  `test_methods` checks a `ModelSceneActor`'s calls against the build like any widget's (WowTestKit #90).
+- `test_methods` checks a `ModelSceneActor`'s calls against the build like any widget's (WowTestKit #90).
 - **`test_overlay.lua`** plays games to their end through the stub: the mascot's states, both overlays,
   what they say and show, the button, putting the overlay away, a click not bringing it back.
 - **`test_polish.lua`** is the Liquid Glass polish (#30): the rarity colours, the difficulty details,
@@ -681,7 +690,7 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
   at a finished board and the result bar, the capped HUD, and the scale across every difficulty on four
   screens. **`test_media.lua`** checks every texture in `Media/` is a valid power-of-two 32-bit TGA.
 - **`test_grid.lua`** clicks tiles through the stub on hand-built boards (`Window._test.SetGame`):
-  the pool, painting, flood, flags, chords, wrong gestures, the end of a game, `/gsweep perf|input`.
+  the pool, painting, flood, flags, chords, wrong gestures, the end of a game.
 - **`test_window.lua`** drives the window through the stub: slash commands, clicks, drags, ticks,
   screen changes. Set `frame._left` / `_top` / `_mouseOver` and `WoW.now` / `WoW.screen` /
   `WoW.mouseDown` to stage the client.

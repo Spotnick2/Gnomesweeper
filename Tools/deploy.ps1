@@ -10,18 +10,63 @@
     copies only the shipped files and prints its commit. The checkout is
     $env:LIBGLASS, else ..\LibGlass.
 
+    The developer probe, Tools\GnomesweeperProbe (#87), is a ForeverProbe module and
+    never packaged: -Probe deploys it too, -ProbeOnly just it, the ForeverProbe
+    checkout first ($env:FOREVERPROBE, else ..\ForeverProbe; its GUIDE section 6).
+    Deploy it only for a test session the owner is running: _forever_ is the live client.
+
     Usage:
         pwsh Tools/deploy.ps1
+        pwsh Tools/deploy.ps1 -Probe        # ...and GnomesweeperProbe (/fp gs)
+        pwsh Tools/deploy.ps1 -ProbeOnly    # just GnomesweeperProbe
         pwsh Tools/deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 #>
 
 param(
-    [string]$AddOnsPath = "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns"
+    [string]$AddOnsPath = "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns",
+    [switch]$Probe,
+    [switch]$ProbeOnly
 )
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path $AddOnsPath)) { Write-Error "AddOns path not found: $AddOnsPath"; exit 1 }
+
+$ForeverProbe = if ($env:FOREVERPROBE) { $env:FOREVERPROBE } else { Join-Path (Split-Path -Parent $RepoRoot) "ForeverProbe" }
+if (-not [System.IO.Path]::IsPathRooted($ForeverProbe)) { $ForeverProbe = Join-Path $RepoRoot $ForeverProbe }
+
+function Deploy-Probe {
+    # The host first: GnomesweeperProbe has ## Dependencies: ForeverProbe, so without
+    # it the client loads no probe at all.
+    if (-not (Test-Path -LiteralPath (Join-Path $ForeverProbe "Tools\deploy.ps1"))) {
+        Write-Error "ForeverProbe checkout not found at $ForeverProbe (clone github.com/Spotnick2/ForeverProbe there, or set `$env:FOREVERPROBE)"
+        exit 1
+    }
+    & pwsh -NoProfile -File (Join-Path $ForeverProbe "Tools\deploy.ps1") -AddOnsPath $AddOnsPath
+    if ($LASTEXITCODE -ne 0) { Write-Error "ForeverProbe deploy refused; GnomesweeperProbe was not touched"; exit 1 }
+    $src = Join-Path $RepoRoot "Tools\GnomesweeperProbe"
+    $dest = Join-Path $AddOnsPath "GnomesweeperProbe"
+    Write-Host "Deploying GnomesweeperProbe -> $dest" -ForegroundColor Cyan
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    # The TOC and Lua only, mirrored: a file dropped from the probe doesn't linger.
+    $probeFiles = Get-ChildItem -LiteralPath $src -File | Where-Object { $_.Extension -in ".toc", ".lua" }
+    foreach ($f in $probeFiles) {
+        Copy-Item -LiteralPath $f.FullName -Destination (Join-Path $dest $f.Name) -Force
+        Write-Host "  $($f.Name)"
+    }
+    $names = $probeFiles | Select-Object -ExpandProperty Name
+    Get-ChildItem -LiteralPath $dest -File | Where-Object { $names -notcontains $_.Name } | ForEach-Object {
+        Write-Host "  removing stale $($_.Name)" -ForegroundColor DarkYellow
+        Remove-Item -LiteralPath $_.FullName -Force
+    }
+}
+
+if ($ProbeOnly) {
+    Deploy-Probe
+    Write-Host ""
+    Write-Host "/reload in game to load it, then /fp gs for the probe's commands." -ForegroundColor Yellow
+    exit 0
+}
 
 # A relative $env:LIBGLASS is from the repo root, as in the tests.
 $LibGlass = if ($env:LIBGLASS) { $env:LIBGLASS } else { Join-Path (Split-Path -Parent $RepoRoot) "LibGlass" }
@@ -139,5 +184,6 @@ Write-Host "  every TOC file is in place" -ForegroundColor DarkGray
 Write-Host ""
 # /reload loads everything a deploy brings: new files, new textures, a changed TOC
 # (re-measured 2026-11-16, GuildSpy #97; porting guide section 5; #93).
+if ($Probe) { Deploy-Probe }
 Write-Host "/reload in game to load it." -ForegroundColor Yellow
-Write-Host "In game:  /console scriptErrors 1   then   /gsweep" -ForegroundColor Green
+Write-Host "In game:  /console scriptErrors 1   then   /gsweep$(if ($Probe) { '   (probe: /fp gs, its lines in /fp)' })" -ForegroundColor Green

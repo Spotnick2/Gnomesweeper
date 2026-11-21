@@ -89,6 +89,59 @@ function loadAddon(opts)
     WoW.fire("ADDON_LOADED", "Gnomesweeper")
 end
 
+-- ForeverProbe, the host GnomesweeperProbe depends on (#87), from its checkout
+-- ($FOREVERPROBE, else ..\ForeverProbe), as GlassChat loads it. It's private and
+-- only on the owner's disk: with FOREVERPROBE_OPTIONAL=1 (CI) a probe test file
+-- exits cleanly, SKIPPED, when it isn't there; locally a missing checkout is an error.
+function loadForeverProbe()
+    local root = (os.getenv("FOREVERPROBE") or "../ForeverProbe"):gsub("\\", "/"):gsub("/$", "")
+    local toc = io.open(root .. "/ForeverProbe.toc", "rb")
+    if not toc then
+        if os.getenv("FOREVERPROBE_OPTIONAL") == "1" then
+            io.write("SKIPPED: ForeverProbe isn't here (private, local only); the probe tests run locally\n")
+            os.exit(0)
+        end
+        error("ForeverProbe checkout not found at " .. root .. ": clone it there or set FOREVERPROBE", 0)
+    end
+    local files = {}
+    for line in toc:read("*a"):gmatch("[^\r\n]+") do
+        if line:match("%.lua$") and not line:match("^#") then files[#files + 1] = root .. "/" .. line end
+    end
+    toc:close()
+    ForeverProbe = nil
+    for _, file in ipairs(files) do assert(loadfile(file))("ForeverProbe", {}) end
+    WoW.fire("ADDON_LOADED", "ForeverProbe")
+    return ForeverProbe
+end
+
+-- The probe (Tools/GnomesweeperProbe, #87), loaded as the client would: the addon
+-- (loadAddon(opts)), then the host, then the module's TOC files, then its
+-- ADDON_LOADED. Returns the module's namespace (NS.P is its ForeverProbe module).
+local PROBE = "Tools/GnomesweeperProbe/"
+function loadProbe(opts)
+    opts = opts or {}
+    loadAddon(opts)
+    loadForeverProbe()
+    GnomesweeperProbeDB = opts.probeDB
+    local ns = {}
+    for _, line in ipairs(Kit.tocLines(PROBE .. "GnomesweeperProbe.toc")) do
+        assert(loadfile(PROBE .. line))("GnomesweeperProbe", ns)
+    end
+    WoW.fire("ADDON_LOADED", "GnomesweeperProbe")
+    return ns
+end
+
+-- Runs /fp gs <args>, as the chat box would.
+function probeSlash(args) SlashCmdList.FOREVERPROBE("gs " .. args) end
+
+-- Whether the probe said a line holding text (the module's saved log).
+function probeSaid(text)
+    for _, line in ipairs((GnomesweeperProbeDB or {}).log or {}) do
+        if line:find(text, 1, true) then return true end
+    end
+    return false
+end
+
 -- Pure modules (Board.lua, Layout.lua) are loaded with every global but a few
 -- Lua builtins forbidden, reads AND writes (except the addon's own table):
 -- "pure" is then enforced, not claimed. A stray client call, or a missing
@@ -116,4 +169,3 @@ function loadPure(env, file)
     chunk("Gnomesweeper", {})
     return env.Gnomesweeper
 end
-

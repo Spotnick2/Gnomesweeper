@@ -31,6 +31,11 @@ local function EnsureDefaults()
     for k, v in pairs(DEFAULTS) do
         if GnomesweeperDB[k] == nil then GnomesweeperDB[k] = v end
     end
+    -- What the measuring commands kept before they moved to GnomesweeperProbe (#87):
+    -- a player who once ran one keeps no leftovers.
+    for _, k in ipairs({ "assetProbe", "modelProbe", "soundProbe", "guildProbe", "inputLog" }) do
+        GnomesweeperDB[k] = nil
+    end
 end
 
 local function Print(msg)
@@ -38,9 +43,9 @@ local function Print(msg)
 end
 GS.Print = Print
 
--- Also listed on Options > AddOns > Gnomesweeper > About (all but the "(for measuring)" ones).
--- The player's commands are translated (the commands themselves stay English); the
--- measuring probes stay English, and their "(for measuring)" is what About skips.
+-- Also listed on Options > AddOns > Gnomesweeper > About. The player's commands are
+-- translated (the commands themselves stay English). The measuring commands are
+-- GnomesweeperProbe's (/fp gs, #87), never shipped.
 local HELP = {
     L["/gsweep - open or close the board (also /gnomesweeper, /minewipe)"],
     L["/gsweep beginner, intermediate or expert - start a game at that difficulty"],
@@ -51,13 +56,6 @@ local HELP = {
     L["/gsweep minimap - show or hide the minimap button"],
     L["/gsweep reset - put the window back in the middle of the screen"],
     L["/gsweep scale 0.5 to 1.5, or scale reset - resize the window (it never grows past the screen)"],
-    "/gsweep assets - a sheet of every texture, to check by eye that each one draws (for measuring)",
-    "/gsweep models, or models perf - every candidate creature model (loaded, textured, its animations), then their frame cost over the board (for measuring), kept for /reload to save",
-    "/gsweep bomb - replay the end panel's model (the bomb, or Tally on a win), to judge it (for measuring)",
-    "/gsweep sounds - play every candidate sound and the music, one after another (for measuring)",
-    "/gsweep perf - time the board on an Expert-sized game (for measuring)",
-    "/gsweep input - log every mouse press and release on the tiles (for measuring), kept for /reload to save; again to stop",
-    "/gsweep guildprobe - how the guild sees this character's addon messages (for measuring), kept for /reload to save",
 }
 
 local function Slash(msg)
@@ -73,8 +71,6 @@ local function Slash(msg)
     elseif msg == "music" then
         GS.Options.Set("music", not GnomesweeperDB.music)
         Print(GnomesweeperDB.music and L["Gnomeregan's music on."] or L["Gnomeregan's music off."])
-    elseif msg == "sounds" then
-        GS.Sounds.ToggleProbe()
     elseif msg == "combat" then
         GS.Options.Set("hideInCombat", not GnomesweeperDB.hideInCombat)
         Print(GnomesweeperDB.hideInCombat and L["hide in combat on: a fight puts the window away until it ends."]
@@ -111,22 +107,6 @@ local function Slash(msg)
         else
             Print(string.format(L["scale must be a number from %s to %s (or reset)."], lo, hi))
         end
-    elseif msg == "assets" then
-        GS.Assets.Toggle()
-    elseif msg == "models" then
-        GS.ModelProbe.Toggle()
-    elseif msg == "models perf" then
-        GS.ModelProbe.Perf()
-    elseif msg == "bomb" then
-        Print(GS.Window.TestBomb())
-    elseif msg == "perf" then
-        for _, line in ipairs(GS.Window.Benchmark()) do Print(line) end
-    elseif msg == "guildprobe" then
-        GS.Social.Probe()
-    elseif msg == "input" then
-        GS.Grid.SetLogging(not GS.Grid.Logging())
-        Print("tile input logging " .. (GS.Grid.Logging()
-            and "on: click some tiles, then /reload to save the log." or "off."))
     else
         if msg ~= "help" then Print(string.format(L["unknown option '%s'."], msg)) end
         for _, line in ipairs(HELP) do Print(line) end

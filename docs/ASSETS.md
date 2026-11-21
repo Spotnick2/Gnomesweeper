@@ -1,8 +1,9 @@
 # Art plan
 
-**To check every texture on the live client: `/gsweep assets`** (#6). It shows a contact sheet of
+**To check every texture on the live client: the probe's `/fp gs assets`** (#6; was `/gsweep assets`
+until #87 moved every probe out of the addon, `docs/FOREVER-PROBE.md`). It shows a contact sheet of
 everything the skin names, says which client paths the client doesn't have, and saves the results
-(`GnomesweeperDB.assetProbe`) for a `/reload` to write to disk. A green square or an empty cell on
+(`GnomesweeperProbeDB.assets`) for a `/reload` to write to disk. A green square or an empty cell on
 the sheet is a texture the client can't draw.
 
 **Measured with it** (owner, 1.60.1.70205, 2026-10-02): **all 19 textures draw**, with no green
@@ -82,7 +83,7 @@ as file IDs. #6 does the rest.
   the size of the clock and close glyphs beside it, and the client's trophy and achievement art is
   square item icons with a painted frame and background (they turn into a dark tile at 14 units) or
   Retail achievement atlases not measured on Forever. **Unmeasured alternative**, if a client icon is
-  wanted: try `Interface\Icons\INV_Misc_Trophy_*` / `Achievement_*` names with `/gsweep assets`
+  wanted: try `Interface\Icons\INV_Misc_Trophy_*` / `Achievement_*` names with `/fp gs assets`
   (`GetFileIDFromPath`) before switching.
 
 ## The mascot (#5, #30)

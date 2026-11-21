@@ -1,4 +1,5 @@
--- Assets.lua: /gsweep assets. A contact sheet of every texture the skin names,
+-- Assets.lua: /fp gs assets (GnomesweeperProbe, #87; was /gsweep assets).
+-- A contact sheet of every texture the skin names,
 -- so each can be checked on the live client by eye, plus what the client can say
 -- about them by itself (#6).
 --
@@ -12,14 +13,13 @@
 -- What GetFileIDFromPath answers for a media path is recorded too: whether it
 -- knows addon files is itself a measurement.
 --
--- The results are kept in GnomesweeperDB.assetProbe, so a /reload writes them to
+-- The results are kept in GnomesweeperProbeDB.assets, so a /reload writes them to
 -- the SavedVariables file and they can be read from disk.
 
-local ADDON = ...
-Gnomesweeper = Gnomesweeper or {}
+local ADDON, NS = ...
 local GS = Gnomesweeper
 local Assets = {}
-GS.Assets = Assets
+NS.Assets = Assets
 
 local Glass, Skin, Widgets = GS.Glass, GS.Skin, GS.Widgets
 local C = Skin.COLORS
@@ -144,15 +144,14 @@ local function build(entries)
 end
 
 local function save(entries)
-    local version, build = GetBuildInfo()
-    local probe = { build = tostring(version) .. "." .. tostring(build), entries = {} }
+    local probe = { build = NS.build(), entries = {} }
     for _, e in ipairs(entries) do
         probe.entries[e.key] = { kind = e.kind, value = tostring(e.value), fileID = e.fileID, checked = e.checked }
     end
-    GnomesweeperDB.assetProbe = probe
+    NS.db().assets = probe
 end
 
--- /gsweep assets: show (or hide) the sheet, refresh what the client says, save it, report.
+-- /fp gs assets: show (or hide) the sheet, refresh what the client says, save it, report.
 function Assets.Toggle()
     if sheet and sheet:IsShown() then sheet:Hide(); return end
     local entries = Assets.Survey()
@@ -167,12 +166,14 @@ function Assets.Toggle()
 
     local missing, names = Assets.Missing(entries), {}
     for _, e in ipairs(missing) do names[#names + 1] = e.key .. " (" .. tostring(e.value) .. ")" end
-    print(string.format("|cff7fd4ffGnome|rsweeper: %d textures on the sheet. Client paths it doesn't have: %s.",
-        #entries, #names > 0 and table.concat(names, ", ") or "none"))
-    print("|cff7fd4ffGnome|rsweeper: our own files and client file IDs can only be checked by eye: look at the sheet. /reload saves the results.")
+    NS.say("%d textures on the sheet. Client paths it doesn't have: %s.",
+        #entries, #names > 0 and table.concat(names, ", ") or "none")
+    NS.say("our own files and client file IDs can only be checked by eye: look at the sheet. /reload saves the results.")
 end
 
 function Assets.IsShown() return sheet ~= nil and sheet:IsShown() end
+
+NS.P:Command("assets", function() Assets.Toggle() end, "a sheet of every texture, to check by eye that each one draws")
 
 Assets._test = {
     cells = cells,

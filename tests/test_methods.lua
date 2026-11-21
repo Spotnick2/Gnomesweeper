@@ -61,10 +61,7 @@ do
     local t = G.tiles[41]
     t._scripts.OnMouseDown(t, "LeftButton"); t._scripts.OnMouseDown(t, "RightButton")
     t._scripts.OnMouseUp(t, "LeftButton", true); t._scripts.OnMouseUp(t, "RightButton", true)
-    WoW.slash("/gsweep perf")
-    WoW.slash("/gsweep input")
     press(2, "LeftButton")
-    WoW.slash("/gsweep input")
     -- End a game on a mine, on a hand-built board (a random one might put the mine under a flag).
     W._test.SetGame(Gnomesweeper.Board._test.FromLayout({ "..*..", "..*..", "..*..", "..*.." }))
     press(3, "LeftButton")
@@ -117,28 +114,6 @@ do
     end
     local bests = Gnomesweeper.Window._test.ui.bests
     bests.close._scripts.OnClick(bests.close)
-    do                                                  -- the model probe (#20): sheet, viewer, perf
-        WoW.modelSetFails[6977] = nil
-        WoW.modelBoxes[6977] = { -0.5, -0.4, -0.6, 0.5, 0.4, 0.6 }
-        WoW.modelBoxes["unit:player"] = { -0.3, -0.3, -0.5, 0.3, 0.3, 0.5 }
-        WoW.slash("/gsweep models")
-        WoW.advance(3.5)
-        local P = Gnomesweeper.ModelProbe._test
-        P.cells[1]._scripts.OnClick(P.cells[1])
-        WoW.advance(0.5)
-        local v = P.viewer()
-        v.next._scripts.OnClick(v.next); v.prev._scripts.OnClick(v.prev)
-        v.sparks._scripts.OnClick(v.sparks)
-        WoW.slash("/gsweep models perf")
-        for _ = 1, 700 do WoW.tick(0.016) end
-        WoW.advance(1)
-        for _ = 1, 700 do WoW.tick(0.016) end
-        P.sheet():Hide()
-    end
-    WoW.slash("/gsweep assets")                         -- the contact sheet (#6)
-    local sheet = Gnomesweeper.Assets._test.sheet()
-    sheet._scripts.OnDragStart(sheet); sheet._scripts.OnDragStop(sheet)
-    sheet.close._scripts.OnClick(sheet.close)
     W.NewGame("beginner")
 end
 
@@ -176,8 +151,8 @@ eq(#swallowed, 0, "no error was swallowed by a pcall during the exercise: " .. t
 -- A model scene's actor is checked like any widget: the kit has its methods (WowTestKit #90).
 local recorded = Kit.checkMethods()
 -- The floor: what loading and the exercise record today, rounded down, so the
--- exercise can't quietly shrink.
-check(recorded >= 180, "the exercise reached the windows (" .. recorded .. " recorded)")
+-- exercise can't quietly shrink. (165 since the probes moved out, #87; test_probe.lua checks theirs.)
+check(recorded >= 165, "the exercise reached the windows (" .. recorded .. " recorded)")
 
 -- FINDING (#95): /gsweep help printed once, its three lines with a bare "|".
 done("test_methods")

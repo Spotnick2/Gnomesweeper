@@ -1236,19 +1236,6 @@ function Window.Dispatch(kind, i)
     if not x then return end
     -- The option: a left click on a revealed number chords it.
     if kind == "reveal" and db().chordOnLeft and game:Cell(i).state == "revealed" then kind = "chord" end
-    -- While /gsweep input is on, say what the cell was and what the action did,
-    -- so "nothing happened" can be explained from the log alone.
-    local before
-    if Grid.Logging() then
-        local c, flags = game:Cell(i), 0
-        for dy = -1, 1 do
-            for dx = -1, 1 do
-                local j = (dx ~= 0 or dy ~= 0) and game:Index(x + dx, y + dy)
-                if j and game:Cell(j).state == "flag" then flags = flags + 1 end
-            end
-        end
-        before = string.format("(%d,%d) %s%s, %d flags around", x, y, c.state, c.count and (" " .. c.count) or "", flags)
-    end
     local was = game:State()
     local list
     if kind == "reveal" then
@@ -1258,7 +1245,6 @@ function Window.Dispatch(kind, i)
     else
         list = game:ToggleMark(x, y)
     end
-    if before then Grid.Log("%s on %s -> %d cells changed (%s)", kind, before, #list, game:State()) end
     if #list > 0 and kind ~= "mark" then reveals = reveals + 1 end   -- flags are read off the board (#32)
     local state = game:State()
     recordScores(was, state)             -- first, so the refresh below shows a new best
@@ -1400,44 +1386,6 @@ end
 function Window.ScaleInfo()
     ensure()
     return db().scale or 1, Window.scale
-end
-
--- /gsweep bomb (for measuring, #21): replays the end panel's model (the bomb on a
--- wipe, Tally on a win) without ending another game, to judge it by eye. Says why
--- when it can't.
-function Window.TestBomb()
-    if not Window.IsShown() then return "open the board first (/gsweep)." end
-    if not GS.Models.Enabled() then return "3D models are off in the settings." end
-    if not (ui.overlay and ui.overlay:IsShown()) then
-        return "end a game first (a wipe for the bomb, a win for Tally): this replays the panel's model."
-    end
-    ui.slot.stop()
-    Window.EndModel()
-    local c = GS.Models.CAST[game:State() == "won" and "win" or "wipe"]
-    -- Its steps as "1 (1.5 s), 6 (held, lift 24)", to judge each by eye.
-    local steps = {}
-    for _, s in ipairs(c.steps) do
-        steps[#steps + 1] = string.format("%d (%s%s)", s[1], s[2] and string.format("%.2f s", s[2]) or "held",
-            s.lift and (", lift " .. s.lift) or "")
-    end
-    return string.format("display %d: %s; drawn %d units tall (tiles are 24).", c.display,
-        table.concat(steps, ", "), GS.Models.HEIGHT)
-end
-
--- Where a model would go (#20's probe, #21): the face button, and the effects
--- layer over the tiles (above them, under the end overlay). nil before the window
--- is built.
-function Window.ModelHosts()
-    return ui.face, ui.fx
-end
-
--- /gsweep perf: times the heavy operations on a scratch Expert board, then puts
--- the real game back.
-function Window.Benchmark()
-    ensure()
-    local lines = Grid.Benchmark()
-    syncGame()
-    return lines
 end
 
 Window._test = {

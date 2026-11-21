@@ -5,8 +5,8 @@
 -- PlaySoundFile refuses the game's own file paths on Forever (porting guide); kit
 -- IDs play. (C_Sound.PlaySound's second argument is a UISoundSubType enum, not a
 -- channel: it isn't used here.) The kits are the candidates in docs/SOUNDS.md;
--- /gsweep sounds plays each one to choose by ear and records what the client
--- said.
+-- GnomesweeperProbe's /fp gs sounds plays each one to choose by ear and records
+-- what the client said (#87).
 --
 -- The wipe is two sounds in a row, the bomb and then a gnome's last words: two
 -- PlaySound calls at once overlap, so the second waits WIPE_DELAY. A new game, or
@@ -30,7 +30,7 @@ local GS = Gnomesweeper
 local Sounds = {}
 GS.Sounds = Sounds
 
--- The picks (docs/SOUNDS.md). All measured to play on 70205 (/gsweep sounds).
+-- The picks (docs/SOUNDS.md). All measured to play on 70205 (then /gsweep sounds).
 -- Voices follow the character's sex (owner): a male or a female gnome.
 Sounds.KITS = {
     reveal = 1115,       -- SOUNDKIT.U_CHAT_SCROLL_BUTTON: a soft click
@@ -130,7 +130,6 @@ end
 
 local playing = false    -- this addon started the music and hasn't stopped it
 local inCombat = false
-local probeMusic = false -- /gsweep sounds wants the music now, even with the setting off
 
 local LOG_MAX = 60
 local function log(fmt, ...)
@@ -144,10 +143,9 @@ local function log(fmt, ...)
     while #l > LOG_MAX do table.remove(l, 1) end
 end
 
--- The one check. The probe's music is one more reason to play, under the same
--- window and combat rules, so it is started, stopped and owned like any other.
+-- The one check: the setting on, the window shown, not in combat.
 local function eligible()
-    return (db().music == true or probeMusic) and GS.Window.IsShown() and not inCombat
+    return db().music == true and GS.Window.IsShown() and not inCombat
 end
 
 -- Starts or stops the music to match the one check. Safe to call any time.
@@ -199,88 +197,6 @@ events:SetScript("OnEvent", function(_, event)
     end
     Sounds.UpdateMusic()
 end)
-
-------------------------------------------------------------
--- /gsweep sounds: every candidate, one after another (for measuring)
-------------------------------------------------------------
-
--- The choices still open (the rest are picked and measured: docs/SOUNDS.md).
--- The first round (70205) refused 17484, 17487 and 17569, the Cataclysm-era
--- Operation: Gnomeregan kits. These alert candidates are Blizzard's own SOUNDKIT.
-Sounds.CANDIDATES = {
-    { 18871, "alert (the clock passed your best): ALARM_CLOCK_WARNING_1" },
-    { 12867, "alert: ALARM_CLOCK_WARNING_2" },
-    { 12889, "alert: ALARM_CLOCK_WARNING_3" },
-    { 8959, "alert: RAID_WARNING" },
-    { 8960, "alert: READY_CHECK" },
-    { 4574, "alert: IG_PVP_UPDATE" },
-    { 8459, "alert: PVP_THROUGH_QUEUE (the battleground is ready)" },
-    { 25477, "alert: UI_BATTLEGROUND_COUNTDOWN_TIMER" },
-    { 878, "new best: IG_QUEST_LIST_COMPLETE (the current pick)" },
-    { 31578, "new best: UI_EPICLOOT_TOAST" },
-    { 63971, "new best: UI_LEGENDARY_LOOT_TOAST" },
-    { 73277, "new best: UI_WORLDQUEST_COMPLETE" },
-    { 8569, "fireworks (the owner's pick)" },
-    { 4935, "new game: GnomeRoboArmFidget01Fidget02 (the owner's pick)" },
-}
-Sounds.PROBE_GAP = 3       -- seconds between candidates
-Sounds.MUSIC_PROBE = 12    -- seconds of music at the end
-
-local probeRun = 0
-
-function Sounds.Probe()
-    probeRun = probeRun + 1
-    local run = probeRun
-    local version, build = GetBuildInfo()
-    local results = { build = tostring(version) .. "." .. tostring(build), kits = {} }
-    db().soundProbe = results
-    local list = Sounds.CANDIDATES
-    GS.Print(string.format("playing %d sounds, %d s apart, then %d s of music. /gsweep sounds again stops it.",
-        #list, Sounds.PROBE_GAP, Sounds.MUSIC_PROBE))
-    for i, c in ipairs(list) do
-        C_Timer.After((i - 1) * Sounds.PROBE_GAP, function()
-            if run ~= probeRun then return end
-            local willPlay = PlaySound(c[1], "SFX")
-            results.kits[c[1]] = { name = c[2], willPlay = willPlay and true or false }
-            GS.Print(string.format("%d/%d  %d  %s%s", i, #list, c[1], c[2], willPlay and "" or "  (the client says it won't play)"))
-        end)
-    end
-    local t = #list * Sounds.PROBE_GAP
-    C_Timer.After(t, function()
-        if run ~= probeRun then return end
-        -- Through the one check: no music with the board closed or in combat.
-        probeMusic = true
-        Sounds.UpdateMusic()
-        results.music = { file = Sounds.MUSIC, started = playing }
-        GS.Print(playing and string.format("music: Gnomeregan's zone music (%d), for %d s.", Sounds.MUSIC, Sounds.MUSIC_PROBE)
-            or "music: skipped (the board is closed, or you're in combat).")
-    end)
-    C_Timer.After(t + Sounds.MUSIC_PROBE, function()
-        if run ~= probeRun then return end
-        probeMusic = false
-        Sounds.UpdateMusic()                               -- stops it, unless the setting wants it on
-        GS.Print("done. /reload saves what the client said; tell me what you heard.")
-    end)
-end
-
--- Toggle: a second /gsweep sounds while one runs stops it.
-local probing = false
-function Sounds.ToggleProbe()
-    if probing then
-        probeRun = probeRun + 1                            -- the remaining callbacks do nothing
-        probing = false
-        probeMusic = false
-        Sounds.UpdateMusic()                               -- stops only music this addon started
-        GS.Print("sound check stopped.")
-        return
-    end
-    probing = true
-    Sounds.Probe()
-    local run = probeRun
-    C_Timer.After(#Sounds.CANDIDATES * Sounds.PROBE_GAP + Sounds.MUSIC_PROBE, function()
-        if run == probeRun then probing = false end
-    end)
-end
 
 Sounds._test = {
     inCombat = function() return inCombat end,

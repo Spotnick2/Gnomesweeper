@@ -1,4 +1,4 @@
--- The probe's Models.lua (Tools/GnomesweeperProbe, #87): /fp gs models, the model
+-- The probe's Models.lua (Tools/GnomesweeperProbe, #87): /fp sweep models, the model
 -- probe (#20). Loads ForeverProbe from its checkout: local only.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
@@ -49,7 +49,7 @@ do
     WoW.modelSetFails[19139] = true                         -- Boombot: not on this client
     probeSlash("models")
     local sheet = T.sheet()
-    check(sheet and sheet:IsShown(), "/fp gs models shows the sheet")
+    check(sheet and sheet:IsShown(), "/fp sweep models shows the sheet")
     eq(#T.cells, #P.CANDIDATES, "one cell per candidate")
     local bomb = T.cells[indexOf(P, "walkingBomb")]
     local scene, actor = bomb.scene, bomb.scene.actor
@@ -98,7 +98,7 @@ do
 
     -- Closing drops answers still on their way; showing again loads everything afresh.
     probeSlash("models")
-    check(not sheet:IsShown(), "/fp gs models again closes it")
+    check(not sheet:IsShown(), "/fp sweep models again closes it")
     WoW.modelBoxes = {}
     probeSlash("models")
     eq(bomb.state:GetText(), "...", "a new survey starts over")
@@ -213,7 +213,7 @@ do
 end
 
 ----------------------------------------------------------------------------
--- /fp gs modelperf
+-- /fp sweep modelperf
 ----------------------------------------------------------------------------
 do
     local P, T = setup()

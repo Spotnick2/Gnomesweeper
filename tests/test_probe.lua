@@ -30,44 +30,25 @@ local function open(opts)
 end
 
 ----------------------------------------------------------------------------
--- The module, and the old saved results gone from the addon's table
+-- The module (what ships without it is test_shipped.lua, which CI runs)
 ----------------------------------------------------------------------------
 do
-    local NS = loadProbe({ db = { assetProbe = { build = "x" }, modelProbe = {}, soundProbe = {},
-        guildProbe = { "a" }, inputLog = { "b" }, socialLog = { "kept" }, theme = "modern" } })
-    for _, k in ipairs({ "assetProbe", "modelProbe", "soundProbe", "guildProbe", "inputLog" }) do
-        eq(GnomesweeperDB[k], nil, "the addon drops a probe's old results at load: " .. k)
-    end
-    eq(GnomesweeperDB.socialLog[1], "kept", "...but keeps its own diagnostics (socialLog, owner)")
-    eq(GnomesweeperDB.theme, "modern", "...and the settings")
+    local NS = loadProbe()
     check(NS.P ~= nil and type(GnomesweeperProbeDB.log) == "table", "the module is loaded, its log bound")
     check(said("loaded (1 loads)"), "...and says so in its own log")
     eq(#WoW.chat, 0, "...not in chat")
-    for _, line in ipairs(Gnomesweeper.HELP) do
-        check(not line:find("(for measuring)", 1, true), "the addon's help lists no measuring command: " .. line)
-    end
-    eq(Gnomesweeper.ModelProbe, nil, "the addon has no model probe")
-    eq(Gnomesweeper.Assets, nil, "...no asset sheet")
-    eq(Gnomesweeper.Sounds.Probe, nil, "...no sound probe")
-    eq(Gnomesweeper.Social.Probe, nil, "...no guild probe")
-    eq(Gnomesweeper.Grid.SetLogging, nil, "...no input logging")
-    eq(Gnomesweeper.Window.Benchmark, nil, "...no benchmark")
-    eq(Gnomesweeper.Window.TestBomb, nil, "...no bomb replay")
-    WoW.chat = {}
-    WoW.slash("/gsweep perf")
-    check(#WoW.chat > 0 and WoW.chat[1]:find("unknown option 'perf'", 1, true) ~= nil,
-        "/gsweep perf is an unknown option now")
+    eq(ForeverProbe.byCmd.sweep ~= nil, true, "its command is /fp sweep (GuildSpyProbe has gs: Codex, #104)")
 end
 
 ----------------------------------------------------------------------------
--- /fp gs perf
+-- /fp sweep perf
 ----------------------------------------------------------------------------
 do
     local NS, W = open()
     probeSlash("perf")
     check(said("open the board first") == false, "(the board is open)")
     local game = W.game
-    check(said("build Expert"), "/fp gs perf reports the Expert build")
+    check(said("build Expert"), "/fp sweep perf reports the Expert build")
     check(said("first reveal and repaint"), "...the first reveal")
     check(said("a loss, every mine shown"), "...a loss")
     check(said("10 difficulty switches"), "...and switching difficulty")
@@ -82,12 +63,12 @@ do
 end
 
 ----------------------------------------------------------------------------
--- /fp gs input
+-- /fp sweep input
 ----------------------------------------------------------------------------
 do
     local NS, W = open()
     probeSlash("input")
-    check(said("logging on"), "/fp gs input turns the log on")
+    check(said("logging on"), "/fp sweep input turns the log on")
     click(5, L)
     check(said("tile 5  down  LeftButton"), "...and logs a press")
     check(said("upInside=true"), "...and a release with its arguments")
@@ -109,6 +90,10 @@ do
     click(at(3, 3), R)
     click(at(2, 2), M)
     check(said("chord on (2,2) revealed 3, 3 flags around -> 7 cells changed"), "a chord that works says what it opened")
+    GnomesweeperDB.chordOnLeft = true
+    local ok = pcall(W2.Dispatch, "reveal", W2.game.total + 1)
+    check(ok, "an index Dispatch ignores stays ignored with the log on and left-click clearing (Codex, #104)")
+    GnomesweeperDB.chordOnLeft = false
     local dispatch = NS2._test.input.dispatch
     probeSlash("input")
     eq(W2.Dispatch, dispatch, "off: Window.Dispatch is the addon's own again")
@@ -126,7 +111,7 @@ do
 end
 
 ----------------------------------------------------------------------------
--- /fp gs bomb
+-- /fp sweep bomb
 ----------------------------------------------------------------------------
 do
     local BOMB = { -1.4, -1.2, -1.95, 1.4, 1.2, 1.95 }
@@ -155,7 +140,7 @@ do
 end
 
 ----------------------------------------------------------------------------
--- /fp gs sounds
+-- /fp sweep sounds
 ----------------------------------------------------------------------------
 do
     local NS, W = open()
@@ -184,7 +169,7 @@ do
     WoW.advance(NS.SOUND_GAP * 2 - 1)
     probeSlash("sounds")
     WoW.advance(200)
-    eq(#WoW.sounds, 2, "a second /fp gs sounds stops it")
+    eq(#WoW.sounds, 2, "a second /fp sweep sounds stops it")
     eq(WoW.music, nil, "...with no music left playing")
 end
 
@@ -203,6 +188,41 @@ do  -- the music's turn follows the addon's rule: the board shown, not in combat
     eq(WoW.music, nil, "...nor in combat")
     WoW.inCombat = false
     WoW.advance(NS.MUSIC_SECONDS)
+end
+
+do  -- the sample stops with the board, or a fight (Codex, #104)
+    local NS, W = open()
+    local n = #NS.SOUNDS
+    probeSlash("sounds")
+    WoW.advance(n * NS.SOUND_GAP + 1)
+    eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "(the sample plays)")
+    W.win:Hide()
+    eq(WoW.music, nil, "closing the board stops it")
+    W.win:Show()
+    WoW.advance(NS.MUSIC_SECONDS)
+    probeSlash("sounds")
+    WoW.advance(n * NS.SOUND_GAP + 1)
+    eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "(again)")
+    WoW.inCombat = true
+    WoW.fire("PLAYER_REGEN_DISABLED")
+    eq(WoW.music, nil, "a fight stops it")
+    WoW.inCombat = false
+    WoW.fire("PLAYER_REGEN_ENABLED")
+    WoW.advance(NS.MUSIC_SECONDS)
+end
+
+do  -- the setting turned on during the sample: the addon's music plays on after it (Codex, #104)
+    local NS, W = open()
+    probeSlash("sounds")
+    WoW.advance(#NS.SOUNDS * NS.SOUND_GAP + 1)
+    Gnomesweeper.Options.Set("music", true)
+    eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "(the addon takes the music over)")
+    WoW.advance(NS.MUSIC_SECONDS)
+    eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "the sample's end leaves the addon's music playing")
+    probeSlash("sounds")
+    WoW.advance(NS.SOUND_GAP)
+    probeSlash("sounds")
+    eq(WoW.music, Gnomesweeper.Sounds.MUSIC, "...and so does stopping the probe")
 end
 
 do  -- cancelling it never stops music someone else plays
@@ -224,7 +244,7 @@ do  -- with the music setting on, the addon plays it and the probe leaves it be
 end
 
 ----------------------------------------------------------------------------
--- /fp gs guild (phase 0)
+-- /fp sweep guild (phase 0)
 ----------------------------------------------------------------------------
 do  -- in a guild: the identity, the send, the echo, Ambiguate
     local NS = loadProbe()

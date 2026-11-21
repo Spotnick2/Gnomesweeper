@@ -170,7 +170,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   title is **"Clean sweep!"** (was "Field cleared!"; the French keeps "Champ déminé !").
   `Window.EndModel()` starts the model, and `onFail` lays the panel out again without it. The
   panel stops its model when it hides and starts it when it shows (the client hides children with
-  the window: a reopened panel replays it). The probe's **`/fp gs bomb`** replays the panel's model.
+  the window: a reopened panel replays it). The probe's **`/fp sweep bomb`** replays the panel's model.
 - **`Window.lua`** (#3, done; #4 and #5 build on it): the glass window, built **lazily** on the first
   `/gsweep`. It owns the current game (`Window.game`, a `Board`) and is the only thing that creates
   one: `Window.NewGame(preset)`, `Window.Open(preset)`, `Window.Toggle()`. Its parts:
@@ -238,7 +238,7 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
     still keeps the window inside 95% of the screen, so the scale wanted and the scale shown can
     differ, and the command says so.
   - **No measuring command ships** (#87): timing the board and logging the tiles' input are the
-    probe's `/fp gs perf` and `/fp gs input` (`Tools/GnomesweeperProbe`, below).
+    probe's `/fp sweep perf` and `/fp sweep input` (`Tools/GnomesweeperProbe`, below).
 - **`Options.lua`** (#8): the settings. `Options.ITEMS` lists them (question marks, the first-click
   rule, left-click clearing, the window scale; sounds #9, music #22, models #21 and hiding in combat
   #37 join it with their issues). **`Options.Set(key, value)` is the one place a setting changes**: it
@@ -337,13 +337,13 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   shown, not in combat) runs whenever any of them changes (`Sounds.UpdateMusic`: the window's
   show/hide, `PLAYER_REGEN_*`, a setting), and `StopMusic()` only for music this addon started.
   Off by default. The title bar's **note** button (greyed under a red slash when off) and the
-  settings change the same value. Auditioning the candidates by ear is the probe's `/fp gs sounds`.
+  settings change the same value. Auditioning the candidates by ear is the probe's `/fp sweep sounds`.
 - **`Tools/GnomesweeperProbe`** (#87): **the developer probe, a ForeverProbe module, never packaged**
   (`.pkgmeta` ignores `Tools`, and CI fails on a `Tools/` path in the zip). The owner's rule: **no
   probe ships in a release**, and the shipped addon keeps no probe code and no hook for one: the
   module reads it through its public functions and `_test` seams, and wraps `Window.Dispatch` /
-  `Grid.Refresh` only while `/fp gs input` is on. `## Dependencies: ForeverProbe, Gnomesweeper`;
-  `/fp gs` lists its commands; its lines go to the `/fp` console and `GnomesweeperProbeDB.log`,
+  `Grid.Refresh` only while `/fp sweep input` is on. `## Dependencies: ForeverProbe, Gnomesweeper`;
+  `/fp sweep` lists its commands; its lines go to the `/fp` console and `GnomesweeperProbeDB.log`,
   never chat, and what it measured to `GnomesweeperProbeDB` (`assets`, `models`, `sounds`). The addon
   drops the old `assetProbe` / `modelProbe` / `soundProbe` / `guildProbe` / `inputLog` keys from
   `GnomesweeperDB` at load. Deploy: `Tools\deploy.ps1 -Probe` / `-ProbeOnly`; `docs/FOREVER-PROBE.md`
@@ -425,14 +425,14 @@ LibDBIcon-1.0, ChatThrottleLib) → `Compat.lua` → `Locales\enUS.lua` → `Loc
   query **retries every 5 s for up to a minute** while the guild isn't known (after a `/reload` on this
   beta its name can come late, with no `PLAYER_GUILD_UPDATE` after). **`GnomesweeperDB.socialLog`**
   (the last 60 lines) records the login, each query and its result, guild events, every message, and
-  each toast decision with its reason; the probe's `/fp gs guild` also reports the toasts' state. Sends go through **ChatThrottleLib** when
+  each toast decision with its reason; the probe's `/fp sweep guild` also reports the toasts' state. Sends go through **ChatThrottleLib** when
   loaded; a refused send (at once, or later through its callback) doesn't count as made and is kept in
   `Social.lastFailure` (the probe reports it). Window calls `RecordWin` in a `pcall`: the guild layer
   can never cost the account's best. Reading never creates the table, except a record of this
   character's seeded from the scores, kept at once (a preview could be lost to an alt's new best). Reset best times clears `mine`. **The Guild tab** (Window's Best times: You |
   Guild): per difficulty the guild's best to the tenth, who and when, "you: 2 of 5", the top 5 in a
   row's tooltip, the guild's name at the bottom; it refreshes when a time arrives
-  (`Window.SocialChanged`). Phase 0's probe is the module's `/fp gs guild` (#87). **Measured (70205):** the guild
+  (`Window.SocialChanged`). Phase 0's probe is the module's `/fp sweep guild` (#87). **Measured (70205):** the guild
   sender is the full name with the surname and **no realm** (`"Kaleid Sumner"`), `Ambiguate` is a no-op,
   `UnitFullName`'s second answer is the surname, and `GetGuildInfo`'s 4th is the guild's own realm
   (`docs/SOCIAL.md`, "Identity"). The stub's `C_ChatInfo` echoes a GUILD message from `WoW.addonSender`,
@@ -569,7 +569,7 @@ Advice citing TBC/Classic APIs is usually stale.
   a plain Button"). **The middle button arrives too, and so do two buttons held at once** (left pressed first,
   right second: both `OnMouseDown`s and both `OnMouseUp`s, with `upInside` correct on each), so
   left+right needs no special client support. Unmeasured: right pressed first, and closing the
-  window with a button held. The probe's `/fp gs input` logs the events and what each action did.
+  window with a button held. The probe's `/fp sweep input` logs the events and what each action did.
 - `UISpecialFrames` for Escape-to-close. `FULLSCREEN_DIALOG` strata like GlassPanel's `Window`.
 - SavedVariables persist as of 70009. Verify persistence only with a **full client exit**, never
   a `/reload`. Code must still cope when they're absent.
@@ -668,7 +668,7 @@ kit's (the harness loads it for the pure tests, which load no stub). `kit.pin`'s
   damaged data), the full name, and in the window: counting, the overlay, the result bar, the list,
   the tooltip, a reload, and the result bar's room for its text on every difficulty.
 - **The probe's tests** (#87) load ForeverProbe from its checkout (`loadProbe()` in the harness:
-  the addon, the host, the module; `probeSlash("models")` runs `/fp gs models`, `probeSaid(text)`
+  the addon, the host, the module; `probeSlash("models")` runs `/fp sweep models`, `probeSaid(text)`
   reads its log). **Local only**: CI sets `FOREVERPROBE_OPTIONAL=1` and they print `SKIPPED` (the host
   is private), so run `tests\run.ps1` before any PR that touches the probe. **`test_probe.lua`** is
   `Core.lua`'s commands, nothing in chat, the old keys dropped, the addon's own surface free of probes,

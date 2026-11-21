@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: GnomesweeperProbe
-## Notes: Throwaway probe for Gnomesweeper: models, textures, sounds, the guild channel, input, timings. A ForeverProbe module: /fp gs
+## Notes: Throwaway probe for Gnomesweeper: models, textures, sounds, the guild channel, input, timings. A ForeverProbe module: /fp sweep
 ## Author: Spotnick
 ## Version: dev
 ## Dependencies: ForeverProbe, Gnomesweeper

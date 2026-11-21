@@ -45,7 +45,7 @@ GS.Print = Print
 
 -- Also listed on Options > AddOns > Gnomesweeper > About. The player's commands are
 -- translated (the commands themselves stay English). The measuring commands are
--- GnomesweeperProbe's (/fp gs, #87), never shipped.
+-- GnomesweeperProbe's (/fp sweep, #87), never shipped.
 local HELP = {
     L["/gsweep - open or close the board (also /gnomesweeper, /minewipe)"],
     L["/gsweep beginner, intermediate or expert - start a game at that difficulty"],

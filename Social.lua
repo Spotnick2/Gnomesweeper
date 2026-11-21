@@ -18,7 +18,7 @@
 -- cleared by a guild change or the setting turned off. Toast.lua draws it.
 --
 -- Phase 0's measuring probe (what this character is called, a "P" message and its echo) is
--- GnomesweeperProbe's /fp gs guild (#87), never shipped.
+-- GnomesweeperProbe's /fp sweep guild (#87), never shipped.
 
 local ADDON = ...
 Gnomesweeper = Gnomesweeper or {}
@@ -220,7 +220,7 @@ end
 -- (Codex, #69: a throttled BULK B arrived after a NORMAL R).
 -- The result is read (docs/SOCIAL.md): a failure calls onFail (with ChatThrottleLib, when the
 -- message actually leaves, which can be later) and is kept in Social.lastFailure, which
--- GnomesweeperProbe's /fp gs guild reports. Returns false when it failed at once.
+-- GnomesweeperProbe's /fp sweep guild reports. Returns false when it failed at once.
 local function failed(result, onFail)
     Social.lastFailure = tostring(result) .. " at " .. date("%H:%M:%S")
     slog("send FAILED: %s", tostring(result))

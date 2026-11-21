@@ -1,4 +1,4 @@
--- Models.lua: /fp gs models, the model probe (GnomesweeperProbe, #87; was
+-- Models.lua: /fp sweep models, the model probe (GnomesweeperProbe, #87; was
 -- /gsweep models, #20). Which creature models
 -- render on this client, how long they take, which animations they have, and
 -- what a scene costs over the board: what #21 (live models) builds on.
@@ -19,7 +19,7 @@
 -- (declared, unmeasured) and a DressUpModel's SetUnit("player") (measured in
 -- AltStable: textured).
 --
--- /fp gs modelperf: the frame rate over the open board for 5 s, then 5 s with
+-- /fp sweep modelperf: the frame rate over the open board for 5 s, then 5 s with
 -- a head over the face and a bomb over the tiles, as #21 would draw them.
 --
 -- Everything is kept in GnomesweeperProbeDB.models, so a /reload writes it to the
@@ -490,7 +490,7 @@ local function survey()
     finished()
 end
 
--- /fp gs models: show (or hide) the sheet; each show loads everything afresh.
+-- /fp sweep models: show (or hide) the sheet; each show loads everything afresh.
 function Probe.Toggle()
     if sheet and sheet:IsShown() then sheet:Hide(); return end
     local saved = type(NS.db().models) == "table" and NS.db().models.headCrop
@@ -503,7 +503,7 @@ function Probe.Toggle()
 end
 
 ----------------------------------------------------------------------------
--- /fp gs modelperf
+-- /fp sweep modelperf
 ----------------------------------------------------------------------------
 
 -- The two scenes belong to the probe (a frame on UIParent), drawn OVER the face and
@@ -545,7 +545,7 @@ function Probe.Perf()
     local ui = GS.Window._test.ui
     local face, fx = ui.face, ui.fx
     if not (GS.Window.IsShown() and face and fx) then
-        Print("open the board first (/gsweep expert is the worst case), then /fp gs modelperf.")
+        Print("open the board first (/gsweep expert is the worst case), then /fp sweep modelperf.")
         return
     end
     perf = perf or CreateFrame("Frame", nil, UIParent)

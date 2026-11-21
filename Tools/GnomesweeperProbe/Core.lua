@@ -7,20 +7,21 @@
 -- It reads the addon through its public functions and its _test seams; the
 -- shipped addon has no probe code and no hook for one. A probe: English.
 --
---   /fp gs assets      a sheet of every texture, to check each one draws (Assets.lua, #6)
---   /fp gs models      every candidate creature model, and a viewer (Models.lua, #20)
---   /fp gs modelperf   the frame rate over the board without, then with, two models
---   /fp gs bomb        replay the end panel's model, to judge it (#21)
---   /fp gs sounds      every candidate sound, then the music; again to stop (#9, #22)
---   /fp gs perf        time the board on an Expert-sized game (#4)
---   /fp gs input       log every tile press and release, and what each action did; again to stop (#4)
---   /fp gs guild       how the guild sees this character's addon messages (#15, phase 0)
+--   /fp sweep assets      a sheet of every texture, to check each one draws (Assets.lua, #6)
+--   /fp sweep models      every candidate creature model, and a viewer (Models.lua, #20)
+--   /fp sweep modelperf   the frame rate over the board without, then with, two models
+--   /fp sweep bomb        replay the end panel's model, to judge it (#21)
+--   /fp sweep sounds      every candidate sound, then the music; again to stop (#9, #22)
+--   /fp sweep perf        time the board on an Expert-sized game (#4)
+--   /fp sweep input       log every tile press and release, and what each action did; again to stop (#4)
+--   /fp sweep guild       how the guild sees this character's addon messages (#15, phase 0)
 
 local ADDON, NS = ...
 local GS = Gnomesweeper
 local MAX_LOG = 3000
 
-local P = ForeverProbe:Module("GnomesweeperProbe", { api = 1, cmd = "gs" })
+-- "sweep": GuildSpyProbe has "gs", and a second module claiming one is refused (Codex, #104).
+local P = ForeverProbe:Module("GnomesweeperProbe", { api = 1, cmd = "sweep" })
 NS.P = P
 
 -- A line to the console and the log. With arguments, a format string.
@@ -42,7 +43,7 @@ function NS.build()
 end
 
 ------------------------------------------------------------
--- /fp gs bomb (#21): replay the end panel's model without ending another game
+-- /fp sweep bomb (#21): replay the end panel's model without ending another game
 ------------------------------------------------------------
 
 function NS.Bomb()
@@ -69,7 +70,7 @@ end
 P:Command("bomb", function() say(NS.Bomb()) end, "replay the end panel's model (the bomb, or Tally on a win)")
 
 ------------------------------------------------------------
--- /fp gs perf (#4): the heavy operations, timed on a scratch Expert board
+-- /fp sweep perf (#4): the heavy operations, timed on a scratch Expert board
 ------------------------------------------------------------
 
 local function timed(fn)
@@ -125,7 +126,7 @@ P:Command("perf", function()
 end, "time the board on an Expert-sized game")
 
 ------------------------------------------------------------
--- /fp gs input (#4): every press and release on the tiles, and what each action did
+-- /fp sweep input (#4): every press and release on the tiles, and what each action did
 ------------------------------------------------------------
 -- The tiles' scripts are hooked (HookScript: kept, and silent while off), and
 -- Window.Dispatch and Grid.Refresh are wrapped while it's on and put back after.
@@ -184,10 +185,11 @@ function NS.SetInput(on)
         end
         W.Dispatch = function(kind, i)
             local game = W.game
-            local before = game and describe(game, i)
+            local before = game and game:XY(i) and describe(game, i)
             -- The option turns a left click on a revealed number into a chord (as Dispatch does).
             local shown = kind
-            if game and kind == "reveal" and GnomesweeperDB.chordOnLeft and game:Cell(i).state == "revealed" then shown = "chord" end
+            local cell = game and game:XY(i) and game:Cell(i)       -- nil for an index Dispatch ignores
+            if cell and kind == "reveal" and GnomesweeperDB.chordOnLeft and cell.state == "revealed" then shown = "chord" end
             changed = nil
             local r = input.dispatch(kind, i)
             if before then
@@ -208,7 +210,7 @@ P:Command("input", function()
 end, "log every tile press and release, and what each action did; again to stop")
 
 ------------------------------------------------------------
--- /fp gs sounds (#9, #22): every candidate, one after another, then the music
+-- /fp sweep sounds (#9, #22): every candidate, one after another, then the music
 ------------------------------------------------------------
 
 -- The choices still open (the rest are picked and measured: docs/SOUNDS.md).
@@ -236,12 +238,29 @@ NS.MUSIC_SECONDS = 12  -- seconds of music at the end
 local sounds = { run = 0, on = false }
 
 -- The music is the addon's own check's business when its setting is on (it plays while
--- the board is shown, out of combat); the probe plays it itself only when that's off.
+-- the board is shown, out of combat); the probe plays its sample itself only when that's
+-- off. The sample stops with the board or a fight, as the addon's music does, and yields to
+-- the addon if the setting comes on meanwhile: the addon then plays the same track, owns it,
+-- and a StopMusic here would silence it with the addon still thinking it plays (Codex, #104).
 local function stopProbeMusic()
-    if sounds.music then
-        sounds.music = false
-        StopMusic()
-        GS.Sounds.UpdateMusic()                          -- the setting's music back, if it wants it
+    if not sounds.music then return end
+    sounds.music = false
+    local addonWants = GnomesweeperDB.music == true and GS.Window.IsShown() and not UnitAffectingCombat("player")
+    if not addonWants then StopMusic() end
+    GS.Sounds.UpdateMusic()
+end
+
+local musicWatch = CreateFrame("Frame")
+musicWatch:SetScript("OnEvent", function() stopProbeMusic() end)   -- a fight
+local hookedHide
+local function watchMusic()
+    if not musicWatch.registered then
+        musicWatch.registered = P:RegisterEvents(musicWatch, { "PLAYER_REGEN_DISABLED" })
+    end
+    local win = GS.Window.win
+    if win and not hookedHide then
+        hookedHide = true
+        win:HookScript("OnHide", function() stopProbeMusic() end)     -- the board closing
     end
 end
 
@@ -252,7 +271,7 @@ function NS.Sounds()
     local results = { build = NS.build(), kits = {} }
     NS.db().sounds = results
     local list = NS.SOUNDS
-    say("playing %d sounds, %d s apart, then %d s of music. /fp gs sounds again stops it.",
+    say("playing %d sounds, %d s apart, then %d s of music. /fp sweep sounds again stops it.",
         #list, NS.SOUND_GAP, NS.MUSIC_SECONDS)
     for i, c in ipairs(list) do
         C_Timer.After((i - 1) * NS.SOUND_GAP, function()
@@ -274,6 +293,7 @@ function NS.Sounds()
             say("music: skipped (the board is closed, or you're in combat).")
         else
             sounds.music = true
+            watchMusic()
             PlayMusic(GS.Sounds.MUSIC)
             results.music = { file = GS.Sounds.MUSIC, started = true }
             say("music: Gnomeregan's zone music (%d), for %d s.", GS.Sounds.MUSIC, NS.MUSIC_SECONDS)
@@ -299,7 +319,7 @@ P:Command("sounds", function()
 end, "play every candidate sound and the music, one after another; again to stop")
 
 ------------------------------------------------------------
--- /fp gs guild (#15, phase 0): how the guild names this character's addon messages
+-- /fp sweep guild (#15, phase 0): how the guild names this character's addon messages
 ------------------------------------------------------------
 -- What this character is called (every API's answer), a "P" message (a type no v1
 -- client knows) to the guild, and the server's echo. Only our own echo is logged
@@ -330,15 +350,15 @@ listener:SetScript("OnEvent", function(_, _, prefix, text, channel, sender, targ
     say("  text=%s zone=%s local=%s name=%s instance=%s", ours and show(text) or P.Shape(text),
         show(zone), show(localID), show(name), show(instance))
     for _, ctx in ipairs({ "none", "short", "guild", "mail" }) do
-        local ok, out = pcall(Ambiguate, sender, ctx)
-        say("  Ambiguate(sender, %q) = %s", ctx, ok and show(out) or ("error " .. tostring(out)))
+        local ok, out = P:Try("Ambiguate", Ambiguate, sender, ctx)
+        if ok then say("  Ambiguate(sender, %q) = %s", ctx, show(out)) end
     end
 end)
 
 function NS.Guild()
     local show, S = P.Show, GS.Social
-    local ok, registered = pcall(C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
-    say("prefix %s registered: %s", PREFIX, ok and show(registered) or ("error " .. tostring(registered)))
+    local ok, registered = P:Try("RegisterAddonMessagePrefix", C_ChatInfo.RegisterAddonMessagePrefix, PREFIX)
+    if ok then say("prefix %s registered: %s", PREFIX, show(registered)) end
     identity()
     if not guild.listening then
         guild.listening = P:RegisterEvents(listener, { "CHAT_MSG_ADDON" })
@@ -348,8 +368,8 @@ function NS.Guild()
         return
     end
     local message = "1\tP\t" .. time()
-    local okS, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, message, "GUILD")
-    say("SendAddonMessage(GUILD) = %s", okS and show(result) or ("error " .. tostring(result)))
+    local okS, result = P:Try("SendAddonMessage(GUILD)", C_ChatInfo.SendAddonMessage, PREFIX, message, "GUILD")
+    if okS then say("SendAddonMessage(GUILD) = %s", show(result)) end
     say("last guild send failure: %s", show(S.lastFailure))
     local T = S._test
     local gk = T.guildKey()
@@ -378,7 +398,7 @@ boot:SetScript("OnEvent", function(_, _, name)
     if type(db.log) ~= "table" then db.log = {} end
     P:UseLog(db.log, MAX_LOG)                         -- from here on, lines are saved too
     db.loads = (db.loads or 0) + 1
-    say("loaded (%d loads). /fp gs for the commands", db.loads)
+    say("loaded (%d loads). /fp sweep for the commands", db.loads)
 end)
 
 NS._test = { P = P, input = input, sounds = sounds, guild = guild }

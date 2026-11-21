@@ -14,7 +14,7 @@ Low kit IDs (under ~8000) are vanilla-era sounds.
 
 **Wired (#9, #22, `Sounds.lua`):** reveal 1115, flag 856 / unflag 857 (Blizzard's own UI clicks from
 `SOUNDKIT`), wipe 7517 then 1038 (0.7 s later), win 6131, new game 4779, music 53189. **Pick by ear
-with the probe's `/fp gs sounds`** (was `/gsweep sounds` until #87): it plays every candidate below,
+with the probe's `/fp sweep sounds`** (was `/gsweep sounds` until #87): it plays every candidate below,
 3 s apart, then the music, and saves what the client said (`GnomesweeperProbeDB.sounds`); swap the
 picks in `Sounds.KITS`.
 
@@ -33,9 +33,9 @@ game): **kit 8456**, the owner's pick (a PvP warning; after auditioning 4574 `IG
 25477, the battleground countdown); the new game: **kit 4935 `GnomeRoboArmFidget01Fidget02`** (its
 file is 566083; the owner found the kit ID in Classic's data), a gnomish arm, in place of the big red
 button 4779 that "doesn't sound like much". **A new personal best** (#10): the fanfare **878**
-`IG_QUEST_LIST_COMPLETE` (provisional; `/fp gs sounds` auditions 31578, 63971, 73277), then the
+`IG_QUEST_LIST_COMPLETE` (provisional; `/fp sweep sounds` auditions 31578, 63971, 73277), then the
 gnome's cheer a second later, and with the fireworks **8569** (the owner's pick). The API can't list the client's sound kits (they are game data,
-`SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/fp gs sounds`.
+`SoundKit.db2`, not functions): candidates come from Wowhead names, confirmed by `/fp sweep sounds`.
 The owner once heard the zone's music and ours together; the music log is in place to catch when.
 
 ## Effects (#9)

@@ -412,7 +412,7 @@ do  -- a refused send isn't counted as sent
     WoW.addonResult = 3                                 -- refused
     login()
     eq(#sent("Q"), 0, "(the login query refused)")
-    check(S.lastFailure and S.lastFailure:find("^3 at") ~= nil, "the failure is kept (and /fp gs guild reports it)")
+    check(S.lastFailure and S.lastFailure:find("^3 at") ~= nil, "the failure is kept (and /fp sweep guild reports it)")
     WoW.addonResult = nil
     eq(S.QueryIfStale(), true, "a refused query doesn't block the next for 5 minutes")
     eq(#sent("Q"), 1, "...it goes")

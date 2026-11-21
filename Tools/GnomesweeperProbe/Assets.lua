@@ -1,4 +1,4 @@
--- Assets.lua: /fp gs assets (GnomesweeperProbe, #87; was /gsweep assets).
+-- Assets.lua: /fp sweep assets (GnomesweeperProbe, #87; was /gsweep assets).
 -- A contact sheet of every texture the skin names,
 -- so each can be checked on the live client by eye, plus what the client can say
 -- about them by itself (#6).
@@ -151,7 +151,7 @@ local function save(entries)
     NS.db().assets = probe
 end
 
--- /fp gs assets: show (or hide) the sheet, refresh what the client says, save it, report.
+-- /fp sweep assets: show (or hide) the sheet, refresh what the client says, save it, report.
 function Assets.Toggle()
     if sheet and sheet:IsShown() then sheet:Hide(); return end
     local entries = Assets.Survey()

@@ -5,7 +5,7 @@
 -- PlaySoundFile refuses the game's own file paths on Forever (porting guide); kit
 -- IDs play. (C_Sound.PlaySound's second argument is a UISoundSubType enum, not a
 -- channel: it isn't used here.) The kits are the candidates in docs/SOUNDS.md;
--- GnomesweeperProbe's /fp gs sounds plays each one to choose by ear and records
+-- GnomesweeperProbe's /fp sweep sounds plays each one to choose by ear and records
 -- what the client said (#87).
 --
 -- The wipe is two sounds in a row, the bomb and then a gnome's last words: two

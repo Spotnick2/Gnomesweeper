@@ -131,8 +131,8 @@ function loadProbe(opts)
     return ns
 end
 
--- Runs /fp gs <args>, as the chat box would.
-function probeSlash(args) SlashCmdList.FOREVERPROBE("gs " .. args) end
+-- Runs /fp sweep <args>, as the chat box would.
+function probeSlash(args) SlashCmdList.FOREVERPROBE("sweep " .. args) end
 
 -- Whether the probe said a line holding text (the module's saved log).
 function probeSaid(text)

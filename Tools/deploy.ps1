@@ -17,7 +17,7 @@
 
     Usage:
         pwsh Tools/deploy.ps1
-        pwsh Tools/deploy.ps1 -Probe        # ...and GnomesweeperProbe (/fp gs)
+        pwsh Tools/deploy.ps1 -Probe        # ...and GnomesweeperProbe (/fp sweep)
         pwsh Tools/deploy.ps1 -ProbeOnly    # just GnomesweeperProbe
         pwsh Tools/deploy.ps1 -AddOnsPath "D:\...\_forever_\Interface\AddOns"
 #>
@@ -64,7 +64,7 @@ function Deploy-Probe {
 if ($ProbeOnly) {
     Deploy-Probe
     Write-Host ""
-    Write-Host "/reload in game to load it, then /fp gs for the probe's commands." -ForegroundColor Yellow
+    Write-Host "/reload in game to load it, then /fp sweep for the probe's commands." -ForegroundColor Yellow
     exit 0
 }
 
@@ -186,4 +186,4 @@ Write-Host ""
 # (re-measured 2026-11-16, GuildSpy #97; porting guide section 5; #93).
 if ($Probe) { Deploy-Probe }
 Write-Host "/reload in game to load it." -ForegroundColor Yellow
-Write-Host "In game:  /console scriptErrors 1   then   /gsweep$(if ($Probe) { '   (probe: /fp gs, its lines in /fp)' })" -ForegroundColor Green
+Write-Host "In game:  /console scriptErrors 1   then   /gsweep$(if ($Probe) { '   (probe: /fp sweep, its lines in /fp)' })" -ForegroundColor Green

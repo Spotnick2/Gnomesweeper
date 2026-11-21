@@ -1,4 +1,4 @@
--- The probe's Assets.lua (Tools/GnomesweeperProbe, #87): /fp gs assets, the contact
+-- The probe's Assets.lua (Tools/GnomesweeperProbe, #87): /fp sweep assets, the contact
 -- sheet of every texture (#6). Loads ForeverProbe from its checkout: local only.
 dofile("tests/wow_stubs.lua")
 dofile("tests/harness.lua")
@@ -63,7 +63,7 @@ do
     check(rawget(_G, "GnomesweeperAssets") == nil, "nothing is built until it is asked for")
     probeSlash("assets")
     local sheet = A._test.sheet()
-    check(sheet ~= nil and sheet:IsShown(), "/fp gs assets shows the sheet")
+    check(sheet ~= nil and sheet:IsShown(), "/fp sweep assets shows the sheet")
     eq(sheet:GetFrameStrata(), "FULLSCREEN_DIALOG", "...over the game")
     local special = 0
     for _, name in ipairs(UISpecialFrames) do if name == "GnomesweeperAssets" then special = special + 1 end end

@@ -281,7 +281,7 @@ do
 
     WoW.chat = {}
     WoW.slash("/gsweep help")
-    check(chatHas("beginner | intermediate | expert"), "help lists the difficulties")
+    check(chatHas("beginner, intermediate or expert"), "help lists the difficulties")
     check(not chatHas("unknown option"), "...without calling it an error")
 
     W.Open("bogus")
@@ -402,5 +402,4 @@ do
 end
 
 -- FINDING (#95): /gsweep help printed 2 time(s), its three lines with a bare "|".
-eq(acceptKnownStrays(), 6, "the help's known stray | lines (#95), and no other")
 done("test_window")

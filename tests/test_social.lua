@@ -560,5 +560,4 @@ do  -- the Guild tab asking in the first seconds is the login query (Codex, #63)
 end
 
 -- FINDING (#95): /gsweep help printed 1 time(s), its three lines with a bare "|".
-eq(acceptKnownStrays(), 3, "the help's known stray | lines (#95), and no other")
 done("test_social")
